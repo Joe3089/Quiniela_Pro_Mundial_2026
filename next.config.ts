@@ -1,7 +1,26 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  reactStrictMode: true,
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "*.supabase.co",
+      },
+      {
+        protocol: "https",
+        hostname: "media.api-sports.io",
+      },
+      {
+        protocol: "https",
+        hostname: "flagcdn.com",
+      },
+    ],
+  },
+  experimental: {
+    optimizePackageImports: ["lucide-react", "framer-motion"],
+  },
 };
 
 export default nextConfig;

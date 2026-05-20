@@ -1,0 +1,127 @@
+"use client";
+
+import { motion } from "framer-motion";
+import Image from "next/image";
+import { Clock, MapPin } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { cn, formatTime, formatDateShort } from "@/lib/utils";
+import { MATCH_STATUS_LABELS } from "@/constants";
+import type { Match } from "@/types/fixtures";
+
+interface MatchCardProps {
+  match: Match;
+  showPrediction?: boolean;
+  prediction?: { home: number; away: number } | null;
+  onClick?: () => void;
+  compact?: boolean;
+}
+
+export function MatchCard({ match, showPrediction, prediction, onClick, compact }: MatchCardProps) {
+  const isLive = match.status === "live";
+  const isFinished = match.status === "finished";
+  const hasScore = match.home_score !== null && match.away_score !== null;
+
+  return (
+    <motion.div
+      whileHover={{ scale: onClick ? 1.01 : 1 }}
+      whileTap={{ scale: onClick ? 0.99 : 1 }}
+      onClick={onClick}
+      className={cn(
+        "glass rounded-xl border border-border/50 transition-all duration-200",
+        onClick && "cursor-pointer hover:border-primary/30 hover:bg-primary/5",
+        compact ? "p-3" : "p-4"
+      )}
+    >
+      {/* Header: date & status */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Clock className="h-3 w-3" />
+          <span>{formatDateShort(match.match_date)}</span>
+          <span>·</span>
+          <span>{formatTime(match.match_date)}</span>
+        </div>
+        <Badge
+          variant={
+            isLive ? "live" : isFinished ? "secondary" : "outline"
+          }
+          className="text-[10px] h-5"
+        >
+          {isLive ? "● EN VIVO" : MATCH_STATUS_LABELS[match.status]}
+        </Badge>
+      </div>
+
+      {/* Teams & Score */}
+      <div className="flex items-center gap-3">
+        {/* Home */}
+        <div className="flex-1 flex items-center gap-2 justify-end">
+          <span className={cn("font-semibold text-sm text-right", compact && "text-xs")}>
+            {match.home_team?.short_name ?? "TBD"}
+          </span>
+          {match.home_team?.flag_url && (
+            <Image
+              src={match.home_team.flag_url}
+              alt={match.home_team.name}
+              width={compact ? 24 : 28}
+              height={compact ? 16 : 20}
+              className="rounded-sm object-cover"
+            />
+          )}
+        </div>
+
+        {/* Score / VS */}
+        <div className={cn(
+          "flex items-center gap-1.5 min-w-[64px] justify-center",
+          compact && "min-w-[48px]"
+        )}>
+          {hasScore ? (
+            <>
+              <span className={cn("font-bold text-lg tabular-nums", isLive && "text-red-400", compact && "text-base")}>
+                {match.home_score}
+              </span>
+              <span className="text-muted-foreground">-</span>
+              <span className={cn("font-bold text-lg tabular-nums", isLive && "text-red-400", compact && "text-base")}>
+                {match.away_score}
+              </span>
+            </>
+          ) : (
+            <span className="text-muted-foreground text-sm font-medium">vs</span>
+          )}
+        </div>
+
+        {/* Away */}
+        <div className="flex-1 flex items-center gap-2">
+          {match.away_team?.flag_url && (
+            <Image
+              src={match.away_team.flag_url}
+              alt={match.away_team.name}
+              width={compact ? 24 : 28}
+              height={compact ? 16 : 20}
+              className="rounded-sm object-cover"
+            />
+          )}
+          <span className={cn("font-semibold text-sm", compact && "text-xs")}>
+            {match.away_team?.short_name ?? "TBD"}
+          </span>
+        </div>
+      </div>
+
+      {/* Venue */}
+      {!compact && match.city && (
+        <div className="flex items-center justify-center gap-1 mt-2 text-xs text-muted-foreground">
+          <MapPin className="h-3 w-3" />
+          <span>{match.city}</span>
+        </div>
+      )}
+
+      {/* Prediction badge */}
+      {showPrediction && prediction && (
+        <div className="mt-3 pt-3 border-t border-border/50 flex items-center justify-center gap-2">
+          <span className="text-xs text-muted-foreground">Tu predicción:</span>
+          <span className="text-xs font-bold text-primary">
+            {prediction.home} - {prediction.away}
+          </span>
+        </div>
+      )}
+    </motion.div>
+  );
+}
