@@ -1,8 +1,9 @@
 -- ============================================================
 -- FIFA World Cup 2026 Seed Data
+-- UUIDs válidos: solo caracteres hex (0-9, a-f)
 -- ============================================================
 
--- Insert tournament
+-- TOURNAMENT
 insert into public.tournaments (id, name, slug, season, start_date, end_date, is_active, host_countries)
 values (
   'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
@@ -15,51 +16,143 @@ values (
   array['USA', 'Canada', 'Mexico']
 );
 
--- Insert teams (all 48 qualified nations)
--- Group A
+-- GROUPS (A-L) — UUIDs hex válidos
 insert into public.groups (id, tournament_id, name, letter) values
-  ('g-a0000000-0000-0000-0000-000000000001', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Group A', 'A'),
-  ('g-b0000000-0000-0000-0000-000000000002', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Group B', 'B'),
-  ('g-c0000000-0000-0000-0000-000000000003', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Group C', 'C'),
-  ('g-d0000000-0000-0000-0000-000000000004', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Group D', 'D'),
-  ('g-e0000000-0000-0000-0000-000000000005', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Group E', 'E'),
-  ('g-f0000000-0000-0000-0000-000000000006', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Group F', 'F'),
-  ('g-g0000000-0000-0000-0000-000000000007', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Group G', 'G'),
-  ('g-h0000000-0000-0000-0000-000000000008', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Group H', 'H'),
-  ('g-i0000000-0000-0000-0000-000000000009', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Group I', 'I'),
-  ('g-j0000000-0000-0000-0000-000000000010', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Group J', 'J'),
-  ('g-k0000000-0000-0000-0000-000000000011', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Group K', 'K'),
-  ('g-l0000000-0000-0000-0000-000000000012', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Group L', 'L');
+  ('aa000000-0000-0000-0000-000000000001', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Group A', 'A'),
+  ('aa000000-0000-0000-0000-000000000002', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Group B', 'B'),
+  ('aa000000-0000-0000-0000-000000000003', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Group C', 'C'),
+  ('aa000000-0000-0000-0000-000000000004', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Group D', 'D'),
+  ('aa000000-0000-0000-0000-000000000005', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Group E', 'E'),
+  ('aa000000-0000-0000-0000-000000000006', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Group F', 'F'),
+  ('aa000000-0000-0000-0000-000000000007', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Group G', 'G'),
+  ('aa000000-0000-0000-0000-000000000008', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Group H', 'H'),
+  ('aa000000-0000-0000-0000-000000000009', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Group I', 'I'),
+  ('aa000000-0000-0000-0000-00000000000a', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Group J', 'J'),
+  ('aa000000-0000-0000-0000-00000000000b', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Group K', 'K'),
+  ('aa000000-0000-0000-0000-00000000000c', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Group L', 'L');
 
--- Teams
+-- TEAMS (48 equipos, 4 por grupo)
 insert into public.teams (id, tournament_id, name, short_name, fifa_code, continent, flag_url) values
-  -- Group A
-  ('t-usa00000-0000-0000-0000-000000000001','a1b2c3d4-e5f6-7890-abcd-ef1234567890','United States','USA','USA','CONCACAF','https://flagcdn.com/w40/us.png'),
-  ('t-mex00000-0000-0000-0000-000000000002','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Mexico','MEX','MEX','CONCACAF','https://flagcdn.com/w40/mx.png'),
-  ('t-can00000-0000-0000-0000-000000000003','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Canada','CAN','CAN','CONCACAF','https://flagcdn.com/w40/ca.png'),
-  ('t-pan00000-0000-0000-0000-000000000004','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Panama','PAN','PAN','CONCACAF','https://flagcdn.com/w40/pa.png'),
-  -- Group B
-  ('t-arg00000-0000-0000-0000-000000000005','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Argentina','ARG','ARG','CONMEBOL','https://flagcdn.com/w40/ar.png'),
-  ('t-bra00000-0000-0000-0000-000000000006','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Brazil','BRA','BRA','CONMEBOL','https://flagcdn.com/w40/br.png'),
-  ('t-col00000-0000-0000-0000-000000000007','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Colombia','COL','COL','CONMEBOL','https://flagcdn.com/w40/co.png'),
-  ('t-uru00000-0000-0000-0000-000000000008','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Uruguay','URU','URU','CONMEBOL','https://flagcdn.com/w40/uy.png'),
-  -- Group C
-  ('t-fra00000-0000-0000-0000-000000000009','a1b2c3d4-e5f6-7890-abcd-ef1234567890','France','FRA','FRA','UEFA','https://flagcdn.com/w40/fr.png'),
-  ('t-eng00000-0000-0000-0000-000000000010','a1b2c3d4-e5f6-7890-abcd-ef1234567890','England','ENG','ENG','UEFA','https://flagcdn.com/w40/gb-eng.png'),
-  ('t-ger00000-0000-0000-0000-000000000011','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Germany','GER','GER','UEFA','https://flagcdn.com/w40/de.png'),
-  ('t-spa00000-0000-0000-0000-000000000012','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Spain','ESP','ESP','UEFA','https://flagcdn.com/w40/es.png'),
-  -- Group D
-  ('t-por00000-0000-0000-0000-000000000013','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Portugal','POR','POR','UEFA','https://flagcdn.com/w40/pt.png'),
-  ('t-ned00000-0000-0000-0000-000000000014','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Netherlands','NED','NED','UEFA','https://flagcdn.com/w40/nl.png'),
-  ('t-bel00000-0000-0000-0000-000000000015','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Belgium','BEL','BEL','UEFA','https://flagcdn.com/w40/be.png'),
-  ('t-cro00000-0000-0000-0000-000000000016','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Croatia','CRO','CRO','UEFA','https://flagcdn.com/w40/hr.png'),
-  -- Group E
-  ('t-mor00000-0000-0000-0000-000000000017','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Morocco','MAR','MAR','CAF','https://flagcdn.com/w40/ma.png'),
-  ('t-sen00000-0000-0000-0000-000000000018','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Senegal','SEN','SEN','CAF','https://flagcdn.com/w40/sn.png'),
-  ('t-jpn00000-0000-0000-0000-000000000019','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Japan','JPN','JPN','AFC','https://flagcdn.com/w40/jp.png'),
-  ('t-kor00000-0000-0000-0000-000000000020','a1b2c3d4-e5f6-7890-abcd-ef1234567890','South Korea','KOR','KOR','AFC','https://flagcdn.com/w40/kr.png'),
-  -- Group F
-  ('t-ita00000-0000-0000-0000-000000000021','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Italy','ITA','ITA','UEFA','https://flagcdn.com/w40/it.png'),
-  ('t-sui00000-0000-0000-0000-000000000022','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Switzerland','SUI','SUI','UEFA','https://flagcdn.com/w40/ch.png'),
-  ('t-den00000-0000-0000-0000-000000000023','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Denmark','DEN','DEN','UEFA','https://flagcdn.com/w40/dk.png'),
-  ('t-mex00001-0000-0000-0000-000000000024','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Ecuador','ECU','ECU','CONMEBOL','https://flagcdn.com/w40/ec.png');
+  -- Grupo A (CONCACAF hosts)
+  ('bb000000-0000-0000-0000-000000000001','a1b2c3d4-e5f6-7890-abcd-ef1234567890','United States','USA','USA','CONCACAF','https://flagcdn.com/w40/us.png'),
+  ('bb000000-0000-0000-0000-000000000002','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Mexico','MEX','MEX','CONCACAF','https://flagcdn.com/w40/mx.png'),
+  ('bb000000-0000-0000-0000-000000000003','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Canada','CAN','CAN','CONCACAF','https://flagcdn.com/w40/ca.png'),
+  ('bb000000-0000-0000-0000-000000000004','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Panama','PAN','PAN','CONCACAF','https://flagcdn.com/w40/pa.png'),
+  -- Grupo B (CONMEBOL)
+  ('bb000000-0000-0000-0000-000000000005','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Argentina','ARG','ARG','CONMEBOL','https://flagcdn.com/w40/ar.png'),
+  ('bb000000-0000-0000-0000-000000000006','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Brazil','BRA','BRA','CONMEBOL','https://flagcdn.com/w40/br.png'),
+  ('bb000000-0000-0000-0000-000000000007','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Colombia','COL','COL','CONMEBOL','https://flagcdn.com/w40/co.png'),
+  ('bb000000-0000-0000-0000-000000000008','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Uruguay','URU','URU','CONMEBOL','https://flagcdn.com/w40/uy.png'),
+  -- Grupo C (UEFA)
+  ('bb000000-0000-0000-0000-000000000009','a1b2c3d4-e5f6-7890-abcd-ef1234567890','France','FRA','FRA','UEFA','https://flagcdn.com/w40/fr.png'),
+  ('bb000000-0000-0000-0000-00000000000a','a1b2c3d4-e5f6-7890-abcd-ef1234567890','England','ENG','ENG','UEFA','https://flagcdn.com/w40/gb-eng.png'),
+  ('bb000000-0000-0000-0000-00000000000b','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Germany','GER','GER','UEFA','https://flagcdn.com/w40/de.png'),
+  ('bb000000-0000-0000-0000-00000000000c','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Spain','ESP','ESP','UEFA','https://flagcdn.com/w40/es.png'),
+  -- Grupo D (UEFA)
+  ('bb000000-0000-0000-0000-00000000000d','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Portugal','POR','POR','UEFA','https://flagcdn.com/w40/pt.png'),
+  ('bb000000-0000-0000-0000-00000000000e','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Netherlands','NED','NED','UEFA','https://flagcdn.com/w40/nl.png'),
+  ('bb000000-0000-0000-0000-00000000000f','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Belgium','BEL','BEL','UEFA','https://flagcdn.com/w40/be.png'),
+  ('bb000000-0000-0000-0000-000000000010','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Croatia','CRO','CRO','UEFA','https://flagcdn.com/w40/hr.png'),
+  -- Grupo E (Mix)
+  ('bb000000-0000-0000-0000-000000000011','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Morocco','MAR','MAR','CAF','https://flagcdn.com/w40/ma.png'),
+  ('bb000000-0000-0000-0000-000000000012','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Senegal','SEN','SEN','CAF','https://flagcdn.com/w40/sn.png'),
+  ('bb000000-0000-0000-0000-000000000013','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Japan','JPN','JPN','AFC','https://flagcdn.com/w40/jp.png'),
+  ('bb000000-0000-0000-0000-000000000014','a1b2c3d4-e5f6-7890-abcd-ef1234567890','South Korea','KOR','KOR','AFC','https://flagcdn.com/w40/kr.png'),
+  -- Grupo F (UEFA + CONMEBOL)
+  ('bb000000-0000-0000-0000-000000000015','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Italy','ITA','ITA','UEFA','https://flagcdn.com/w40/it.png'),
+  ('bb000000-0000-0000-0000-000000000016','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Switzerland','SUI','SUI','UEFA','https://flagcdn.com/w40/ch.png'),
+  ('bb000000-0000-0000-0000-000000000017','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Denmark','DEN','DEN','UEFA','https://flagcdn.com/w40/dk.png'),
+  ('bb000000-0000-0000-0000-000000000018','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Ecuador','ECU','ECU','CONMEBOL','https://flagcdn.com/w40/ec.png'),
+  -- Grupo G (Mix)
+  ('bb000000-0000-0000-0000-000000000019','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Australia','AUS','AUS','AFC','https://flagcdn.com/w40/au.png'),
+  ('bb000000-0000-0000-0000-00000000001a','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Iran','IRN','IRN','AFC','https://flagcdn.com/w40/ir.png'),
+  ('bb000000-0000-0000-0000-00000000001b','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Nigeria','NGA','NGA','CAF','https://flagcdn.com/w40/ng.png'),
+  ('bb000000-0000-0000-0000-00000000001c','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Poland','POL','POL','UEFA','https://flagcdn.com/w40/pl.png'),
+  -- Grupo H (UEFA + Mix)
+  ('bb000000-0000-0000-0000-00000000001d','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Austria','AUT','AUT','UEFA','https://flagcdn.com/w40/at.png'),
+  ('bb000000-0000-0000-0000-00000000001e','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Turkey','TUR','TUR','UEFA','https://flagcdn.com/w40/tr.png'),
+  ('bb000000-0000-0000-0000-00000000001f','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Mexico2','MEX2','MEX2','CONCACAF','https://flagcdn.com/w40/mx.png'),
+  ('bb000000-0000-0000-0000-000000000020','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Egypt','EGY','EGY','CAF','https://flagcdn.com/w40/eg.png'),
+  -- Grupo I (Mix)
+  ('bb000000-0000-0000-0000-000000000021','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Serbia','SRB','SRB','UEFA','https://flagcdn.com/w40/rs.png'),
+  ('bb000000-0000-0000-0000-000000000022','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Ukraine','UKR','UKR','UEFA','https://flagcdn.com/w40/ua.png'),
+  ('bb000000-0000-0000-0000-000000000023','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Saudi Arabia','KSA','KSA','AFC','https://flagcdn.com/w40/sa.png'),
+  ('bb000000-0000-0000-0000-000000000024','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Peru','PER','PER','CONMEBOL','https://flagcdn.com/w40/pe.png'),
+  -- Grupo J (Mix)
+  ('bb000000-0000-0000-0000-000000000025','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Scotland','SCO','SCO','UEFA','https://flagcdn.com/w40/gb-sct.png'),
+  ('bb000000-0000-0000-0000-000000000026','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Czech Republic','CZE','CZE','UEFA','https://flagcdn.com/w40/cz.png'),
+  ('bb000000-0000-0000-0000-000000000027','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Cameroon','CMR','CMR','CAF','https://flagcdn.com/w40/cm.png'),
+  ('bb000000-0000-0000-0000-000000000028','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Costa Rica','CRC','CRC','CONCACAF','https://flagcdn.com/w40/cr.png'),
+  -- Grupo K (Mix)
+  ('bb000000-0000-0000-0000-000000000029','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Hungary','HUN','HUN','UEFA','https://flagcdn.com/w40/hu.png'),
+  ('bb000000-0000-0000-0000-00000000002a','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Romania','ROU','ROU','UEFA','https://flagcdn.com/w40/ro.png'),
+  ('bb000000-0000-0000-0000-00000000002b','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Ghana','GHA','GHA','CAF','https://flagcdn.com/w40/gh.png'),
+  ('bb000000-0000-0000-0000-00000000002c','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Ivory Coast','CIV','CIV','CAF','https://flagcdn.com/w40/ci.png'),
+  -- Grupo L (Mix)
+  ('bb000000-0000-0000-0000-00000000002d','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Greece','GRE','GRE','UEFA','https://flagcdn.com/w40/gr.png'),
+  ('bb000000-0000-0000-0000-00000000002e','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Slovakia','SVK','SVK','UEFA','https://flagcdn.com/w40/sk.png'),
+  ('bb000000-0000-0000-0000-00000000002f','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Algeria','ALG','ALG','CAF','https://flagcdn.com/w40/dz.png'),
+  ('bb000000-0000-0000-0000-000000000030','a1b2c3d4-e5f6-7890-abcd-ef1234567890','Honduras','HON','HON','CONCACAF','https://flagcdn.com/w40/hn.png');
+
+-- STANDINGS iniciales (0 puntos para todos)
+insert into public.standings (group_id, team_id, tournament_id) values
+  -- Grupo A
+  ('aa000000-0000-0000-0000-000000000001','bb000000-0000-0000-0000-000000000001','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('aa000000-0000-0000-0000-000000000001','bb000000-0000-0000-0000-000000000002','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('aa000000-0000-0000-0000-000000000001','bb000000-0000-0000-0000-000000000003','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('aa000000-0000-0000-0000-000000000001','bb000000-0000-0000-0000-000000000004','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  -- Grupo B
+  ('aa000000-0000-0000-0000-000000000002','bb000000-0000-0000-0000-000000000005','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('aa000000-0000-0000-0000-000000000002','bb000000-0000-0000-0000-000000000006','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('aa000000-0000-0000-0000-000000000002','bb000000-0000-0000-0000-000000000007','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('aa000000-0000-0000-0000-000000000002','bb000000-0000-0000-0000-000000000008','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  -- Grupo C
+  ('aa000000-0000-0000-0000-000000000003','bb000000-0000-0000-0000-000000000009','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('aa000000-0000-0000-0000-000000000003','bb000000-0000-0000-0000-00000000000a','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('aa000000-0000-0000-0000-000000000003','bb000000-0000-0000-0000-00000000000b','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('aa000000-0000-0000-0000-000000000003','bb000000-0000-0000-0000-00000000000c','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  -- Grupo D
+  ('aa000000-0000-0000-0000-000000000004','bb000000-0000-0000-0000-00000000000d','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('aa000000-0000-0000-0000-000000000004','bb000000-0000-0000-0000-00000000000e','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('aa000000-0000-0000-0000-000000000004','bb000000-0000-0000-0000-00000000000f','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('aa000000-0000-0000-0000-000000000004','bb000000-0000-0000-0000-000000000010','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  -- Grupo E
+  ('aa000000-0000-0000-0000-000000000005','bb000000-0000-0000-0000-000000000011','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('aa000000-0000-0000-0000-000000000005','bb000000-0000-0000-0000-000000000012','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('aa000000-0000-0000-0000-000000000005','bb000000-0000-0000-0000-000000000013','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('aa000000-0000-0000-0000-000000000005','bb000000-0000-0000-0000-000000000014','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  -- Grupo F
+  ('aa000000-0000-0000-0000-000000000006','bb000000-0000-0000-0000-000000000015','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('aa000000-0000-0000-0000-000000000006','bb000000-0000-0000-0000-000000000016','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('aa000000-0000-0000-0000-000000000006','bb000000-0000-0000-0000-000000000017','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('aa000000-0000-0000-0000-000000000006','bb000000-0000-0000-0000-000000000018','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  -- Grupo G
+  ('aa000000-0000-0000-0000-000000000007','bb000000-0000-0000-0000-000000000019','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('aa000000-0000-0000-0000-000000000007','bb000000-0000-0000-0000-00000000001a','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('aa000000-0000-0000-0000-000000000007','bb000000-0000-0000-0000-00000000001b','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('aa000000-0000-0000-0000-000000000007','bb000000-0000-0000-0000-00000000001c','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  -- Grupo H
+  ('aa000000-0000-0000-0000-000000000008','bb000000-0000-0000-0000-00000000001d','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('aa000000-0000-0000-0000-000000000008','bb000000-0000-0000-0000-00000000001e','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('aa000000-0000-0000-0000-000000000008','bb000000-0000-0000-0000-00000000001f','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('aa000000-0000-0000-0000-000000000008','bb000000-0000-0000-0000-000000000020','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  -- Grupo I
+  ('aa000000-0000-0000-0000-000000000009','bb000000-0000-0000-0000-000000000021','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('aa000000-0000-0000-0000-000000000009','bb000000-0000-0000-0000-000000000022','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('aa000000-0000-0000-0000-000000000009','bb000000-0000-0000-0000-000000000023','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('aa000000-0000-0000-0000-000000000009','bb000000-0000-0000-0000-000000000024','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  -- Grupo J
+  ('aa000000-0000-0000-0000-00000000000a','bb000000-0000-0000-0000-000000000025','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('aa000000-0000-0000-0000-00000000000a','bb000000-0000-0000-0000-000000000026','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('aa000000-0000-0000-0000-00000000000a','bb000000-0000-0000-0000-000000000027','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('aa000000-0000-0000-0000-00000000000a','bb000000-0000-0000-0000-000000000028','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  -- Grupo K
+  ('aa000000-0000-0000-0000-00000000000b','bb000000-0000-0000-0000-000000000029','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('aa000000-0000-0000-0000-00000000000b','bb000000-0000-0000-0000-00000000002a','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('aa000000-0000-0000-0000-00000000000b','bb000000-0000-0000-0000-00000000002b','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('aa000000-0000-0000-0000-00000000000b','bb000000-0000-0000-0000-00000000002c','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  -- Grupo L
+  ('aa000000-0000-0000-0000-00000000000c','bb000000-0000-0000-0000-00000000002d','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('aa000000-0000-0000-0000-00000000000c','bb000000-0000-0000-0000-00000000002e','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('aa000000-0000-0000-0000-00000000000c','bb000000-0000-0000-0000-00000000002f','a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('aa000000-0000-0000-0000-00000000000c','bb000000-0000-0000-0000-000000000030','a1b2c3d4-e5f6-7890-abcd-ef1234567890');

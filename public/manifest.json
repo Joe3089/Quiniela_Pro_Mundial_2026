@@ -59,14 +59,6 @@
       "purpose": "maskable any"
     }
   ],
-  "screenshots": [
-    {
-      "src": "/screenshots/mobile-home.png",
-      "sizes": "390x844",
-      "type": "image/png",
-      "form_factor": "narrow"
-    }
-  ],
   "related_applications": [],
   "prefer_related_applications": false,
   "shortcuts": [
