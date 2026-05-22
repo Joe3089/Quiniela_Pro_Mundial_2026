@@ -78,11 +78,7 @@ export function PredictionsView() {
     ])
   );
 
-  const LOCKOUT_MS = 2 * 60 * 60 * 1000;
-  const open = allMatches?.filter(
-    (m) => m.status === "scheduled" &&
-      new Date(m.match_date).getTime() - Date.now() > LOCKOUT_MS
-  ) ?? [];
+  const open = allMatches?.filter((m) => m.status === "scheduled") ?? [];
 
   const withPrediction = allMatches?.filter((m) => predictionMap.has(m.id)) ?? [];
   const finished = allMatches?.filter((m) => m.status === "finished") ?? [];

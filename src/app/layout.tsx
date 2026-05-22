@@ -36,7 +36,7 @@ export const metadata: Metadata = {
     description: APP_DESCRIPTION,
   },
   icons: {
-    icon: "/icons/icon-192x192.png",
+    icon: "/icon.svg",
     apple: "/icons/apple-touch-icon.png",
   },
 };
@@ -47,8 +47,8 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#0d1117" },
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#070710" },
+    { media: "(prefers-color-scheme: light)", color: "#070710" },
   ],
 };
 

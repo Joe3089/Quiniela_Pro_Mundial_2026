@@ -4,12 +4,18 @@
   "description": "La mejor quiniela del Mundial FIFA 2026",
   "start_url": "/dashboard",
   "display": "standalone",
-  "background_color": "#0d1117",
-  "theme_color": "#1c8ef9",
+  "background_color": "#070710",
+  "theme_color": "#E0001B",
   "orientation": "portrait-primary",
   "categories": ["sports", "games"],
   "lang": "es",
   "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
     {
       "src": "/icons/icon-72x72.png",
       "sizes": "72x72",
