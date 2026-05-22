@@ -21,7 +21,9 @@ function PredictionMatchRow({
   prediction?: { home: number; away: number } | null;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const isLocked = match.status !== "scheduled" || new Date(match.match_date) <= new Date();
+  const LOCKOUT_MS = 2 * 60 * 60 * 1000;
+  const isLocked = match.status !== "scheduled" ||
+    new Date(match.match_date).getTime() - Date.now() <= LOCKOUT_MS;
 
   return (
     <div className="glass rounded-xl border border-border/40 overflow-hidden">
@@ -76,8 +78,10 @@ export function PredictionsView() {
     ])
   );
 
+  const LOCKOUT_MS = 2 * 60 * 60 * 1000;
   const open = allMatches?.filter(
-    (m) => m.status === "scheduled" && new Date(m.match_date) > new Date()
+    (m) => m.status === "scheduled" &&
+      new Date(m.match_date).getTime() - Date.now() > LOCKOUT_MS
   ) ?? [];
 
   const withPrediction = allMatches?.filter((m) => predictionMap.has(m.id)) ?? [];

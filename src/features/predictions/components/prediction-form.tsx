@@ -53,7 +53,8 @@ function ScoreInput({
 export function PredictionForm({ match, existingPrediction, onSuccess }: PredictionFormProps) {
   const save = useSavePrediction();
   const isLocked = match.status !== "scheduled";
-  const isPast = new Date(match.match_date) <= new Date();
+  const lockoutTime = new Date(new Date(match.match_date).getTime() - 2 * 60 * 60 * 1000);
+  const isBeforeLockout = new Date() >= lockoutTime;
 
   const { watch, setValue, handleSubmit } = useForm<PredictionInput>({
     resolver: zodResolver(predictionSchema),
@@ -66,7 +67,7 @@ export function PredictionForm({ match, existingPrediction, onSuccess }: Predict
   const homeScore = watch("home_score_prediction");
   const awayScore = watch("away_score_prediction");
 
-  const disabled = isLocked || isPast;
+  const disabled = isLocked || isBeforeLockout;
 
   const onSubmit = (data: PredictionInput) => {
     if (disabled) return;
@@ -154,8 +155,8 @@ export function PredictionForm({ match, existingPrediction, onSuccess }: Predict
       </AnimatePresence>
 
       {disabled ? (
-        <div className={cn("text-center text-xs py-2 rounded-lg", isLocked ? "text-red-400 bg-red-500/10" : "text-muted-foreground bg-muted/20")}>
-          {isLocked ? "Partido en curso o finalizado" : "Partido cerrado para predicciones"}
+        <div className={cn("text-center text-xs py-2 rounded-lg", isLocked ? "text-red-400 bg-red-500/10" : "text-yellow-500/80 bg-yellow-500/10")}>
+          {isLocked ? "Partido en curso o finalizado" : "Cerrado · Menos de 2h para el partido"}
         </div>
       ) : (
         <Button
