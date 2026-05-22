@@ -92,9 +92,11 @@ export function PredictionsView() {
         animate={{ opacity: 1, y: 0 }}
         className="mb-6 flex items-center justify-between"
       >
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Target className="h-6 w-6 text-primary" />
-          Mis <span className="text-gradient ml-1">Predicciones</span>
+        <h1 className="text-2xl font-black tracking-tight flex items-center gap-2">
+          <div className="h-8 w-8 rounded-xl bg-[hsl(var(--primary)/0.15)] flex items-center justify-center">
+            <Target className="h-4 w-4 text-[hsl(var(--primary))]" />
+          </div>
+          Mis <span className="text-gradient-vivid ml-1">Predicciones</span>
         </h1>
         <div className="flex items-center gap-2">
           <Badge variant="secondary">{predictions?.length ?? 0} guardadas</Badge>

@@ -61,14 +61,16 @@ export function FixturesView() {
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Trophy className="h-6 w-6 text-primary" />
-          Partidos · <span className="text-gradient">Mundial 2026</span>
+        <h1 className="text-2xl font-black tracking-tight flex items-center gap-2">
+          <div className="h-8 w-8 rounded-xl bg-[hsl(var(--primary)/0.15)] flex items-center justify-center">
+            <Trophy className="h-4 w-4 text-[hsl(var(--primary))]" />
+          </div>
+          Partidos · <span className="text-gradient-vivid">Mundial 2026</span>
         </h1>
       </motion.div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-6 glass border border-border/30">
+        <TabsList className="mb-6 glass border border-white/8">
           <TabsTrigger value="grupos" className="gap-2">
             <Users className="h-4 w-4" />
             Grupos

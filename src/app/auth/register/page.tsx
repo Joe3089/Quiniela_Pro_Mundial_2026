@@ -1,24 +1,39 @@
 import { RegisterForm } from "@/features/auth/components/register-form";
-import { Trophy } from "lucide-react";
 import Link from "next/link";
 import type { Metadata } from "next";
+import { Logo } from "@/components/ui/logo";
 
 export const metadata: Metadata = { title: "Crear cuenta" };
 
 export default function RegisterPage() {
   return (
-    <div className="min-h-screen fifa-gradient flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <Trophy className="h-5 w-5 text-white" />
-            </div>
-          </Link>
+    <div className="min-h-screen relative flex items-center justify-center px-4 py-12 overflow-hidden">
+      {/* Blobs */}
+      <div className="blob blob-purple w-[500px] h-[500px] -top-20 -right-32 opacity-50" />
+      <div className="blob blob-red w-[400px] h-[400px] -bottom-20 -left-20 opacity-40" />
+
+      <div className="relative w-full max-w-sm z-10">
+        {/* Logo */}
+        <div className="flex flex-col items-center mb-8 gap-2">
+          <Logo size="lg" variant="full" href="/" />
+          <p className="text-sm text-muted-foreground">Únete a la quiniela del Mundial</p>
         </div>
-        <div className="glass rounded-2xl border border-border/50 p-8">
+
+        {/* Form card */}
+        <div className="glass-card rounded-2xl p-8 border border-white/8">
           <RegisterForm />
         </div>
+
+        {/* Footer */}
+        <p className="text-center text-sm text-muted-foreground mt-6">
+          ¿Ya tienes cuenta?{" "}
+          <Link
+            href="/auth/login"
+            className="font-semibold text-[hsl(var(--primary))] hover:text-[hsl(var(--primary)/0.8)] transition-colors"
+          >
+            Iniciar sesión
+          </Link>
+        </p>
       </div>
     </div>
   );

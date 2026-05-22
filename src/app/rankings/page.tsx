@@ -8,10 +8,12 @@ export default function RankingsPage() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <BarChart3 className="h-6 w-6 text-primary" />
-          <span className="text-gradient">Ranking</span>
-          <span className="ml-1">Global</span>
+        <h1 className="text-2xl font-black tracking-tight flex items-center gap-2">
+          <div className="h-8 w-8 rounded-xl bg-[hsl(var(--brand-violet)/0.15)] flex items-center justify-center">
+            <BarChart3 className="h-4 w-4 text-[hsl(var(--brand-violet))]" />
+          </div>
+          <span className="text-gradient-vivid">Ranking</span>
+          <span>Global</span>
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
           Actualización en tiempo real · Mundial 2026

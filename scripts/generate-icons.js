@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// Generates minimal valid PNG icons for PWA manifest
+// Generates PNG icons for PWA manifest using FIFA 2026 brand colors
+// Red #E0001B → Purple #6B21A8 gradient circle with gold trophy accent
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
@@ -26,6 +27,8 @@ function pngChunk(type, data) {
   return Buffer.concat([lenBuf, typeBytes, data, crcBuf]);
 }
 
+function lerp(a, b, t) { return Math.round(a + (b - a) * t); }
+
 function createIcon(size) {
   const sig = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
 
@@ -38,6 +41,12 @@ function createIcon(size) {
   ihdr[11] = 0;
   ihdr[12] = 0;
 
+  // Brand colors
+  // Red: #E0001B  → r=224, g=0, b=27
+  // Purple: #6B21A8 → r=107, g=33, b=168
+  // Gold: #FFC93C  → r=255, g=201, b=60
+  // Lime: #B5E317  → r=181, g=227, b=23
+
   const cx = size / 2;
   const cy = size / 2;
   const r = size / 2;
@@ -45,34 +54,63 @@ function createIcon(size) {
 
   for (let y = 0; y < size; y++) {
     const row = Buffer.alloc(1 + size * 4);
-    row[0] = 0; // filter none
+    row[0] = 0;
     for (let x = 0; x < size; x++) {
       const dx = x - cx;
       const dy = y - cy;
       const dist = Math.sqrt(dx * dx + dy * dy);
-      const inCircle = dist <= r - 1;
-      const inRing = dist > r - 1 && dist <= r;
+      const inCircle = dist <= r - 0.5;
+      const inRing = dist > r - 0.5 && dist <= r + 0.5;
 
       let pr, pg, pb, pa;
+
       if (inCircle) {
-        // Gradient: deep blue top-left to teal bottom-right
-        const t = (x + y) / (size * 2);
-        pr = Math.round(12 + t * (28 - 12));    // 0c → 1c
-        pg = Math.round(142 + t * (22 - 142));  // 8e → 16 (kinda dark teal)
-        pb = Math.round(249 + t * (132 - 249)); // f9 → 84
+        // Diagonal gradient: red (top-left) → purple (bottom-right)
+        const t = Math.max(0, Math.min(1, (x + y) / (size * 2)));
+        pr = lerp(224, 107, t);
+        pg = lerp(0, 33, t);
+        pb = lerp(27, 168, t);
         pa = 255;
 
-        // Draw a subtle "trophy" shape in center third
-        const cx2 = Math.abs(dx) / (size / 6);
-        const cy2 = Math.abs(dy) / (size / 6);
-        if (cy2 < 1.4 && cx2 < 1.4) {
-          // center badge highlight
-          pr = Math.min(255, pr + 60);
-          pg = Math.min(255, pg + 60);
-          pb = Math.min(255, pb + 60);
+        // Trophy cup area — draw a gold shape in center
+        const relX = (x - cx) / r; // -1 to +1
+        const relY = (y - cy) / r; // -1 to +1
+
+        // Cup body: roughly -0.28 to +0.28 wide, -0.55 to +0.1 tall
+        const inCupBody = (
+          Math.abs(relX) < 0.28 &&
+          relY > -0.55 && relY < 0.1
+        );
+        // Cup handles: small bumps on sides at the top of cup
+        const inLeftHandle = (relX > -0.38 && relX < -0.28 && relY > -0.5 && relY < -0.1);
+        const inRightHandle = (relX > 0.28 && relX < 0.38 && relY > -0.5 && relY < -0.1);
+        // Stem: thin column below cup
+        const inStem = (Math.abs(relX) < 0.08 && relY > 0.1 && relY < 0.35);
+        // Base: horizontal bar at bottom
+        const inBase = (Math.abs(relX) < 0.28 && relY > 0.35 && relY < 0.5);
+        // Lime circles (accent dots on sides of cup, at mid height)
+        const leftDotX = -0.5, leftDotY = -0.1;
+        const rightDotX = 0.5, rightDotY = -0.1;
+        const inLeftDot = Math.sqrt((relX - leftDotX) ** 2 + (relY - leftDotY) ** 2) < 0.09;
+        const inRightDot = Math.sqrt((relX - rightDotX) ** 2 + (relY - rightDotY) ** 2) < 0.09;
+        const inBottomDot = Math.sqrt(relX ** 2 + (relY - 0.65) ** 2) < 0.065;
+
+        if (inLeftDot || inRightDot) {
+          // Lime accent
+          pr = 181; pg = 227; pb = 23; pa = 230;
+        } else if (inBottomDot) {
+          // Gold bottom dot
+          pr = 255; pg = 201; pb = 60; pa = 200;
+        } else if (inCupBody || inLeftHandle || inRightHandle || inStem || inBase) {
+          // Gold trophy
+          const goldT = (relY + 0.55) / 1.05; // 0 at top, 1 at bottom of trophy
+          pr = lerp(255, 245, goldT);
+          pg = lerp(210, 165, goldT);
+          pb = lerp(60, 0, goldT);
+          pa = 255;
         }
       } else if (inRing) {
-        pr = 255; pg = 255; pb = 255; pa = 120;
+        pr = 255; pg = 255; pb = 255; pa = Math.round((r + 0.5 - dist) * 180);
       } else {
         pr = 0; pg = 0; pb = 0; pa = 0;
       }
@@ -108,14 +146,12 @@ for (const s of sizes) {
   console.log(`✓ icon-${s}x${s}.png (${buf.length} bytes)`);
 }
 
-// apple-touch-icon (180x180)
 const appleBuf = createIcon(180);
 fs.writeFileSync(path.join(__dirname, '..', 'public', 'apple-touch-icon.png'), appleBuf);
 console.log('✓ apple-touch-icon.png');
 
-// favicon.ico — just a 32x32 PNG renamed (browsers accept PNG-based favicon)
 const favBuf = createIcon(32);
 fs.writeFileSync(path.join(__dirname, '..', 'public', 'favicon.ico'), favBuf);
 console.log('✓ favicon.ico');
 
-console.log('\nAll icons generated.');
+console.log('\nAll FIFA 2026 icons generated.');

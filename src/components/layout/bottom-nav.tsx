@@ -9,7 +9,7 @@ import { useAuthStore } from "@/store/auth.store";
 const navItems = [
   { href: "/dashboard", label: "Inicio", icon: LayoutGrid },
   { href: "/fixtures", label: "Partidos", icon: Trophy },
-  { href: "/predictions", label: "Picks", icon: Target },
+  { href: "/predictions", label: "Predicciones", icon: Target },
   { href: "/rankings", label: "Ranking", icon: BarChart3 },
   { href: "/profile", label: "Perfil", icon: User },
 ];

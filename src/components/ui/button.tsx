@@ -21,7 +21,7 @@ const buttonVariants = cva(
         glass:
           "glass text-foreground hover:bg-white/10 active:scale-[0.98]",
         gradient:
-          "bg-gradient-to-r from-primary to-accent text-primary-foreground shadow hover:opacity-90 active:scale-[0.98]",
+          "bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--brand-purple))] text-white shadow hover:opacity-90 active:scale-[0.98]",
       },
       size: {
         default: "h-10 px-4 py-2",

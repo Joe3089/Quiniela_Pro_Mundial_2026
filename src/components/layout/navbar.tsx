@@ -3,21 +3,20 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, LayoutGrid, Target, BarChart3, User, Settings, LogOut, Menu, X } from "lucide-react";
+import { Trophy, LayoutGrid, Target, BarChart3, Settings, LogOut, Menu, X, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import { Logo } from "@/components/ui/logo";
 import { useAuthStore } from "@/store/auth.store";
 import { useLogout } from "@/features/auth/hooks/use-auth";
 import { getInitials, cn } from "@/lib/utils";
-import { APP_NAME } from "@/constants";
 
 const navItems = [
-  { href: "/dashboard", label: "Inicio", icon: LayoutGrid },
-  { href: "/fixtures", label: "Partidos", icon: Trophy },
-  { href: "/predictions", label: "Mis Picks", icon: Target },
-  { href: "/rankings", label: "Ranking", icon: BarChart3 },
+  { href: "/dashboard",   label: "Inicio",        icon: LayoutGrid },
+  { href: "/fixtures",    label: "Partidos",       icon: Trophy },
+  { href: "/predictions", label: "Predicciones",   icon: Target },
+  { href: "/rankings",    label: "Ranking",        icon: BarChart3 },
 ];
 
 export function Navbar() {
@@ -27,158 +26,209 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
+  const isAdmin = (user as { is_admin?: boolean } | null)?.is_admin;
+
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 shrink-0">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <Trophy className="h-4 w-4 text-white" />
-            </div>
-            <span className="font-bold text-sm hidden sm:block text-gradient">
-              {APP_NAME}
-            </span>
-          </Link>
+      <header className="fixed top-0 left-0 right-0 z-50">
+        {/* Top border accent */}
+        <div className="h-[2px] bg-gradient-to-r from-[hsl(var(--primary))] via-[hsl(var(--brand-violet))] to-[hsl(var(--accent))]" />
 
-          {/* Desktop nav */}
-          {isAuthenticated && (
-            <div className="hidden md:flex items-center gap-1">
-              {navItems.map((item) => {
-                const isActive = pathname.startsWith(item.href);
-                return (
-                  <Link key={item.href} href={item.href}>
-                    <div
+        <div
+          className={cn(
+            "glass border-b border-white/5 transition-all duration-300",
+            mobileOpen ? "border-b-white/10" : ""
+          )}
+        >
+          <div className="max-w-7xl mx-auto px-4 sm:px-6">
+            <div className="flex items-center justify-between h-14">
+
+              {/* Logo */}
+              <Logo size="sm" variant="full" />
+
+              {/* Desktop nav */}
+              <nav className="hidden md:flex items-center gap-1">
+                {navItems.map((item) => {
+                  const active = pathname.startsWith(item.href);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
                       className={cn(
-                        "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all",
-                        isActive
-                          ? "bg-primary/15 text-primary"
-                          : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                        "relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200",
+                        active
+                          ? "text-white"
+                          : "text-muted-foreground hover:text-white hover:bg-white/5"
                       )}
                     >
-                      <item.icon className="h-4 w-4" />
+                      <item.icon className="h-3.5 w-3.5" />
                       {item.label}
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Right side */}
-          <div className="flex items-center gap-2">
-            {isAuthenticated && user ? (
-              <div className="relative">
-                <button
-                  onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-muted/30 transition-colors"
-                >
-                  <Avatar className="h-7 w-7">
-                    <AvatarImage src={user.avatar_url ?? undefined} />
-                    <AvatarFallback className="text-xs">
-                      {getInitials(user.display_name ?? user.username)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="text-sm font-medium hidden sm:block">
-                    {user.display_name ?? user.username}
-                  </span>
-                </button>
-
-                <AnimatePresence>
-                  {userMenuOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                      className="absolute right-0 mt-2 w-48 glass-strong rounded-xl border border-border/50 shadow-xl overflow-hidden"
-                      onClick={() => setUserMenuOpen(false)}
-                    >
-                      <div className="p-2 space-y-1">
-                        <Link href="/profile">
-                          <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-muted/30 transition-colors">
-                            <User className="h-4 w-4" />
-                            Mi perfil
-                          </div>
-                        </Link>
-                        {user.is_admin && (
-                          <Link href="/admin">
-                            <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-muted/30 transition-colors">
-                              <Settings className="h-4 w-4" />
-                              Admin
-                            </div>
-                          </Link>
-                        )}
-                        <Separator />
-                        <button
-                          onClick={() => logout.mutate()}
-                          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-destructive hover:bg-destructive/10 transition-colors"
-                        >
-                          <LogOut className="h-4 w-4" />
-                          Cerrar sesión
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" asChild>
-                  <Link href="/auth/login">Ingresar</Link>
-                </Button>
-                <Button variant="gradient" size="sm" asChild>
-                  <Link href="/auth/register">Registro</Link>
-                </Button>
-              </div>
-            )}
-
-            {/* Mobile menu toggle */}
-            {isAuthenticated && (
-              <button
-                onClick={() => setMobileOpen(!mobileOpen)}
-                className="md:hidden p-2 rounded-lg hover:bg-muted/30 transition-colors"
-              >
-                {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Mobile nav */}
-        <AnimatePresence>
-          {mobileOpen && isAuthenticated && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="border-t border-border/50 md:hidden"
-              onClick={() => setMobileOpen(false)}
-            >
-              <div className="p-3 flex flex-col gap-1">
-                {navItems.map((item) => {
-                  const isActive = pathname.startsWith(item.href);
-                  return (
-                    <Link key={item.href} href={item.href}>
-                      <div className={cn(
-                        "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all",
-                        isActive
-                          ? "bg-primary/15 text-primary"
-                          : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
-                      )}>
-                        <item.icon className="h-5 w-5" />
-                        {item.label}
-                      </div>
+                      {active && (
+                        <motion.div
+                          layoutId="nav-pill"
+                          className="absolute inset-0 rounded-lg -z-10"
+                          style={{
+                            background: "linear-gradient(135deg, rgba(224,0,27,0.2), rgba(123,47,190,0.2))",
+                            border: "1px solid rgba(224,0,27,0.2)",
+                          }}
+                          transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                        />
+                      )}
                     </Link>
                   );
                 })}
+              </nav>
+
+              {/* Right side */}
+              <div className="flex items-center gap-2">
+                {isAuthenticated && user ? (
+                  <div className="relative">
+                    <button
+                      onClick={() => setUserMenuOpen((o) => !o)}
+                      className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-colors"
+                    >
+                      <Avatar className="h-7 w-7 ring-1 ring-[hsl(var(--primary)/0.4)]">
+                        <AvatarImage src={user.avatar_url ?? ""} />
+                        <AvatarFallback className="bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--brand-violet))] text-white text-xs font-bold">
+                          {getInitials(user.display_name ?? user.username)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="hidden md:block text-sm font-medium max-w-[100px] truncate">
+                        {user.display_name ?? user.username}
+                      </span>
+                      <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", userMenuOpen && "rotate-180")} />
+                    </button>
+
+                    <AnimatePresence>
+                      {userMenuOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 6, scale: 0.96 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 6, scale: 0.96 }}
+                          transition={{ duration: 0.15 }}
+                          className="absolute right-0 mt-2 w-48 glass-card rounded-xl border border-white/10 overflow-hidden shadow-2xl"
+                        >
+                          <div className="p-1">
+                            <Link
+                              href="/profile"
+                              onClick={() => setUserMenuOpen(false)}
+                              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-white/5 transition-colors"
+                            >
+                              <Avatar className="h-5 w-5">
+                                <AvatarFallback className="bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--brand-violet))] text-white text-[10px]">
+                                  {getInitials(user.display_name ?? user.username)}
+                                </AvatarFallback>
+                              </Avatar>
+                              Mi perfil
+                            </Link>
+                            {isAdmin && (
+                              <Link
+                                href="/admin"
+                                onClick={() => setUserMenuOpen(false)}
+                                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-white/5 transition-colors text-[hsl(var(--brand-gold))]"
+                              >
+                                <Settings className="h-4 w-4" />
+                                Admin
+                              </Link>
+                            )}
+                            <div className="my-1 h-px bg-white/5" />
+                            <button
+                              onClick={() => { logout.mutate(); setUserMenuOpen(false); }}
+                              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-red-500/10 text-muted-foreground hover:text-red-400 transition-colors"
+                            >
+                              <LogOut className="h-4 w-4" />
+                              Cerrar sesión
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                ) : (
+                  <div className="hidden md:flex items-center gap-2">
+                    <Button variant="ghost" size="sm" asChild>
+                      <Link href="/auth/login">Entrar</Link>
+                    </Button>
+                    <Button
+                      size="sm"
+                      asChild
+                      className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--brand-purple))] text-white hover:opacity-90"
+                    >
+                      <Link href="/auth/register">Unirse</Link>
+                    </Button>
+                  </div>
+                )}
+
+                {/* Mobile menu toggle */}
+                <button
+                  className="md:hidden p-2 rounded-lg hover:bg-white/5 transition-colors"
+                  onClick={() => setMobileOpen((o) => !o)}
+                  aria-label="Toggle menu"
+                >
+                  {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                </button>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </nav>
+            </div>
+          </div>
+
+          {/* Mobile menu */}
+          <AnimatePresence>
+            {mobileOpen && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden border-t border-white/5 md:hidden"
+              >
+                <div className="px-4 py-3 space-y-1">
+                  {navItems.map((item) => {
+                    const active = pathname.startsWith(item.href);
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setMobileOpen(false)}
+                        className={cn(
+                          "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
+                          active
+                            ? "bg-gradient-to-r from-[hsl(var(--primary)/0.15)] to-[hsl(var(--brand-purple)/0.15)] text-white border border-[hsl(var(--primary)/0.2)]"
+                            : "text-muted-foreground hover:text-white hover:bg-white/5"
+                        )}
+                      >
+                        <item.icon className="h-4 w-4" />
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+                  {!isAuthenticated && (
+                    <div className="pt-2 flex gap-2">
+                      <Button variant="outline" size="sm" className="flex-1" asChild>
+                        <Link href="/auth/login" onClick={() => setMobileOpen(false)}>Entrar</Link>
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="flex-1 bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--brand-purple))] text-white"
+                        asChild
+                      >
+                        <Link href="/auth/register" onClick={() => setMobileOpen(false)}>Unirse gratis</Link>
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </header>
 
       {/* Spacer */}
-      <div className="h-16" />
+      <div className="h-[calc(2px+3.5rem)]" />
+
+      {/* Backdrop for user menu */}
+      {userMenuOpen && (
+        <div className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)} />
+      )}
     </>
   );
 }

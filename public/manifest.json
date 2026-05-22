@@ -64,7 +64,7 @@
   "shortcuts": [
     {
       "name": "Mis Predicciones",
-      "short_name": "Picks",
+      "short_name": "Picks2026",
       "description": "Ver y hacer predicciones",
       "url": "/predictions",
       "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]

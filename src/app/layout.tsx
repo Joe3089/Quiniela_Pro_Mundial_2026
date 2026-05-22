@@ -55,7 +55,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" suppressHydrationWarning className={inter.variable}>
-      <body className="min-h-screen bg-background font-sans antialiased">
+      <body className="min-h-screen bg-background font-sans antialiased wc-bg">
         <Providers>
           <Navbar />
           <main className="pb-20 md:pb-0">{children}</main>
