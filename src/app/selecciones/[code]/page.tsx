@@ -3,9 +3,11 @@
 import { use } from "react";
 import { notFound } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowLeft, Trophy, Users, Star, Shirt } from "lucide-react";
+import { ArrowLeft, Trophy, Users, Star, AlertTriangle, Clock } from "lucide-react";
 import Link from "next/link";
 import { getTeamByCode } from "@/data/wc2026-teams";
+import { ConfederationBadge } from "@/components/ui/confederation-badge";
+import { FlagImage } from "@/components/ui/flag-image";
 import { cn } from "@/lib/utils";
 
 const positionColors = {
@@ -41,11 +43,11 @@ export default function TeamDetailPage({ params }: { params: Promise<{ code: str
         className="glass-card rounded-2xl border border-white/8 p-6 mb-6"
       >
         <div className="flex items-start gap-5">
-          <span className="text-6xl leading-none">{team.flag}</span>
+          <FlagImage fifaCode={team.code} fallbackEmoji={team.flag} size="xl" className="rounded-lg shadow-lg shrink-0" />
           <div className="flex-1">
             <div className="flex items-start justify-between gap-4 flex-wrap">
               <div>
-                <p className="text-xs font-bold tracking-widest text-muted-foreground uppercase mb-1">{team.confederation}</p>
+                <div className="mb-1"><ConfederationBadge confederation={team.confederation} size="lg" /></div>
                 <h1 className="text-3xl font-black text-white mb-1">{team.name}</h1>
                 <p className="text-sm text-muted-foreground">{team.description}</p>
               </div>
@@ -169,49 +171,74 @@ export default function TeamDetailPage({ params }: { params: Promise<{ code: str
             <Users className="h-3.5 w-3.5 text-violet-400" />
           </div>
           <h2 className="font-bold text-sm">Plantilla convocada</h2>
-          <span className="ml-auto text-xs text-muted-foreground">{team.players.length} jugadores</span>
+          {team.rosterPublished !== false && (
+            <span className="ml-auto text-xs text-muted-foreground">{team.players.length} jugadores</span>
+          )}
         </div>
 
-        {[
-          { label: "Porteros", players: gk, pos: "GK" as const },
-          { label: "Defensas", players: def, pos: "DEF" as const },
-          { label: "Mediocampistas", players: mid, pos: "MID" as const },
-          { label: "Delanteros", players: fwd, pos: "FWD" as const },
-        ].map(({ label, players, pos }) =>
-          players.length > 0 ? (
-            <div key={pos}>
-              <div className={cn("px-4 py-2 text-[10px] font-bold tracking-widest uppercase border-b border-white/5", positionColors[pos])}>
-                {label}
-              </div>
-              <div className="divide-y divide-white/5">
-                {players.map((player) => (
-                  <div key={player.name} className="flex items-center gap-3 px-4 py-2.5 hover:bg-white/2 transition-colors">
-                    <div className="h-7 w-7 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
-                      <Shirt className="h-3.5 w-3.5 text-muted-foreground" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-sm font-semibold text-white truncate">{player.name}</span>
-                        {player.isCaptain && (
-                          <span className="text-[9px] font-bold px-1 rounded bg-[hsl(var(--brand-gold)/0.2)] text-[hsl(var(--brand-gold))] border border-[hsl(var(--brand-gold)/0.3)] shrink-0">C</span>
-                        )}
-                        {player.isKeyPlayer && (
-                          <Star className="h-2.5 w-2.5 text-[hsl(var(--brand-gold))] shrink-0" />
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground">{player.club}</p>
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                      <span className="text-xs text-muted-foreground">{player.age} años</span>
-                      {player.dorsal && (
-                        <span className="text-xs font-bold text-white w-5 text-right">#{player.dorsal}</span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+        {team.rosterPublished === false ? (
+          <div className="p-10 flex flex-col items-center text-center gap-3">
+            <div className="h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center">
+              <Clock className="h-6 w-6 text-muted-foreground/50" />
             </div>
-          ) : null
+            <div>
+              <p className="text-sm font-bold text-white mb-1">Convocatoria no publicada</p>
+              <p className="text-xs text-muted-foreground max-w-xs">La FIFA exige la presentación oficial de convocatorias 10 días antes del inicio del torneo (1 de junio).</p>
+            </div>
+            <div className="flex items-center gap-1.5 text-[10px] font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-3 py-1 rounded-full">
+              <AlertTriangle className="h-3 w-3" />
+              Pendiente de publicación
+            </div>
+          </div>
+        ) : (
+          <>
+            {[
+              { label: "Porteros", players: gk, pos: "GK" as const },
+              { label: "Defensas", players: def, pos: "DEF" as const },
+              { label: "Mediocampistas", players: mid, pos: "MID" as const },
+              { label: "Delanteros", players: fwd, pos: "FWD" as const },
+            ].map(({ label, players, pos }) =>
+              players.length > 0 ? (
+                <div key={pos}>
+                  <div className={cn("px-4 py-2 text-[10px] font-bold tracking-widest uppercase border-b border-white/5", positionColors[pos])}>
+                    {label}
+                  </div>
+                  <div className="divide-y divide-white/5">
+                    {players.map((player) => (
+                      <div key={player.name} className="flex items-center gap-3 px-4 py-2.5 hover:bg-white/2 transition-colors">
+                        <img
+                          src={`https://ui-avatars.com/api/?name=${encodeURIComponent(player.name)}&background=1D4ED8&color=fff&size=64&bold=true&format=svg`}
+                          alt={player.name}
+                          width={28}
+                          height={28}
+                          className="h-7 w-7 rounded-lg object-cover shrink-0"
+                          loading="lazy"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm font-semibold text-white truncate">{player.name}</span>
+                            {player.isCaptain && (
+                              <span className="text-[9px] font-bold px-1 rounded bg-[hsl(var(--brand-gold)/0.2)] text-[hsl(var(--brand-gold))] border border-[hsl(var(--brand-gold)/0.3)] shrink-0">C</span>
+                            )}
+                            {player.isKeyPlayer && (
+                              <Star className="h-2.5 w-2.5 text-[hsl(var(--brand-gold))] shrink-0" />
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground">{player.club}</p>
+                        </div>
+                        <div className="flex items-center gap-3 shrink-0">
+                          <span className="text-xs text-muted-foreground">{player.age} años</span>
+                          {player.dorsal && (
+                            <span className="text-xs font-bold text-white w-5 text-right">#{player.dorsal}</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null
+            )}
+          </>
         )}
       </motion.div>
     </div>

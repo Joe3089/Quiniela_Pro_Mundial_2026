@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Trophy, Users, GitBranch } from "lucide-react";
+import { Trophy, Users, GitBranch, Database } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { MatchCard } from "@/features/fixtures/components/match-card";
 import { GroupStandings } from "@/features/fixtures/components/group-standings";
@@ -100,9 +100,11 @@ export function FixturesView() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-16 text-muted-foreground">
-              <Users className="h-12 w-12 mx-auto mb-3 opacity-20" />
-              <p>Los grupos se mostrarán cuando el torneo comience</p>
+            <div className="text-center py-16 text-muted-foreground glass rounded-2xl border border-border/20">
+              <Database className="h-10 w-10 mx-auto mb-3 opacity-30" />
+              <p className="font-semibold text-white mb-1">Base de datos sin datos</p>
+              <p className="text-sm mb-3">Ejecuta el seed SQL en Supabase para cargar los 12 grupos del Mundial 2026</p>
+              <code className="text-xs bg-white/5 px-3 py-1 rounded-full border border-white/10">supabase/seed.sql</code>
             </div>
           )}
         </TabsContent>
@@ -116,9 +118,10 @@ export function FixturesView() {
               <TournamentBracket rounds={bracketRounds} />
             </div>
           ) : (
-            <div className="text-center py-16 text-muted-foreground">
-              <GitBranch className="h-12 w-12 mx-auto mb-3 opacity-20" />
-              <p>El bracket se mostrará al inicio de la fase eliminatoria</p>
+            <div className="text-center py-16 text-muted-foreground glass rounded-2xl border border-border/20">
+              <GitBranch className="h-10 w-10 mx-auto mb-3 opacity-30" />
+              <p className="font-semibold text-white mb-1">Fase eliminatoria</p>
+              <p className="text-sm">Disponible a partir del 4 de julio de 2026</p>
             </div>
           )}
         </TabsContent>
@@ -138,9 +141,10 @@ export function FixturesView() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-16 text-muted-foreground">
-              <Trophy className="h-12 w-12 mx-auto mb-3 opacity-20" />
-              <p>No hay partidos programados aún</p>
+            <div className="text-center py-16 text-muted-foreground glass rounded-2xl border border-border/20">
+              <Trophy className="h-10 w-10 mx-auto mb-3 opacity-30" />
+              <p className="font-semibold text-white mb-1">Sin partidos cargados</p>
+              <p className="text-sm">Ejecuta <code className="text-xs bg-white/5 px-1.5 py-0.5 rounded border border-white/10">supabase/seed.sql</code> para cargar el calendario</p>
             </div>
           )}
         </TabsContent>

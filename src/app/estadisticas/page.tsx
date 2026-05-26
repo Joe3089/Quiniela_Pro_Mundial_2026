@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { motion } from "framer-motion";
-import { TrendingUp, Trophy, Clock, Star, AlertTriangle, Globe2, Users } from "lucide-react";
+import { TrendingUp, Trophy, Clock, Star, AlertTriangle, Globe2, Users, Zap } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   WC_EDITIONS,
@@ -12,6 +11,8 @@ import {
   CONTINENT_STATS,
   MOST_APPEARANCES,
 } from "@/data/wc-history";
+import { FlagImage } from "@/components/ui/flag-image";
+import { ConfederationBadge } from "@/components/ui/confederation-badge";
 import { cn } from "@/lib/utils";
 
 function SectionTitle({ icon: Icon, title, color }: { icon: React.ElementType; title: string; color: string }) {
@@ -42,9 +43,12 @@ function CampeonesTab() {
               className="glass rounded-xl border border-white/5 p-3 flex items-center gap-3"
             >
               <span className="text-xl font-black text-muted-foreground w-5 shrink-0">{i + 1}</span>
-              <span className="text-2xl leading-none">{c.flag}</span>
+              <FlagImage fifaCode={c.fifaCode} fallbackEmoji={c.flag} size="md" className="shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-white">{c.country}</p>
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <p className="text-sm font-bold text-white">{c.country}</p>
+                  <ConfederationBadge confederation={c.confederation} size="sm" />
+                </div>
                 <p className="text-[11px] text-muted-foreground">{c.years.join(" · ")}</p>
               </div>
               <div className="flex items-center gap-4 shrink-0">
@@ -95,7 +99,7 @@ function CampeonesTab() {
           {MOST_APPEARANCES.map((m, i) => (
             <div key={m.country} className="flex items-center gap-3 glass rounded-xl border border-white/5 p-2.5">
               <span className="text-xs text-muted-foreground w-4 text-right shrink-0">{i + 1}</span>
-              <span className="text-xl leading-none">{m.flag}</span>
+              <FlagImage fifaCode={m.fifaCode ?? ""} fallbackEmoji={m.flag} size="sm" className="shrink-0" />
               <span className="text-sm font-semibold text-white flex-1">{m.country}</span>
               <div className="flex items-center gap-2 shrink-0">
                 <div className="w-24 h-1.5 bg-white/5 rounded-full overflow-hidden hidden md:block">
@@ -162,7 +166,7 @@ function GoladoresTab() {
     <div className="space-y-6">
       <SectionTitle icon={Star} title="Máximos goleadores históricos" color="#F5A500" />
       <div className="space-y-2">
-        {ALL_TIME_SCORERS.slice(0, 12).map((s, i) => (
+        {ALL_TIME_SCORERS.map((s, i) => (
           <motion.div
             key={s.name + s.country}
             initial={{ opacity: 0, x: -12 }}
@@ -174,10 +178,21 @@ function GoladoresTab() {
               "text-sm font-black w-5 shrink-0 text-center",
               i === 0 ? "text-[hsl(var(--brand-gold))]" : "text-muted-foreground"
             )}>{s.rank}</span>
-            <span className="text-xl leading-none">{s.flag}</span>
+            <img
+              src={`https://ui-avatars.com/api/?name=${encodeURIComponent(s.name)}&background=0f172a&color=94a3b8&size=56&bold=true&format=svg`}
+              alt={s.name}
+              width={32}
+              height={32}
+              className="h-8 w-8 rounded-full object-cover shrink-0 border border-white/10"
+              loading="lazy"
+            />
+            <FlagImage fifaCode={s.fifaCode ?? ""} fallbackEmoji={s.flag} size="sm" className="shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-white">{s.name}</p>
-              <p className="text-[11px] text-muted-foreground">{s.country} · {s.years}</p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                {s.confederation && <ConfederationBadge confederation={s.confederation} size="sm" />}
+                <p className="text-[11px] text-muted-foreground">{s.years}</p>
+              </div>
             </div>
             <div className="flex items-center gap-3 shrink-0">
               <div className="w-20 h-2 bg-white/5 rounded-full overflow-hidden hidden sm:block">
@@ -192,6 +207,107 @@ function GoladoresTab() {
             </div>
           </motion.div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── MUNDIAL 2026 TAB ───────────────────────────────────────── */
+function Mundial2026Tab() {
+  const liveStats = [
+    { label: "Partidos jugados",  value: "0",   max: 104, color: "#3b82f6" },
+    { label: "Goles marcados",    value: "0",   max: 300, color: "#F5A500" },
+    { label: "Tarjetas amarillas",value: "0",   max: 400, color: "#eab308" },
+    { label: "Tarjetas rojas",    value: "0",   max: 30,  color: "#ef4444" },
+  ];
+
+  const topCandidates = [
+    { name: "Kylian Mbappé",      country: "Francia",    fifaCode: "FRA", flag: "🇫🇷", goals: 0 },
+    { name: "Lionel Messi",       country: "Argentina",  fifaCode: "ARG", flag: "🇦🇷", goals: 0 },
+    { name: "Julián Álvarez",     country: "Argentina",  fifaCode: "ARG", flag: "🇦🇷", goals: 0 },
+    { name: "Vinícius Jr.",       country: "Brasil",     fifaCode: "BRA", flag: "🇧🇷", goals: 0 },
+    { name: "Erling Haaland",     country: "Noruega",    fifaCode: "NOR", flag: "🇳🇴", goals: 0 },
+    { name: "Harry Kane",         country: "Inglaterra", fifaCode: "ENG", flag: "󠁧󠁢󠁥󠁮󠁧󠁿🏴󠁧󠁢󠁥󠁮󠁧󠁿", goals: 0 },
+  ];
+
+  return (
+    <div className="space-y-8">
+      {/* Banner */}
+      <div className="glass-card rounded-2xl border border-[hsl(var(--brand-blue)/0.3)] p-5 text-center relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--brand-blue)/0.08)] to-transparent pointer-events-none" />
+        <div className="inline-flex items-center gap-2 text-[10px] font-bold text-[hsl(var(--brand-blue-light))] bg-[hsl(var(--brand-blue)/0.1)] border border-[hsl(var(--brand-blue)/0.25)] px-3 py-1 rounded-full mb-3">
+          <Zap className="h-3 w-3" />
+          EN VIVO · EMPIEZA EL 11 DE JUNIO 2026
+        </div>
+        <p className="text-2xl font-black text-white mb-1">Mundial FIFA 2026</p>
+        <p className="text-sm text-muted-foreground">EE.UU. · Canadá · México · 48 equipos · 104 partidos</p>
+      </div>
+
+      {/* Live stats grid */}
+      <div>
+        <SectionTitle icon={TrendingUp} title="Estadísticas en vivo" color="#3b82f6" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {liveStats.map((s) => (
+            <div key={s.label} className="glass rounded-xl border border-white/5 p-3 text-center">
+              <div className="text-3xl font-black mb-1" style={{ color: s.color }}>{s.value}</div>
+              <div className="text-[11px] text-muted-foreground">{s.label}</div>
+              <div className="mt-2 h-1 bg-white/5 rounded-full overflow-hidden">
+                <div className="h-full rounded-full" style={{ width: "0%", background: s.color }} />
+              </div>
+              <div className="text-[9px] text-muted-foreground mt-1">de {s.max} posibles</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Top scorer candidates */}
+      <div>
+        <SectionTitle icon={Star} title="Candidatos al Bota de Oro" color="#F5A500" />
+        <div className="space-y-2">
+          {topCandidates.map((c, i) => (
+            <div key={c.name} className="glass rounded-xl border border-white/5 p-3 flex items-center gap-3">
+              <span className="text-xs text-muted-foreground w-4 text-right shrink-0">{i + 1}</span>
+              <img
+                src={`https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=1D4ED8&color=fff&size=56&bold=true&format=svg`}
+                alt={c.name}
+                width={32}
+                height={32}
+                className="h-8 w-8 rounded-full object-cover shrink-0"
+                loading="lazy"
+              />
+              <FlagImage fifaCode={c.fifaCode} fallbackEmoji={c.flag} size="sm" className="shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-white">{c.name}</p>
+                <p className="text-[11px] text-muted-foreground">{c.country}</p>
+              </div>
+              <div className="text-right shrink-0">
+                <span className="text-2xl font-black text-[hsl(var(--brand-gold))]">{c.goals}</span>
+                <p className="text-[9px] text-muted-foreground">goles</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Tournament info */}
+      <div>
+        <SectionTitle icon={Globe2} title="Datos del torneo" color="#10b981" />
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {[
+            { label: "Equipos", value: "48", sub: "6 confederaciones" },
+            { label: "Grupos", value: "12", sub: "A–L, 4 equipos c/u" },
+            { label: "Partidos", value: "104", sub: "Fase de grupos + eliminatorias" },
+            { label: "Sedes", value: "16", sub: "3 países anfitriones" },
+            { label: "Inicio", value: "11 Jun", sub: "Ciudad de México" },
+            { label: "Final", value: "19 Jul", sub: "MetLife Stadium, NJ" },
+          ].map((s) => (
+            <div key={s.label} className="glass rounded-xl border border-white/5 p-3">
+              <div className="text-xl font-black text-emerald-400 mb-0.5">{s.value}</div>
+              <div className="text-xs font-bold text-white">{s.label}</div>
+              <div className="text-[10px] text-muted-foreground">{s.sub}</div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -305,8 +421,12 @@ export default function EstadisticasPage() {
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="campeones">
+      <Tabs defaultValue="mundial2026">
         <TabsList className="mb-6 glass border border-border/30 flex-wrap h-auto gap-1 p-1">
+          <TabsTrigger value="mundial2026" className="gap-1.5 text-xs">
+            <Zap className="h-3.5 w-3.5" />
+            Mundial 2026
+          </TabsTrigger>
           <TabsTrigger value="campeones" className="gap-1.5 text-xs">
             <Trophy className="h-3.5 w-3.5" />
             Campeones
@@ -325,6 +445,7 @@ export default function EstadisticasPage() {
           </TabsTrigger>
         </TabsList>
 
+        <TabsContent value="mundial2026"><Mundial2026Tab /></TabsContent>
         <TabsContent value="campeones"><CampeonesTab /></TabsContent>
         <TabsContent value="historial"><HistorialTab /></TabsContent>
         <TabsContent value="goleadores"><GoladoresTab /></TabsContent>

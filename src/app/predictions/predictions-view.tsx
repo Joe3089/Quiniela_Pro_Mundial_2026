@@ -202,9 +202,14 @@ function PredictionMatchRow({
 }) {
   const [expanded, setExpanded] = useState(false);
   const [lineupOpen, setLineupOpen] = useState(false);
-  const LOCKOUT_MS = 2 * 60 * 60 * 1000;
+  const LOCKOUT_MS = 2 * 60 * 60 * 1000; // 2 hours before kickoff
+  const matchTime = new Date(match.match_date).getTime();
+  const msUntilMatch = matchTime - Date.now();
+  // Open if: scheduled AND (tournament hasn't started yet OR more than 2h before kickoff)
+  const tournamentStart = new Date("2026-06-11T00:00:00Z").getTime();
+  const preTournament = Date.now() < tournamentStart;
   const isLocked = match.status !== "scheduled" ||
-    new Date(match.match_date).getTime() - Date.now() <= LOCKOUT_MS;
+    (!preTournament && msUntilMatch <= LOCKOUT_MS);
 
   const homeTeam = getTeamByCode(match.home_team?.fifa_code ?? "");
   const awayTeam = getTeamByCode(match.away_team?.fifa_code ?? "");

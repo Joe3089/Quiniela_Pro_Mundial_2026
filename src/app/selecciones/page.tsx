@@ -12,6 +12,8 @@ import {
   type Confederation,
   type WCTeam,
 } from "@/data/wc2026-teams";
+import { ConfederationBadge } from "@/components/ui/confederation-badge";
+import { FlagImage } from "@/components/ui/flag-image";
 import { cn } from "@/lib/utils";
 
 function TeamCard({ team, index }: { team: WCTeam; index: number }) {
@@ -22,13 +24,17 @@ function TeamCard({ team, index }: { team: WCTeam; index: number }) {
       transition={{ delay: index * 0.03 }}
     >
       <Link href={`/selecciones/${team.code}`}>
-        <div className="glass rounded-xl border border-white/5 hover:border-[hsl(var(--brand-blue)/0.4)] p-3 flex items-center gap-3 transition-all hover:-translate-y-0.5 hover:shadow-lg group cursor-pointer">
-          <span className="text-3xl leading-none">{team.flag}</span>
+        <div className="glass rounded-xl border border-white/5 hover:border-[hsl(var(--brand-blue)/0.4)] p-3 flex items-center gap-3 transition-all hover:-translate-y-0.5 hover:shadow-lg group cursor-pointer relative overflow-hidden">
+          {/* Flag image */}
+          <FlagImage fifaCode={team.code} fallbackEmoji={team.flag} size="lg" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold text-white truncate group-hover:text-[hsl(var(--brand-blue-light))] transition-colors">
               {team.name}
             </p>
-            <p className="text-[11px] text-muted-foreground">{team.confederation} · #{team.fifaRanking}</p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <ConfederationBadge confederation={team.confederation} size="sm" />
+              <span className="text-[10px] text-muted-foreground">#{team.fifaRanking}</span>
+            </div>
           </div>
           <div className="text-right shrink-0">
             <p className="text-[10px] text-muted-foreground">{team.worldCupAppearances} Mundiales</p>

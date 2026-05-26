@@ -16,6 +16,7 @@ export interface WCEdition {
 export interface WCChampion {
   country: string;
   flag: string;
+  fifaCode: string;
   titles: number;
   years: number[];
   runnerUp: number;
@@ -29,6 +30,8 @@ export interface TopScorer {
   name: string;
   country: string;
   flag: string;
+  fifaCode?: string;
+  confederation?: string;
   goals: number;
   editions: number;
   years: string;
@@ -71,32 +74,32 @@ export const WC_EDITIONS: WCEdition[] = [
 ];
 
 export const WC_CHAMPIONS: WCChampion[] = [
-  { country: "Brasil",      flag: "🇧🇷", titles: 5, years: [1958, 1962, 1970, 1994, 2002], runnerUp: 2, runnerUpYears: [1950, 1998], thirdPlace: 2, confederation: "CONMEBOL" },
-  { country: "Alemania",    flag: "🇩🇪", titles: 4, years: [1954, 1974, 1990, 2014], runnerUp: 4, runnerUpYears: [1966, 1982, 1986, 2002], thirdPlace: 4, confederation: "UEFA" },
-  { country: "Italia",      flag: "🇮🇹", titles: 4, years: [1934, 1938, 1982, 2006], runnerUp: 2, runnerUpYears: [1970, 1994], thirdPlace: 1, confederation: "UEFA" },
-  { country: "Argentina",   flag: "🇦🇷", titles: 3, years: [1978, 1986, 2022], runnerUp: 3, runnerUpYears: [1930, 1990, 2014], thirdPlace: 0, confederation: "CONMEBOL" },
-  { country: "Francia",     flag: "🇫🇷", titles: 2, years: [1998, 2018], runnerUp: 2, runnerUpYears: [2006, 2022], thirdPlace: 2, confederation: "UEFA" },
-  { country: "Uruguay",     flag: "🇺🇾", titles: 2, years: [1930, 1950], runnerUp: 0, runnerUpYears: [], thirdPlace: 0, confederation: "CONMEBOL" },
-  { country: "Inglaterra",  flag: "󠁧󠁢󠁥󠁮󠁧󠁿🏴󠁧󠁢󠁥󠁮󠁧󠁿", titles: 1, years: [1966], runnerUp: 0, runnerUpYears: [], thirdPlace: 1, confederation: "UEFA" },
-  { country: "España",      flag: "🇪🇸", titles: 1, years: [2010], runnerUp: 0, runnerUpYears: [], thirdPlace: 0, confederation: "UEFA" },
+  { country: "Brasil",      flag: "🇧🇷", fifaCode: "BRA", titles: 5, years: [1958, 1962, 1970, 1994, 2002], runnerUp: 2, runnerUpYears: [1950, 1998], thirdPlace: 2, confederation: "CONMEBOL" },
+  { country: "Alemania",    flag: "🇩🇪", fifaCode: "GER", titles: 4, years: [1954, 1974, 1990, 2014], runnerUp: 4, runnerUpYears: [1966, 1982, 1986, 2002], thirdPlace: 4, confederation: "UEFA" },
+  { country: "Italia",      flag: "🇮🇹", fifaCode: "ITA", titles: 4, years: [1934, 1938, 1982, 2006], runnerUp: 2, runnerUpYears: [1970, 1994], thirdPlace: 1, confederation: "UEFA" },
+  { country: "Argentina",   flag: "🇦🇷", fifaCode: "ARG", titles: 3, years: [1978, 1986, 2022], runnerUp: 3, runnerUpYears: [1930, 1990, 2014], thirdPlace: 0, confederation: "CONMEBOL" },
+  { country: "Francia",     flag: "🇫🇷", fifaCode: "FRA", titles: 2, years: [1998, 2018], runnerUp: 2, runnerUpYears: [2006, 2022], thirdPlace: 2, confederation: "UEFA" },
+  { country: "Uruguay",     flag: "🇺🇾", fifaCode: "URU", titles: 2, years: [1930, 1950], runnerUp: 0, runnerUpYears: [], thirdPlace: 0, confederation: "CONMEBOL" },
+  { country: "Inglaterra",  flag: "󠁧󠁢󠁥󠁮󠁧󠁿🏴󠁧󠁢󠁥󠁮󠁧󠁿", fifaCode: "ENG", titles: 1, years: [1966], runnerUp: 0, runnerUpYears: [], thirdPlace: 1, confederation: "UEFA" },
+  { country: "España",      flag: "🇪🇸", fifaCode: "ESP", titles: 1, years: [2010], runnerUp: 0, runnerUpYears: [], thirdPlace: 0, confederation: "UEFA" },
 ];
 
 export const ALL_TIME_SCORERS: TopScorer[] = [
-  { rank: 1,  name: "Miroslav Klose",   country: "Alemania",  flag: "🇩🇪", goals: 16, editions: 4, years: "2002–2014" },
-  { rank: 2,  name: "Ronaldo",          country: "Brasil",    flag: "🇧🇷", goals: 15, editions: 4, years: "1994–2006" },
-  { rank: 3,  name: "Gerd Müller",      country: "Alemania",  flag: "🇩🇪", goals: 14, editions: 2, years: "1970–1974" },
-  { rank: 4,  name: "Just Fontaine",    country: "Francia",   flag: "🇫🇷", goals: 13, editions: 1, years: "1958" },
-  { rank: 5,  name: "Pelé",             country: "Brasil",    flag: "🇧🇷", goals: 12, editions: 4, years: "1958–1970" },
-  { rank: 6,  name: "Kylian Mbappé",    country: "Francia",   flag: "🇫🇷", goals: 12, editions: 2, years: "2018–2022" },
-  { rank: 7,  name: "Sándor Kocsis",    country: "Hungría",   flag: "🇭🇺", goals: 11, editions: 1, years: "1954" },
-  { rank: 8,  name: "Jürgen Klinsmann", country: "Alemania",  flag: "🇩🇪", goals: 11, editions: 3, years: "1990–1998" },
-  { rank: 9,  name: "Gabriel Batistuta",country: "Argentina", flag: "🇦🇷", goals: 10, editions: 3, years: "1994–2002" },
-  { rank: 10, name: "Gary Lineker",     country: "Inglaterra",flag: "󠁧󠁢󠁥󠁮󠁧󠁿🏴󠁧󠁢󠁥󠁮󠁧󠁿", goals: 10, editions: 2, years: "1986–1990" },
-  { rank: 11, name: "Teófilo Cubillas", country: "Perú",      flag: "🇵🇪", goals: 10, editions: 2, years: "1970–1978" },
-  { rank: 12, name: "Grzegorz Lato",    country: "Polonia",   flag: "🇵🇱", goals: 10, editions: 3, years: "1974–1982" },
-  { rank: 13, name: "Ronaldo (R9)",     country: "Brasil",    flag: "🇧🇷", goals: 15, editions: 4, years: "1994–2006" },
-  { rank: 14, name: "Harry Kane",       country: "Inglaterra",flag: "󠁧󠁢󠁥󠁮󠁧󠁿🏴󠁧󠁢󠁥󠁮󠁧󠁿", goals: 8, editions: 2, years: "2018–2022" },
-  { rank: 15, name: "Cristiano Ronaldo",country: "Portugal",  flag: "🇵🇹", goals: 8, editions: 5, years: "2006–2022" },
+  { rank: 1,  name: "Miroslav Klose",   country: "Alemania",  flag: "🇩🇪", fifaCode: "GER", confederation: "UEFA",     goals: 16, editions: 4, years: "2002–2014" },
+  { rank: 2,  name: "Ronaldo (R9)",     country: "Brasil",    flag: "🇧🇷", fifaCode: "BRA", confederation: "CONMEBOL", goals: 15, editions: 4, years: "1994–2006" },
+  { rank: 3,  name: "Gerd Müller",      country: "Alemania",  flag: "🇩🇪", fifaCode: "GER", confederation: "UEFA",     goals: 14, editions: 2, years: "1970–1974" },
+  { rank: 4,  name: "Just Fontaine",    country: "Francia",   flag: "🇫🇷", fifaCode: "FRA", confederation: "UEFA",     goals: 13, editions: 1, years: "1958" },
+  { rank: 5,  name: "Pelé",             country: "Brasil",    flag: "🇧🇷", fifaCode: "BRA", confederation: "CONMEBOL", goals: 12, editions: 4, years: "1958–1970" },
+  { rank: 6,  name: "Kylian Mbappé",    country: "Francia",   flag: "🇫🇷", fifaCode: "FRA", confederation: "UEFA",     goals: 12, editions: 2, years: "2018–2022" },
+  { rank: 7,  name: "Sándor Kocsis",    country: "Hungría",   flag: "🇭🇺", fifaCode: "HUN", confederation: "UEFA",     goals: 11, editions: 1, years: "1954" },
+  { rank: 8,  name: "Jürgen Klinsmann", country: "Alemania",  flag: "🇩🇪", fifaCode: "GER", confederation: "UEFA",     goals: 11, editions: 3, years: "1990–1998" },
+  { rank: 9,  name: "Gabriel Batistuta",country: "Argentina", flag: "🇦🇷", fifaCode: "ARG", confederation: "CONMEBOL", goals: 10, editions: 3, years: "1994–2002" },
+  { rank: 10, name: "Gary Lineker",     country: "Inglaterra",flag: "󠁧󠁢󠁥󠁮󠁧󠁿🏴󠁧󠁢󠁥󠁮󠁧󠁿", fifaCode: "ENG", confederation: "UEFA",     goals: 10, editions: 2, years: "1986–1990" },
+  { rank: 11, name: "Teófilo Cubillas", country: "Perú",      flag: "🇵🇪", fifaCode: "PER", confederation: "CONMEBOL", goals: 10, editions: 2, years: "1970–1978" },
+  { rank: 12, name: "Grzegorz Lato",    country: "Polonia",   flag: "🇵🇱", fifaCode: "POL", confederation: "UEFA",     goals: 10, editions: 3, years: "1974–1982" },
+  { rank: 13, name: "Harry Kane",       country: "Inglaterra",flag: "󠁧󠁢󠁥󠁮󠁧󠁿🏴󠁧󠁢󠁥󠁮󠁧󠁿", fifaCode: "ENG", confederation: "UEFA",     goals: 8,  editions: 2, years: "2018–2022" },
+  { rank: 14, name: "Cristiano Ronaldo",country: "Portugal",  flag: "🇵🇹", fifaCode: "POR", confederation: "UEFA",     goals: 8,  editions: 5, years: "2006–2022" },
+  { rank: 15, name: "Lionel Messi",     country: "Argentina", flag: "🇦🇷", fifaCode: "ARG", confederation: "CONMEBOL", goals: 13, editions: 5, years: "2006–2022" },
 ];
 
 export const RECORDS_2026: WCRecord[] = [
@@ -200,14 +203,14 @@ export const CONTINENT_STATS = [
 ];
 
 export const MOST_APPEARANCES = [
-  { country: "Brasil",     flag: "🇧🇷", count: 22, confederation: "CONMEBOL" },
-  { country: "Alemania",   flag: "🇩🇪", count: 20, confederation: "UEFA" },
-  { country: "Italia",     flag: "🇮🇹", count: 18, confederation: "UEFA" },
-  { country: "Argentina",  flag: "🇦🇷", count: 18, confederation: "CONMEBOL" },
-  { country: "México",     flag: "🇲🇽", count: 17, confederation: "CONCACAF" },
-  { country: "Francia",    flag: "🇫🇷", count: 16, confederation: "UEFA" },
-  { country: "España",     flag: "🇪🇸", count: 16, confederation: "UEFA" },
-  { country: "Inglaterra", flag: "󠁧󠁢󠁥󠁮󠁧󠁿🏴󠁧󠁢󠁥󠁮󠁧󠁿", count: 16, confederation: "UEFA" },
-  { country: "Uruguay",    flag: "🇺🇾", count: 14, confederation: "CONMEBOL" },
-  { country: "Bélgica",    flag: "🇧🇪", count: 14, confederation: "UEFA" },
+  { country: "Brasil",     flag: "🇧🇷", fifaCode: "BRA", count: 22, confederation: "CONMEBOL" },
+  { country: "Alemania",   flag: "🇩🇪", fifaCode: "GER", count: 20, confederation: "UEFA" },
+  { country: "Italia",     flag: "🇮🇹", fifaCode: "ITA", count: 18, confederation: "UEFA" },
+  { country: "Argentina",  flag: "🇦🇷", fifaCode: "ARG", count: 18, confederation: "CONMEBOL" },
+  { country: "México",     flag: "🇲🇽", fifaCode: "MEX", count: 17, confederation: "CONCACAF" },
+  { country: "Francia",    flag: "🇫🇷", fifaCode: "FRA", count: 16, confederation: "UEFA" },
+  { country: "España",     flag: "🇪🇸", fifaCode: "ESP", count: 16, confederation: "UEFA" },
+  { country: "Inglaterra", flag: "󠁧󠁢󠁥󠁮󠁧󠁿🏴󠁧󠁢󠁥󠁮󠁧󠁿", fifaCode: "ENG", count: 16, confederation: "UEFA" },
+  { country: "Uruguay",    flag: "🇺🇾", fifaCode: "URU", count: 14, confederation: "CONMEBOL" },
+  { country: "Bélgica",    flag: "🇧🇪", fifaCode: "BEL", count: 14, confederation: "UEFA" },
 ];

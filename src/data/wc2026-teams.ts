@@ -28,6 +28,7 @@ export interface WCTeam {
   players: WCPlayer[];
   formation: string;
   xi: string[];
+  rosterPublished?: boolean;
 }
 
 export const WC2026_TEAMS: WCTeam[] = [
@@ -357,6 +358,7 @@ export const WC2026_TEAMS: WCTeam[] = [
       { name: "Dušan Vlahović", position: "FWD", club: "Juventus", age: 24, dorsal: 9, isKeyPlayer: true },
       { name: "Aleksandar Mitrović", position: "FWD", club: "Al-Hilal", age: 29, dorsal: 10, isCaptain: true, isKeyPlayer: true },
     ],
+    rosterPublished: false,
   },
   {
     code: "DEN", name: "Dinamarca", shortName: "DEN", flag: "🇩🇰",
@@ -373,6 +375,7 @@ export const WC2026_TEAMS: WCTeam[] = [
       { name: "Pierre-Emile Højbjerg", position: "MID", club: "Atlético Madrid", age: 28, dorsal: 23, isKeyPlayer: true },
       { name: "Rasmus Højlund", position: "FWD", club: "Manchester United", age: 22, dorsal: 9, isKeyPlayer: true },
     ],
+    rosterPublished: false,
   },
   {
     code: "HUN", name: "Hungría", shortName: "HUN", flag: "🇭🇺",
@@ -389,6 +392,7 @@ export const WC2026_TEAMS: WCTeam[] = [
       { name: "Roland Sallai", position: "FWD", club: "Freiburg", age: 26, dorsal: 11 },
       { name: "Barnabás Varga", position: "FWD", club: "Ferencváros", age: 29, dorsal: 9 },
     ],
+    rosterPublished: false,
   },
   {
     code: "SVK", name: "Eslovaquia", shortName: "SVK", flag: "🇸🇰",
@@ -405,6 +409,7 @@ export const WC2026_TEAMS: WCTeam[] = [
       { name: "Stanislav Lobotka", position: "MID", club: "Napoli", age: 29, dorsal: 8, isKeyPlayer: true },
       { name: "Ondrej Duda", position: "MID", club: "Hellas Verona", age: 29, dorsal: 10 },
     ],
+    rosterPublished: false,
   },
 
   // ── CONMEBOL (6) ─────────────────────────────────────────────────────
@@ -522,6 +527,7 @@ export const WC2026_TEAMS: WCTeam[] = [
       { name: "Miguel Almirón", position: "MID", club: "Newcastle", age: 30, dorsal: 10, isKeyPlayer: true },
       { name: "Antonio Sanabria", position: "FWD", club: "Torino", age: 28, dorsal: 9 },
     ],
+    rosterPublished: false,
   },
 
   // ── AFC (8) ───────────────────────────────────────────────────────────
@@ -558,6 +564,7 @@ export const WC2026_TEAMS: WCTeam[] = [
       { name: "Sardar Azmoun", position: "FWD", club: "Bayer Leverkusen", age: 29, dorsal: 11, isKeyPlayer: true },
       { name: "Alireza Jahanbakhsh", position: "FWD", club: "Feyenoord", age: 30, dorsal: 7 },
     ],
+    rosterPublished: false,
   },
   {
     code: "KOR", name: "Corea del Sur", shortName: "KOR", flag: "🇰🇷",
@@ -575,6 +582,7 @@ export const WC2026_TEAMS: WCTeam[] = [
       { name: "Son Heung-min", position: "FWD", club: "Tottenham", age: 33, dorsal: 7, isCaptain: true, isKeyPlayer: true },
       { name: "Hwang Hee-chan", position: "FWD", club: "Wolves", age: 28, dorsal: 9 },
     ],
+    rosterPublished: false,
   },
   {
     code: "AUS", name: "Australia", shortName: "AUS", flag: "🇦🇺",
@@ -591,6 +599,7 @@ export const WC2026_TEAMS: WCTeam[] = [
       { name: "Mathew Leckie", position: "FWD", club: "Melbourne City", age: 33, dorsal: 7, isKeyPlayer: true },
       { name: "Mitchell Duke", position: "FWD", club: "Fagiano Okayama", age: 33, dorsal: 19 },
     ],
+    rosterPublished: false,
   },
   {
     code: "KSA", name: "Arabia Saudita", shortName: "KSA", flag: "🇸🇦",
@@ -606,6 +615,7 @@ export const WC2026_TEAMS: WCTeam[] = [
       { name: "Salem Al-Dawsari", position: "FWD", club: "Al-Hilal", age: 32, dorsal: 10, isKeyPlayer: true },
       { name: "Firas Al-Buraikan", position: "FWD", club: "Al-Fateh", age: 24, dorsal: 9, isKeyPlayer: true },
     ],
+    rosterPublished: false,
   },
   {
     code: "QAT", name: "Qatar", shortName: "QAT", flag: "🇶🇦",
@@ -621,6 +631,7 @@ export const WC2026_TEAMS: WCTeam[] = [
       { name: "Akram Afif", position: "FWD", club: "Al-Sadd", age: 27, dorsal: 11, isCaptain: true, isKeyPlayer: true },
       { name: "Almoez Ali", position: "FWD", club: "Al-Duhail", age: 27, dorsal: 19, isKeyPlayer: true },
     ],
+    rosterPublished: false,
   },
   {
     code: "JOR", name: "Jordania", shortName: "JOR", flag: "🇯🇴",
@@ -635,6 +646,7 @@ export const WC2026_TEAMS: WCTeam[] = [
       { name: "Yazeed Abdelhamid", position: "DEF", club: "Reims", age: 31, dorsal: 5, isCaptain: true },
       { name: "Mousa Tayara", position: "MID", club: "Sivasspor", age: 28, dorsal: 10, isKeyPlayer: true },
     ],
+    rosterPublished: false,
   },
   {
     code: "IRQ", name: "Irak", shortName: "IRQ", flag: "🇮🇶",
@@ -649,6 +661,7 @@ export const WC2026_TEAMS: WCTeam[] = [
       { name: "Jalal Hassan", position: "GK", club: "Al-Zawraa", age: 32, dorsal: 1, isCaptain: true },
       { name: "Mohanad Abdulatif", position: "MID", club: "Al-Quwa Al-Jawiya", age: 25, dorsal: 10, isKeyPlayer: true },
     ],
+    rosterPublished: false,
   },
 
   // ── CAF (9) ───────────────────────────────────────────────────────────
@@ -701,6 +714,7 @@ export const WC2026_TEAMS: WCTeam[] = [
       { name: "Mohamed Salah", position: "FWD", club: "Liverpool", age: 33, dorsal: 10, isCaptain: true, isKeyPlayer: true },
       { name: "Omar Marmoush", position: "FWD", club: "Manchester City", age: 25, dorsal: 9, isKeyPlayer: true },
     ],
+    rosterPublished: false,
   },
   {
     code: "SEN", name: "Senegal", shortName: "SEN", flag: "🇸🇳",
@@ -734,6 +748,7 @@ export const WC2026_TEAMS: WCTeam[] = [
       { name: "Sébastien Haller", position: "FWD", club: "Borussia Dortmund", age: 30, dorsal: 9, isKeyPlayer: true },
       { name: "Nicolas Pépé", position: "FWD", club: "OGC Nice", age: 29, dorsal: 7 },
     ],
+    rosterPublished: false,
   },
   {
     code: "CMR", name: "Camerún", shortName: "CMR", flag: "🇨🇲",
@@ -750,6 +765,7 @@ export const WC2026_TEAMS: WCTeam[] = [
       { name: "Bryan Mbeumo", position: "FWD", club: "Brentford", age: 24, dorsal: 11, isKeyPlayer: true },
       { name: "Choupo-Moting", position: "FWD", club: "Al-Shabab", age: 35, dorsal: 9 },
     ],
+    rosterPublished: false,
   },
   {
     code: "ZAF", name: "Sudáfrica", shortName: "RSA", flag: "🇿🇦",
@@ -765,6 +781,7 @@ export const WC2026_TEAMS: WCTeam[] = [
       { name: "Percy Tau", position: "FWD", club: "Al-Ahly", age: 30, dorsal: 10, isKeyPlayer: true },
       { name: "Themba Zwane", position: "FWD", club: "Mamelodi Sundowns", age: 32, dorsal: 9 },
     ],
+    rosterPublished: false,
   },
   {
     code: "GHA", name: "Ghana", shortName: "GHA", flag: "🇬🇭",
@@ -781,6 +798,7 @@ export const WC2026_TEAMS: WCTeam[] = [
       { name: "Mohammed Kudus", position: "MID", club: "West Ham", age: 24, dorsal: 11, isKeyPlayer: true },
       { name: "Jordan Ayew", position: "FWD", club: "Leicester City", age: 32, dorsal: 9 },
     ],
+    rosterPublished: false,
   },
   {
     code: "ALG", name: "Argelia", shortName: "ALG", flag: "🇩🇿",
@@ -797,6 +815,7 @@ export const WC2026_TEAMS: WCTeam[] = [
       { name: "Riyad Mahrez", position: "FWD", club: "Al-Ahli", age: 35, dorsal: 26, isCaptain: true, isKeyPlayer: true },
       { name: "Islam Slimani", position: "FWD", club: "Brest", age: 35, dorsal: 9 },
     ],
+    rosterPublished: false,
   },
 
   // ── CONCACAF adicional (3 sin hosts) ─────────────────────────────────
@@ -814,6 +833,7 @@ export const WC2026_TEAMS: WCTeam[] = [
       { name: "Adalberto Carrasquilla", position: "MID", club: "Houston Dynamo", age: 26, dorsal: 8, isCaptain: true, isKeyPlayer: true },
       { name: "Ismael Díaz", position: "FWD", club: "Girona", age: 23, dorsal: 9, isKeyPlayer: true },
     ],
+    rosterPublished: false,
   },
   {
     code: "JAM", name: "Jamaica", shortName: "JAM", flag: "🇯🇲",
@@ -829,6 +849,7 @@ export const WC2026_TEAMS: WCTeam[] = [
       { name: "Michail Antonio", position: "FWD", club: "Nottingham Forest", age: 34, dorsal: 9, isKeyPlayer: true },
       { name: "Demarai Gray", position: "FWD", club: "Fulham", age: 28, dorsal: 11, isKeyPlayer: true },
     ],
+    rosterPublished: false,
   },
   {
     code: "CRC", name: "Costa Rica", shortName: "CRC", flag: "🇨🇷",
@@ -844,6 +865,7 @@ export const WC2026_TEAMS: WCTeam[] = [
       { name: "Bryan Ruiz", position: "MID", club: "Alajuelense", age: 38, dorsal: 10 },
       { name: "Joel Campbell", position: "FWD", club: "Herediano", age: 32, dorsal: 12, isKeyPlayer: true },
     ],
+    rosterPublished: false,
   },
 
   // ── OFC (1) ───────────────────────────────────────────────────────────
@@ -861,6 +883,7 @@ export const WC2026_TEAMS: WCTeam[] = [
       { name: "Chris Wood", position: "FWD", club: "Nottingham Forest", age: 34, dorsal: 9, isCaptain: true, isKeyPlayer: true },
       { name: "Clayton Lewis", position: "MID", club: "Huddersfield", age: 27, dorsal: 10, isKeyPlayer: true },
     ],
+    rosterPublished: false,
   },
 
   // ── REPECHAJE INTERCONTINENTAL (2) ────────────────────────────────────
@@ -879,6 +902,7 @@ export const WC2026_TEAMS: WCTeam[] = [
       { name: "Soteldo", position: "FWD", club: "Tigres UANL", age: 26, dorsal: 11, isKeyPlayer: true },
       { name: "Salomón Rondón", position: "FWD", club: "Corinthians", age: 34, dorsal: 9 },
     ],
+    rosterPublished: false,
   },
   {
     code: "IDN", name: "Indonesia", shortName: "IDN", flag: "🇮🇩",
@@ -895,6 +919,7 @@ export const WC2026_TEAMS: WCTeam[] = [
       { name: "Egy Maulana Vikri", position: "FWD", club: "Ankaragucu", age: 26, dorsal: 10, isKeyPlayer: true },
       { name: "Marselino Ferdinan", position: "MID", club: "STVV", age: 21, dorsal: 7, isKeyPlayer: true },
     ],
+    rosterPublished: false,
   },
 ];
 
