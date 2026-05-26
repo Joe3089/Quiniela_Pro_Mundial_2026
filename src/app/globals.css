@@ -262,13 +262,13 @@
 
   /* Continuous 3-D spin for the hero trophy */
   .trophy-spin-3d {
-    animation: trophy-spin-3d 9s ease-in-out infinite;
+    animation: trophy-spin-3d 10s ease-in-out infinite;
     transform-style: preserve-3d;
   }
 
-  /* Soccer ball gentle float */
+  /* Soccer ball float + slow spin combined */
   .soccer-float {
-    animation: soccer-float 4s ease-in-out infinite;
+    animation: soccer-float-spin 18s linear infinite;
   }
 
   /* ── hero-2026: full-bleed hero replacing hero-diagonal ── */
@@ -363,9 +363,15 @@
   100% { transform: rotateY(360deg) translateY(0px);   filter: drop-shadow(0 0 28px rgba(245,165,0,.65)); }
 }
 
-/* Soccer ball slow float */
-@keyframes soccer-float {
-  0%,100% { transform: translateY(0px) rotate(0deg); }
-  40%     { transform: translateY(-10px) rotate(8deg); }
-  60%     { transform: translateY(-12px) rotate(10deg); }
+/* Soccer ball: combined float + spin (avoids transform conflict) */
+@keyframes soccer-float-spin {
+  0%   { transform: translateY(0px)   rotate(0deg); }
+  12%  { transform: translateY(-9px)  rotate(43deg); }
+  25%  { transform: translateY(-13px) rotate(90deg); }
+  37%  { transform: translateY(-9px)  rotate(133deg); }
+  50%  { transform: translateY(0px)   rotate(180deg); }
+  62%  { transform: translateY(-9px)  rotate(223deg); }
+  75%  { transform: translateY(-13px) rotate(270deg); }
+  87%  { transform: translateY(-9px)  rotate(313deg); }
+  100% { transform: translateY(0px)   rotate(360deg); }
 }
