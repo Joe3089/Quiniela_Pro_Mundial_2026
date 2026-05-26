@@ -127,20 +127,28 @@ export default function HomePage() {
                 initial={{ opacity: 0, scale: 0.88 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.15, duration: 0.55, type: "spring", stiffness: 90 }}
-                className="relative inline-block leading-none mb-4"
+                className="relative leading-none mb-4 flex items-baseline gap-0"
               >
                 <span
                   className="font-black leading-none tracking-tighter select-none"
                   style={{
                     fontSize: "clamp(5.5rem,20vw,12rem)",
-                    background: "linear-gradient(135deg, #ffffff 0%, #e2e8f0 25%, #F5A500 58%, #FFD000 100%)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                    backgroundClip: "text",
-                    filter: "drop-shadow(0 4px 48px rgba(245,165,0,0.35))",
+                    color: "#ffffff",
+                    textShadow: "0 0 80px rgba(255,255,255,0.15), 0 4px 32px rgba(0,0,0,0.6)",
                   }}
                 >
-                  2026
+                  20
+                </span>
+                <span
+                  className="font-black leading-none tracking-tighter select-none"
+                  style={{
+                    fontSize: "clamp(5.5rem,20vw,12rem)",
+                    color: "#4ade80",
+                    textShadow: "0 0 80px rgba(74,222,128,0.5), 0 4px 32px rgba(0,0,0,0.6)",
+                    filter: "drop-shadow(0 0 40px rgba(74,222,128,0.4))",
+                  }}
+                >
+                  26
                 </span>
               </motion.div>
 
