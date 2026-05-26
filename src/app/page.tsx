@@ -16,7 +16,7 @@ function TrophyImage({ size = 200 }: { size?: number }) {
   return (
     <div
       className="relative"
-      style={{ width: size, height: size * 1.25, perspective: "900px" }}
+      style={{ width: size, height: size * 1.25, perspective: "900px", background: "#060202" }}
     >
       {/* halo dorado detrás */}
       <div
@@ -94,37 +94,46 @@ function CityRevealPanels() {
 }
 
 /* ════════════════════════════════════════════════════════
-   TROPHY OVERLAY — cubre el trofeo estático de la imagen
-   y lo reemplaza con nuestro SVG giratorio
+   TROPHY OVERLAY — tapa copa + logo del fondo, muestra
+   nuestra imagen girando
    ════════════════════════════════════════════════════════ */
 function TrophyOverlay() {
   return (
-    <motion.div
-      className="absolute right-0 top-0 bottom-0 flex items-center justify-end z-20 pointer-events-none"
-      style={{ width: "21%" }}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ delay: 2.10, duration: 0.60, ease: "easeOut" }}
-    >
-      {/* oscurecer el trofeo original de la imagen */}
+    <>
+      {/* Capa opaca permanente que cubre copa estática + logo del fondo.
+          Siempre visible (sin retraso) para que nunca se vea el fondo. */}
       <div
-        className="absolute inset-0"
+        className="absolute right-0 top-0 bottom-0 pointer-events-none z-20"
         style={{
+          width: "28%",
           background:
-            "linear-gradient(90deg,transparent 0%,rgba(12,4,4,0.82) 25%,rgba(12,4,4,0.88) 100%)",
+            "linear-gradient(90deg, transparent 0%, rgba(6,2,2,0.92) 12%, #060202 35%)",
         }}
       />
-      {/* fade inferior: elimina lo que está debajo del trofeo */}
+      {/* Fade inferior extra — cubre el logo FIFA del fondo */}
       <div
-        className="absolute bottom-0 inset-x-0 h-28"
-        style={{ background: "linear-gradient(to top,#080c18 0%,rgba(8,12,24,0.5) 60%,transparent 100%)" }}
+        className="absolute bottom-0 right-0 pointer-events-none z-21"
+        style={{
+          width: "35%",
+          height: "40%",
+          background:
+            "linear-gradient(to top, #080c18 30%, rgba(8,12,24,0.85) 65%, transparent 100%)",
+        }}
       />
 
-      {/* Trofeo real girando */}
-      <div className="relative z-10 pr-2 md:pr-4">
-        <TrophyImage size={180} />
-      </div>
-    </motion.div>
+      {/* Copa girando — aparece con animación tras la secuencia */}
+      <motion.div
+        className="absolute right-0 top-0 bottom-0 flex items-center justify-end pointer-events-none z-22"
+        style={{ width: "28%" }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 2.10, duration: 0.60, ease: "easeOut" }}
+      >
+        <div className="relative z-10 pr-3 md:pr-5">
+          <TrophyImage size={180} />
+        </div>
+      </motion.div>
+    </>
   );
 }
 
