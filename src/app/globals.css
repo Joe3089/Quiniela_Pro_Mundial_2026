@@ -7,69 +7,76 @@
 
 @layer base {
   :root {
-    /* ── Brand Palette ── */
-    --brand-red: 350 100% 44%;          /* #E0001B */
-    --brand-red-vivid: 0 100% 50%;      /* #FF0000 */
-    --brand-purple: 275 72% 50%;        /* #7B2FBE */
-    --brand-violet: 265 85% 62%;        /* #8B5CF6 */
-    --brand-lime: 81 88% 52%;           /* #B5E317 */
-    --brand-gold: 40 95% 52%;           /* #F5A500 */
-    --brand-gold-warm: 45 100% 64%;     /* #FFC93C */
-    --brand-teal: 175 80% 42%;          /* #16C7A4 */
+    /* ── Brand Palette — Black · Royal Blue · White · Gold ── */
+    --brand-blue: 224 76% 48%;          /* #1D4ED8 Royal Blue */
+    --brand-blue-vivid: 221 83% 53%;    /* #2563EB */
+    --brand-blue-dark: 226 71% 34%;     /* #1E3A8A Navy */
+    --brand-blue-light: 213 94% 68%;    /* #60A5FA */
+    --brand-gold: 43 96% 52%;           /* #F5A500 Gold */
+    --brand-gold-warm: 45 100% 62%;     /* #FFD000 */
+    --brand-gold-deep: 36 100% 42%;     /* #D77800 */
+    --brand-red: 350 100% 44%;          /* #E0001B kept for destructive */
+    --brand-violet: 258 90% 66%;        /* #8B5CF6 Violet */
+    --brand-purple: 270 91% 65%;        /* #A855F7 Purple */
+    --brand-emerald: 160 84% 39%;       /* #10B981 Emerald */
+
+    /* ── Tricolor (Mexico·USA·Canada hosts) ── */
+    --tri-green: 142 71% 45%;           /* #22C55E */
+    --tri-red:   0 84% 60%;             /* #EF4444 */
 
     /* ── Semantic (Dark Default) ── */
-    --background: 240 30% 3%;           /* #060610 */
-    --foreground: 0 0% 96%;
-    --card: 240 25% 6%;                 /* #0D0D1A */
-    --card-foreground: 0 0% 96%;
-    --popover: 240 22% 8%;
-    --popover-foreground: 0 0% 96%;
-    --primary: 350 100% 44%;
+    --background: 0 0% 0%;              /* #000000 */
+    --foreground: 0 0% 97%;             /* #F7F7F7 */
+    --card: 220 20% 7%;                 /* #0D1018 */
+    --card-foreground: 0 0% 97%;
+    --popover: 220 20% 9%;
+    --popover-foreground: 0 0% 97%;
+    --primary: 224 76% 48%;             /* Royal Blue */
     --primary-foreground: 0 0% 100%;
-    --secondary: 275 72% 50%;
-    --secondary-foreground: 0 0% 100%;
-    --accent: 81 88% 52%;
-    --accent-foreground: 240 30% 4%;
+    --secondary: 43 96% 52%;            /* Gold */
+    --secondary-foreground: 220 20% 8%;
+    --accent: 43 96% 52%;               /* Gold accent */
+    --accent-foreground: 220 20% 8%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --muted: 240 18% 12%;
-    --muted-foreground: 240 8% 52%;
-    --border: 240 14% 10%;
-    --input: 240 14% 11%;
-    --ring: 350 100% 44%;
+    --muted: 220 16% 12%;
+    --muted-foreground: 220 8% 50%;
+    --border: 220 16% 12%;
+    --input: 220 16% 11%;
+    --ring: 224 76% 48%;
     --radius: 0.875rem;
 
     /* ── Glass ── */
     --glass-bg: rgba(255, 255, 255, 0.04);
     --glass-bg-hover: rgba(255, 255, 255, 0.07);
-    --glass-border: rgba(255, 255, 255, 0.07);
-    --glass-border-vivid: rgba(255, 255, 255, 0.14);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-border-vivid: rgba(255, 255, 255, 0.15);
 
     /* ── Glow ── */
-    --glow-red: rgba(224, 0, 27, 0.4);
-    --glow-purple: rgba(123, 47, 190, 0.4);
-    --glow-lime: rgba(181, 227, 23, 0.35);
-    --glow-gold: rgba(245, 165, 0, 0.4);
+    --glow-blue:   rgba(29, 78, 216, 0.45);
+    --glow-gold:   rgba(245, 165, 0, 0.40);
+    --glow-navy:   rgba(30, 58, 138, 0.50);
+    --glow-white:  rgba(255, 255, 255, 0.08);
   }
 
   .light {
-    --background: 220 20% 96%;
-    --foreground: 240 30% 5%;
+    --background: 220 20% 97%;
+    --foreground: 220 30% 5%;
     --card: 0 0% 100%;
-    --card-foreground: 240 30% 5%;
+    --card-foreground: 220 30% 5%;
     --popover: 0 0% 100%;
-    --popover-foreground: 240 30% 5%;
-    --primary: 350 100% 40%;
+    --popover-foreground: 220 30% 5%;
+    --primary: 224 76% 42%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 275 72% 45%;
-    --secondary-foreground: 0 0% 100%;
-    --accent: 81 88% 40%;
-    --accent-foreground: 0 0% 100%;
+    --secondary: 43 96% 46%;
+    --secondary-foreground: 220 20% 8%;
+    --accent: 43 96% 46%;
+    --accent-foreground: 220 20% 8%;
     --muted: 220 15% 90%;
-    --muted-foreground: 240 8% 42%;
+    --muted-foreground: 220 8% 42%;
     --border: 220 15% 84%;
     --input: 220 15% 84%;
-    --ring: 350 100% 40%;
+    --ring: 224 76% 42%;
     --glass-bg: rgba(0, 0, 0, 0.03);
     --glass-bg-hover: rgba(0, 0, 0, 0.06);
     --glass-border: rgba(0, 0, 0, 0.07);
@@ -127,7 +134,7 @@
 
   /* ── Gradient Text ── */
   .text-gradient {
-    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--brand-violet)));
+    background: linear-gradient(135deg, hsl(var(--brand-blue-light)), hsl(var(--brand-blue)));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -141,9 +148,9 @@
   .text-gradient-vivid {
     background: linear-gradient(
       90deg,
-      hsl(var(--primary)) 0%,
-      hsl(var(--brand-violet)) 50%,
-      hsl(var(--accent)) 100%
+      hsl(var(--brand-blue-light)) 0%,
+      hsl(var(--brand-blue)) 50%,
+      hsl(var(--brand-gold)) 100%
     );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -151,16 +158,15 @@
   }
 
   /* ── Glow ── */
-  .glow-red    { box-shadow: 0 0 28px var(--glow-red),   0 0 56px rgba(224,0,27,0.15); }
-  .glow-purple { box-shadow: 0 0 28px var(--glow-purple); }
-  .glow-lime   { box-shadow: 0 0 28px var(--glow-lime); }
-  .glow-gold   { box-shadow: 0 0 28px var(--glow-gold); }
-  .glow-text-red    { text-shadow: 0 0 24px rgba(224,0,27,0.7); }
-  .glow-text-gold   { text-shadow: 0 0 20px rgba(245,165,0,0.8); }
+  .glow-blue   { box-shadow: 0 0 32px var(--glow-blue),  0 0 64px rgba(29,78,216,0.18); }
+  .glow-gold   { box-shadow: 0 0 28px var(--glow-gold),  0 0 56px rgba(245,165,0,0.12); }
+  .glow-navy   { box-shadow: 0 0 28px var(--glow-navy); }
+  .glow-text-blue  { text-shadow: 0 0 24px rgba(29,78,216,0.8); }
+  .glow-text-gold  { text-shadow: 0 0 20px rgba(245,165,0,0.9); }
 
   /* ── Background System ── */
   .wc-bg {
-    background-color: hsl(var(--background));
+    background-color: #000000;
     position: relative;
     isolation: isolate;
   }
@@ -169,12 +175,25 @@
     position: fixed;
     inset: 0;
     background:
-      radial-gradient(ellipse 90% 60% at -10% 0%,   rgba(224, 0, 27, 0.10) 0%, transparent 55%),
-      radial-gradient(ellipse 70% 50% at 110% 100%,  rgba(123, 47, 190, 0.13) 0%, transparent 55%),
-      radial-gradient(ellipse 60% 40% at 100% 0%,    rgba(139, 92, 246, 0.07) 0%, transparent 50%),
-      radial-gradient(ellipse 40% 30% at 50% 80%,    rgba(181, 227, 23, 0.04) 0%, transparent 60%);
+      radial-gradient(ellipse 80% 55% at -5% 0%,    rgba(29, 78, 216, 0.22) 0%, transparent 52%),
+      radial-gradient(ellipse 65% 45% at 108% 100%, rgba(30, 58, 138, 0.28) 0%, transparent 52%),
+      radial-gradient(ellipse 50% 40% at 100% 8%,   rgba(29, 78, 216, 0.12) 0%, transparent 48%),
+      radial-gradient(ellipse 45% 35% at 50% 95%,   rgba(245, 165, 0, 0.08) 0%, transparent 55%),
+      radial-gradient(ellipse 30% 25% at 25% 65%,   rgba(29, 78, 216, 0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 30% at 75% 35%,   rgba(245, 165, 0, 0.06) 0%, transparent 55%);
     pointer-events: none;
     z-index: -1;
+  }
+  .wc-bg::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(255,255,255,0.018) 1px, transparent 0);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: -1;
+    mask-image: radial-gradient(ellipse 100% 100% at 50% 50%, black 40%, transparent 100%);
   }
 
   /* ── Blobs ── */
@@ -185,10 +204,13 @@
     pointer-events: none;
     will-change: transform;
   }
-  .blob-red    { background: radial-gradient(circle, rgba(224,0,27,0.22), transparent 70%); animation: blob-drift 22s ease-in-out infinite; }
-  .blob-purple { background: radial-gradient(circle, rgba(123,47,190,0.20), transparent 70%); animation: blob-drift 28s ease-in-out infinite reverse; }
+  .blob-blue   { background: radial-gradient(circle, rgba(29,78,216,0.25), transparent 70%); animation: blob-drift 22s ease-in-out infinite; }
+  .blob-navy   { background: radial-gradient(circle, rgba(30,58,138,0.22), transparent 70%); animation: blob-drift 28s ease-in-out infinite reverse; }
   .blob-lime   { background: radial-gradient(circle, rgba(181,227,23,0.12), transparent 70%); animation: blob-drift 18s ease-in-out infinite; animation-delay: -9s; }
   .blob-gold   { background: radial-gradient(circle, rgba(245,165,0,0.15), transparent 70%); animation: blob-drift 24s ease-in-out infinite; animation-delay: -6s; }
+  /* Aliases kept for backward compat */
+  .blob-red    { background: radial-gradient(circle, rgba(29,78,216,0.20), transparent 70%); animation: blob-drift 22s ease-in-out infinite; }
+  .blob-purple { background: radial-gradient(circle, rgba(30,58,138,0.18), transparent 70%); animation: blob-drift 28s ease-in-out infinite reverse; }
 
   /* ── Cards ── */
   .sport-card {
@@ -198,15 +220,15 @@
     transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
   }
   .sport-card:hover {
-    border-color: rgba(224, 0, 27, 0.25);
-    box-shadow: 0 12px 36px rgba(224, 0, 27, 0.08), 0 4px 12px rgba(0,0,0,0.3);
+    border-color: rgba(29, 78, 216, 0.30);
+    box-shadow: 0 12px 36px rgba(29, 78, 216, 0.10), 0 4px 12px rgba(0,0,0,0.4);
     transform: translateY(-2px);
   }
 
   /* ── Score Badge ── */
   .score-pill {
-    background: linear-gradient(135deg, rgba(224,0,27,0.15), rgba(123,47,190,0.15));
-    border: 1px solid rgba(224,0,27,0.2);
+    background: linear-gradient(135deg, rgba(29,78,216,0.15), rgba(30,58,138,0.20));
+    border: 1px solid rgba(29,78,216,0.25);
     border-radius: 99px;
   }
 
@@ -219,13 +241,64 @@
 
   /* ── Compat ── */
   .fifa-gradient {
-    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--brand-purple)) 50%, hsl(var(--background)) 100%);
+    background: linear-gradient(135deg, hsl(var(--brand-blue-dark)) 0%, hsl(var(--brand-blue)) 40%, hsl(var(--background)) 100%);
   }
   .wc2026-bg { /* class kept but body handles it via wc-bg */ }
 
   /* ── Scrollbar ── */
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
   .scrollbar-hide::-webkit-scrollbar { display: none; }
+
+  /* ── Trophy animation ── */
+  .trophy-animate { animation: trophy-showcase 5s ease-in-out infinite; transform-style: preserve-3d; }
+
+  /* ── Premium Hero Panel ── */
+  .hero-diagonal {
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-diagonal::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(135deg, rgba(34, 197, 94, 0.07) 0%, transparent 35%),
+      linear-gradient(225deg, rgba(239, 68, 68, 0.06) 0%, transparent 35%),
+      linear-gradient(180deg, rgba(29, 78, 216, 0.12) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+    animation: tri-sweep 8s ease-in-out infinite;
+  }
+
+  /* ── Stat pill ── */
+  .stat-pill {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 99px;
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .stat-pill:hover {
+    background: rgba(255,255,255,0.07);
+    border-color: rgba(255,255,255,0.14);
+  }
+
+  /* ── Premium Card variants ── */
+  .card-blue {
+    background: linear-gradient(135deg, rgba(29,78,216,0.15) 0%, rgba(30,58,138,0.08) 100%);
+    border: 1px solid rgba(29,78,216,0.25);
+  }
+  .card-gold {
+    background: linear-gradient(135deg, rgba(245,165,0,0.12) 0%, rgba(215,120,0,0.06) 100%);
+    border: 1px solid rgba(245,165,0,0.22);
+  }
+  .card-emerald {
+    background: linear-gradient(135deg, rgba(16,185,129,0.12) 0%, rgba(5,150,105,0.06) 100%);
+    border: 1px solid rgba(16,185,129,0.22);
+  }
+  .card-violet {
+    background: linear-gradient(135deg, rgba(139,92,246,0.12) 0%, rgba(109,40,217,0.06) 100%);
+    border: 1px solid rgba(139,92,246,0.22);
+  }
 }
 
 /* ── Keyframes ── */
@@ -249,4 +322,15 @@
 }
 @keyframes spin-slow {
   to { transform: rotate(360deg); }
+}
+@keyframes trophy-showcase {
+  0%,100% { transform: translateY(0) rotateY(0deg) scale(1); filter: drop-shadow(0 0 20px rgba(245,165,0,0.5)); }
+  20%     { transform: translateY(-10px) rotateY(12deg) scale(1.04); filter: drop-shadow(0 0 32px rgba(245,165,0,0.8)); }
+  40%     { transform: translateY(-14px) rotateY(0deg) scale(1.05); filter: drop-shadow(0 0 40px rgba(245,165,0,0.9)); }
+  60%     { transform: translateY(-10px) rotateY(-12deg) scale(1.04); filter: drop-shadow(0 0 32px rgba(245,165,0,0.8)); }
+  80%     { transform: translateY(-4px) rotateY(-4deg) scale(1.01); filter: drop-shadow(0 0 20px rgba(245,165,0,0.5)); }
+}
+@keyframes tri-sweep {
+  0%,100% { opacity: 0.18; transform: translateX(0); }
+  50%     { opacity: 0.28; transform: translateX(8px); }
 }

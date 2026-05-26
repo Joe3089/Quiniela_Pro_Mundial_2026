@@ -1,4 +1,4 @@
-const CACHE_NAME = "quiniela-pro-v1";
+const CACHE_NAME = "quiniela-wc26-v3";
 const OFFLINE_URL = "/offline";
 
 const STATIC_ASSETS = [

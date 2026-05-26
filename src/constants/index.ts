@@ -1,8 +1,10 @@
-export const APP_NAME = "Quiniela Pro";
-export const APP_DESCRIPTION = "La mejor quiniela del Mundial FIFA 2026";
+export const APP_NAME = "Quiniela FIFA WORLD CUP 2026";
+export const APP_SHORT_NAME = "Quiniela WC26";
+export const APP_DESCRIPTION = "La quiniela oficial del Mundial FIFA World Cup 2026";
 export const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
 export const TOURNAMENT_SLUG = "mundial-2026";
+export const TOURNAMENT_ID = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
 
 export const SCORING = {
   EXACT_SCORE: 5,

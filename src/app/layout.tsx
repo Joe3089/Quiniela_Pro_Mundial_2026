@@ -4,7 +4,7 @@ import "./globals.css";
 import { Providers } from "@/providers";
 import { Navbar } from "@/components/layout/navbar";
 import { BottomNav } from "@/components/layout/bottom-nav";
-import { APP_NAME, APP_DESCRIPTION, APP_URL } from "@/constants";
+import { APP_NAME, APP_SHORT_NAME, APP_DESCRIPTION, APP_URL } from "@/constants";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: APP_NAME,
+    title: APP_SHORT_NAME,
   },
   formatDetection: { telephone: false },
   openGraph: {
@@ -47,8 +47,8 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#070710" },
-    { media: "(prefers-color-scheme: light)", color: "#070710" },
+    { media: "(prefers-color-scheme: dark)", color: "#000000" },
+    { media: "(prefers-color-scheme: light)", color: "#000000" },
   ],
 };
 

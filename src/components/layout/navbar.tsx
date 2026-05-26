@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, LayoutGrid, Target, BarChart3, Settings, LogOut, Menu, X, ChevronDown } from "lucide-react";
-import { useState } from "react";
+import { Trophy, LayoutGrid, Target, BarChart3, Settings, LogOut, Menu, X, ChevronDown, Globe2, TrendingUp } from "lucide-react";
+import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
@@ -13,10 +13,12 @@ import { useLogout } from "@/features/auth/hooks/use-auth";
 import { getInitials, cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/dashboard",   label: "Inicio",        icon: LayoutGrid },
-  { href: "/fixtures",    label: "Partidos",       icon: Trophy },
-  { href: "/predictions", label: "Predicciones",   icon: Target },
-  { href: "/rankings",    label: "Ranking",        icon: BarChart3 },
+  { href: "/dashboard",    label: "Inicio",        icon: LayoutGrid },
+  { href: "/fixtures",     label: "Partidos",       icon: Trophy },
+  { href: "/predictions",  label: "Predicciones",   icon: Target },
+  { href: "/rankings",     label: "Ranking",        icon: BarChart3 },
+  { href: "/selecciones",  label: "Selecciones",    icon: Globe2 },
+  { href: "/estadisticas", label: "Estadísticas",   icon: TrendingUp },
 ];
 
 export function Navbar() {
@@ -25,18 +27,28 @@ export function Navbar() {
   const logout = useLogout();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   const isAdmin = (user as { is_admin?: boolean } | null)?.is_admin;
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-50">
         {/* Top border accent */}
-        <div className="h-[2px] bg-gradient-to-r from-[hsl(var(--primary))] via-[hsl(var(--brand-violet))] to-[hsl(var(--accent))]" />
+        <div className="h-[2px] bg-gradient-to-r from-[hsl(var(--primary))] via-[hsl(var(--brand-gold))] to-[hsl(var(--primary))]" />
 
         <div
           className={cn(
-            "glass border-b border-white/5 transition-all duration-300",
+            "transition-all duration-300",
+            scrolled
+              ? "bg-black/80 backdrop-blur-2xl border-b border-white/10 shadow-[0_4px_24px_rgba(0,0,0,0.5)]"
+              : "glass border-b border-white/5",
             mobileOpen ? "border-b-white/10" : ""
           )}
         >
@@ -47,7 +59,7 @@ export function Navbar() {
               <Logo size="sm" variant="full" />
 
               {/* Desktop nav */}
-              <nav className="hidden md:flex items-center gap-1">
+              <nav className="hidden lg:flex items-center gap-0.5">
                 {navItems.map((item) => {
                   const active = pathname.startsWith(item.href);
                   return (
@@ -55,7 +67,7 @@ export function Navbar() {
                       key={item.href}
                       href={item.href}
                       className={cn(
-                        "relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200",
+                        "relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200",
                         active
                           ? "text-white"
                           : "text-muted-foreground hover:text-white hover:bg-white/5"
@@ -68,8 +80,8 @@ export function Navbar() {
                           layoutId="nav-pill"
                           className="absolute inset-0 rounded-lg -z-10"
                           style={{
-                            background: "linear-gradient(135deg, rgba(224,0,27,0.2), rgba(123,47,190,0.2))",
-                            border: "1px solid rgba(224,0,27,0.2)",
+                            background: "linear-gradient(135deg, rgba(29,78,216,0.25), rgba(30,58,138,0.20))",
+                            border: "1px solid rgba(29,78,216,0.30)",
                           }}
                           transition={{ type: "spring", stiffness: 400, damping: 30 }}
                         />
@@ -89,7 +101,7 @@ export function Navbar() {
                     >
                       <Avatar className="h-7 w-7 ring-1 ring-[hsl(var(--primary)/0.4)]">
                         <AvatarImage src={user.avatar_url ?? ""} />
-                        <AvatarFallback className="bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--brand-violet))] text-white text-xs font-bold">
+                        <AvatarFallback className="bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--brand-blue-dark))] text-white text-xs font-bold">
                           {getInitials(user.display_name ?? user.username)}
                         </AvatarFallback>
                       </Avatar>
@@ -115,7 +127,7 @@ export function Navbar() {
                               className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-white/5 transition-colors"
                             >
                               <Avatar className="h-5 w-5">
-                                <AvatarFallback className="bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--brand-violet))] text-white text-[10px]">
+                                <AvatarFallback className="bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--brand-blue-dark))] text-white text-[10px]">
                                   {getInitials(user.display_name ?? user.username)}
                                 </AvatarFallback>
                               </Avatar>
@@ -146,22 +158,22 @@ export function Navbar() {
                   </div>
                 ) : (
                   <div className="hidden md:flex items-center gap-2">
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link href="/auth/login">Entrar</Link>
+                    <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-white">
+                      <Link href="/auth/register">Registrarse</Link>
                     </Button>
                     <Button
                       size="sm"
                       asChild
-                      className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--brand-purple))] text-white hover:opacity-90"
+                      className="bg-[hsl(var(--brand-blue))] hover:bg-[hsl(var(--brand-blue-vivid))] text-white font-semibold shadow-[0_0_16px_rgba(29,78,216,0.4)] hover:shadow-[0_0_24px_rgba(29,78,216,0.6)] transition-all"
                     >
-                      <Link href="/auth/register">Unirse</Link>
+                      <Link href="/auth/login">Iniciar sesión</Link>
                     </Button>
                   </div>
                 )}
 
                 {/* Mobile menu toggle */}
                 <button
-                  className="md:hidden p-2 rounded-lg hover:bg-white/5 transition-colors"
+                  className="lg:hidden p-2 rounded-lg hover:bg-white/5 transition-colors"
                   onClick={() => setMobileOpen((o) => !o)}
                   aria-label="Toggle menu"
                 >
@@ -179,7 +191,7 @@ export function Navbar() {
                 animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="overflow-hidden border-t border-white/5 md:hidden"
+                className="overflow-hidden border-t border-white/5 lg:hidden"
               >
                 <div className="px-4 py-3 space-y-1">
                   {navItems.map((item) => {
@@ -192,7 +204,7 @@ export function Navbar() {
                         className={cn(
                           "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
                           active
-                            ? "bg-gradient-to-r from-[hsl(var(--primary)/0.15)] to-[hsl(var(--brand-purple)/0.15)] text-white border border-[hsl(var(--primary)/0.2)]"
+                            ? "bg-gradient-to-r from-[hsl(var(--primary)/0.15)] to-[hsl(var(--brand-blue-dark)/0.15)] text-white border border-[hsl(var(--primary)/0.2)]"
                             : "text-muted-foreground hover:text-white hover:bg-white/5"
                         )}
                       >
@@ -203,15 +215,15 @@ export function Navbar() {
                   })}
                   {!isAuthenticated && (
                     <div className="pt-2 flex gap-2">
-                      <Button variant="outline" size="sm" className="flex-1" asChild>
-                        <Link href="/auth/login" onClick={() => setMobileOpen(false)}>Entrar</Link>
+                      <Button variant="ghost" size="sm" className="flex-1 text-muted-foreground" asChild>
+                        <Link href="/auth/register" onClick={() => setMobileOpen(false)}>Registrarse</Link>
                       </Button>
                       <Button
                         size="sm"
-                        className="flex-1 bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--brand-purple))] text-white"
+                        className="flex-1 bg-[hsl(var(--brand-blue))] hover:bg-[hsl(var(--brand-blue-vivid))] text-white font-semibold"
                         asChild
                       >
-                        <Link href="/auth/register" onClick={() => setMobileOpen(false)}>Unirse gratis</Link>
+                        <Link href="/auth/login" onClick={() => setMobileOpen(false)}>Iniciar sesión</Link>
                       </Button>
                     </div>
                   )}

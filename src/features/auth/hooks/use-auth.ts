@@ -54,7 +54,12 @@ export function useGoogleLogin() {
   return useMutation({
     mutationFn: () => authService.signInWithGoogle(),
     onError: (error: Error) => {
-      toast.error(error.message ?? "Error con Google");
+      const msg = error.message ?? "";
+      if (msg.includes("provider is not enabled") || msg.includes("validation_failed")) {
+        toast.error("Google OAuth no está activado en Supabase. Actívalo en Authentication → Providers → Google.");
+      } else {
+        toast.error(msg || "Error al iniciar sesión con Google");
+      }
     },
   });
 }

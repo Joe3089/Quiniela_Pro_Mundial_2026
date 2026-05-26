@@ -1,11 +1,11 @@
 {
-  "name": "Quiniela Pro Mundial 2026",
-  "short_name": "Quiniela Pro",
-  "description": "La mejor quiniela del Mundial FIFA 2026",
+  "name": "Quiniela FIFA WORLD CUP 2026",
+  "short_name": "Quiniela WC26",
+  "description": "La quiniela oficial del Mundial FIFA World Cup 2026",
   "start_url": "/dashboard",
   "display": "standalone",
-  "background_color": "#070710",
-  "theme_color": "#E0001B",
+  "background_color": "#000000",
+  "theme_color": "#000000",
   "orientation": "portrait-primary",
   "categories": ["sports", "games"],
   "lang": "es",
@@ -65,12 +65,10 @@
       "purpose": "maskable any"
     }
   ],
-  "related_applications": [],
-  "prefer_related_applications": false,
   "shortcuts": [
     {
       "name": "Mis Predicciones",
-      "short_name": "Picks2026",
+      "short_name": "Picks",
       "description": "Ver y hacer predicciones",
       "url": "/predictions",
       "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]

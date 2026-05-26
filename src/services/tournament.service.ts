@@ -6,12 +6,13 @@ const db = () => createClient() as any;
 
 export const tournamentService = {
   async getActiveTournament(): Promise<TournamentRow | null> {
-    const { data } = await db()
+    const { data, error } = await db()
       .from("tournaments")
       .select("*")
       .eq("is_active", true)
       .eq("slug", "mundial-2026")
-      .single();
+      .maybeSingle();
+    if (error) console.error("[tournament] fetch error:", error);
     return (data as TournamentRow) ?? null;
   },
 };

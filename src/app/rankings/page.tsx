@@ -9,8 +9,8 @@ export default function RankingsPage() {
     <div className="max-w-3xl mx-auto px-4 py-8">
       <div className="mb-6">
         <h1 className="text-2xl font-black tracking-tight flex items-center gap-2">
-          <div className="h-8 w-8 rounded-xl bg-[hsl(var(--brand-violet)/0.15)] flex items-center justify-center">
-            <BarChart3 className="h-4 w-4 text-[hsl(var(--brand-violet))]" />
+          <div className="h-8 w-8 rounded-xl bg-[hsl(var(--brand-blue)/0.18)] flex items-center justify-center">
+            <BarChart3 className="h-4 w-4 text-[hsl(var(--brand-blue-light))]" />
           </div>
           <span className="text-gradient-vivid">Ranking</span>
           <span>Global</span>

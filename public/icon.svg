@@ -1,43 +1,92 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
   <defs>
-    <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#E0001B"/>
-      <stop offset="50%" stop-color="#7B2FBE"/>
-      <stop offset="100%" stop-color="#B5E317"/>
+    <linearGradient id="bg-grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"   stop-color="#050A18"/>
+      <stop offset="50%"  stop-color="#000814"/>
+      <stop offset="100%" stop-color="#000000"/>
     </linearGradient>
-    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#FFE082"/>
-      <stop offset="60%" stop-color="#FFC93C"/>
-      <stop offset="100%" stop-color="#E6920A"/>
+    <linearGradient id="trophy-gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#FFF5C0"/>
+      <stop offset="35%"  stop-color="#FFD700"/>
+      <stop offset="100%" stop-color="#A86900"/>
     </linearGradient>
+    <linearGradient id="trophy-body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#FFE96B"/>
+      <stop offset="45%"  stop-color="#FFC200"/>
+      <stop offset="100%" stop-color="#B87A00"/>
+    </linearGradient>
+    <linearGradient id="blue-accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#22C55E"/>
+      <stop offset="40%"  stop-color="#1D4ED8"/>
+      <stop offset="100%" stop-color="#EF4444"/>
+    </linearGradient>
+    <filter id="glow-soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="glow-strong" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <radialGradient id="gold-halo" cx="50%" cy="40%" r="35%">
+      <stop offset="0%"   stop-color="#F5A500" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#F5A500" stop-opacity="0"/>
+    </radialGradient>
   </defs>
 
-  <!-- Black background -->
-  <circle cx="50" cy="50" r="50" fill="#070710"/>
+  <!-- Background -->
+  <rect width="120" height="120" fill="url(#bg-grad)"/>
 
-  <!-- Gradient ring border -->
-  <circle cx="50" cy="50" r="47" fill="none" stroke="url(#ring)" stroke-width="4"/>
+  <!-- Gold halo behind trophy -->
+  <ellipse cx="60" cy="44" rx="28" ry="22" fill="url(#gold-halo)"/>
 
-  <!-- "2" left -->
-  <text x="17" y="72"
+  <!-- Tricolor top accent bar -->
+  <rect x="0" y="0" width="120" height="2.5" fill="url(#blue-accent)" opacity="0.9"/>
+
+  <!-- "2" bold white -->
+  <text x="6" y="96"
     font-family="Arial Black, Impact, 'Helvetica Neue', sans-serif"
-    font-size="54" font-weight="900" fill="white" opacity="0.90">2</text>
+    font-size="88" font-weight="900"
+    fill="white" opacity="0.9">2</text>
 
-  <!-- "6" right -->
-  <text x="52" y="72"
+  <!-- "6" bold white -->
+  <text x="62" y="96"
     font-family="Arial Black, Impact, 'Helvetica Neue', sans-serif"
-    font-size="54" font-weight="900" fill="white" opacity="0.90">6</text>
+    font-size="88" font-weight="900"
+    fill="white" opacity="0.9">6</text>
 
-  <!-- Trophy cup body -->
-  <path d="M37 24h26v7h5v9a13 13 0 01-13 13 13 13 0 01-13-13v-9h5z"
-    fill="url(#gold)"/>
-  <!-- Trophy stem -->
-  <rect x="46" y="50" width="8" height="8" rx="1" fill="url(#gold)"/>
-  <!-- Trophy base layers -->
-  <rect x="40" y="58" width="20" height="4" rx="2" fill="url(#gold)"/>
-  <rect x="35" y="62" width="30" height="5" rx="2.5" fill="url(#gold)"/>
+  <!-- Trophy cup body (raised slightly for better positioning) -->
+  <path d="M44 18 h32 v10 h6 v12 a16 16 0 0 1-16 16 a16 16 0 0 1-16-16 V28 h6 z"
+    fill="url(#trophy-body)" filter="url(#glow-soft)"/>
 
-  <!-- Lime accent dots on cup sides -->
-  <circle cx="32" cy="38" r="4" fill="#B5E317" opacity="0.85"/>
-  <circle cx="68" cy="38" r="4" fill="#B5E317" opacity="0.85"/>
+  <!-- Cup handles -->
+  <path d="M44 30 h-8 a8 8 0 0 0 0 16 h4"
+    fill="none" stroke="url(#trophy-gold)" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M76 30 h8 a8 8 0 0 1 0 16 h-4"
+    fill="none" stroke="url(#trophy-gold)" stroke-width="3.5" stroke-linecap="round"/>
+
+  <!-- Star on cup -->
+  <text x="60" y="44"
+    font-family="Arial, sans-serif"
+    font-size="10" text-anchor="middle"
+    fill="#FFF5C0" opacity="0.9">★</text>
+
+  <!-- Stem -->
+  <rect x="57" y="56" width="6" height="11" rx="2" fill="url(#trophy-body)"/>
+
+  <!-- Base layers -->
+  <rect x="49" y="67" width="22" height="4.5" rx="2.2" fill="url(#trophy-body)"/>
+  <rect x="43" y="71" width="34" height="5.5" rx="2.8" fill="url(#trophy-gold)" filter="url(#glow-strong)"/>
+
+  <!-- "FIFA WC" text at bottom -->
+  <text x="60" y="113"
+    font-family="Arial Black, Impact, 'Helvetica Neue', sans-serif"
+    font-size="9.5" font-weight="900"
+    fill="white" text-anchor="middle" letter-spacing="2" opacity="0.85">FIFA WC</text>
 </svg>
