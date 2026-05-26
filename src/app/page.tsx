@@ -94,43 +94,43 @@ function CityRevealPanels() {
 }
 
 /* ════════════════════════════════════════════════════════
-   TROPHY OVERLAY — tapa copa + logo del fondo, muestra
-   nuestra imagen girando
+   TROPHY OVERLAY — cubre SOLO el borde derecho donde está
+   la copa estática; deja visible la ciudad de Toronto a
+   su izquierda.
    ════════════════════════════════════════════════════════ */
 function TrophyOverlay() {
   return (
     <>
-      {/* Capa opaca permanente que cubre copa estática + logo del fondo.
-          Siempre visible (sin retraso) para que nunca se vea el fondo. */}
+      {/* Cover estrecho: solo el 17% derecho (donde está la copa del fondo).
+          Toronto/CN Tower queda visible en el resto del panel rojo. */}
       <div
         className="absolute right-0 top-0 bottom-0 pointer-events-none z-20"
         style={{
-          width: "28%",
-          background:
-            "linear-gradient(90deg, transparent 0%, rgba(6,2,2,0.92) 12%, #060202 35%)",
-        }}
-      />
-      {/* Fade inferior extra — cubre el logo FIFA del fondo */}
-      <div
-        className="absolute bottom-0 right-0 pointer-events-none z-21"
-        style={{
-          width: "35%",
-          height: "40%",
-          background:
-            "linear-gradient(to top, #080c18 30%, rgba(8,12,24,0.85) 65%, transparent 100%)",
+          width: "17%",
+          background: "linear-gradient(90deg, transparent 0%, rgba(6,2,2,0.88) 20%, #060202 55%)",
         }}
       />
 
-      {/* Copa girando — aparece con animación tras la secuencia */}
+      {/* Fade inferior: tapa el logo FIFA que aparece abajo a la derecha */}
+      <div
+        className="absolute bottom-0 right-0 pointer-events-none z-20"
+        style={{
+          width: "42%",
+          height: "38%",
+          background: "linear-gradient(to top, #080c18 35%, rgba(8,12,24,0.65) 70%, transparent 100%)",
+        }}
+      />
+
+      {/* Copa girando — aparece al final de la secuencia */}
       <motion.div
         className="absolute right-0 top-0 bottom-0 flex items-center justify-end pointer-events-none z-22"
-        style={{ width: "28%" }}
+        style={{ width: "17%" }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 2.10, duration: 0.60, ease: "easeOut" }}
       >
-        <div className="relative z-10 pr-3 md:pr-5">
-          <TrophyImage size={180} />
+        <div className="relative z-10 pr-2 md:pr-3">
+          <TrophyImage size={150} />
         </div>
       </motion.div>
     </>
