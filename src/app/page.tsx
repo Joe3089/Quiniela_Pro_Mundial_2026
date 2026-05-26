@@ -10,68 +10,39 @@ import {
 import { Button } from "@/components/ui/button";
 
 /* ════════════════════════════════════════════════════════
-   FIFA WORLD CUP TROPHY — spinning SVG overlay
+   TROPHY — imagen real con rotación 3D
    ════════════════════════════════════════════════════════ */
-function FIFATrophy({ size = 200 }: { size?: number }) {
-  const h = Math.round(size * 1.28);
+function TrophyImage({ size = 200 }: { size?: number }) {
   return (
-    <svg width={size} height={h} viewBox="0 0 100 128" aria-hidden fill="none">
-      <defs>
-        <linearGradient id="tg-v" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"   stopColor="#FFF9C0"/>
-          <stop offset="18%"  stopColor="#FFE566"/>
-          <stop offset="55%"  stopColor="#F5A500"/>
-          <stop offset="100%" stopColor="#7A4A00"/>
-        </linearGradient>
-        <linearGradient id="tg-h" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%"   stopColor="#6B3800"/>
-          <stop offset="35%"  stopColor="#FFD700"/>
-          <stop offset="65%"  stopColor="#FFE88A"/>
-          <stop offset="100%" stopColor="#A06000"/>
-        </linearGradient>
-        <linearGradient id="tg-shine" x1="0.2" y1="0" x2="0.5" y2="1">
-          <stop offset="0%"   stopColor="rgba(255,255,255,0.32)"/>
-          <stop offset="100%" stopColor="rgba(255,255,255,0)"/>
-        </linearGradient>
-        <radialGradient id="tg-amb" cx="50%" cy="60%" r="55%">
-          <stop offset="0%"   stopColor="rgba(255,200,0,0.22)"/>
-          <stop offset="100%" stopColor="rgba(255,200,0,0)"/>
-        </radialGradient>
-        <filter id="tg-drop">
-          <feDropShadow dx="0" dy="3" stdDeviation="4" floodColor="rgba(0,0,0,0.65)"/>
-        </filter>
-        <filter id="tg-glow">
-          <feGaussianBlur stdDeviation="2.5" result="b"/>
-          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-        </filter>
-      </defs>
-      <ellipse cx="50" cy="70" rx="46" ry="54" fill="url(#tg-amb)" opacity="0.9"/>
-      {/* base */}
-      <rect x="20" y="110" width="60" height="12" rx="5" fill="#1b6b38"/>
-      <rect x="24" y="113" width="52" height="6"  rx="3" fill="#28883f"/>
-      <rect x="18" y="108" width="64" height="5"  rx="2.5" fill="url(#tg-v)"/>
-      <rect x="22" y="106" width="56" height="4"  rx="2" fill="url(#tg-h)" opacity="0.9"/>
-      {/* stem */}
-      <path d="M43 78 L43 106 L57 106 L57 78Z" fill="url(#tg-v)"/>
-      <rect x="43" y="78" width="5" height="28" rx="1" fill="rgba(255,255,255,0.18)"/>
-      {/* body */}
-      <path d="M44 78 C42 68 26 56 22 42 C18 28 25 14 33 10 C39 6 46 6 50 9 C54 6 61 6 67 10 C75 14 82 28 78 42 C74 56 58 68 56 78Z"
-        fill="url(#tg-v)" filter="url(#tg-drop)"/>
-      <path d="M50 9 C54 6 61 6 67 10 C75 14 82 28 78 42 C74 56 58 68 56 78 L50 78Z"
-        fill="url(#tg-h)" opacity="0.55"/>
-      <path d="M32 72 C20 58 17 42 24 30 C28 20 36 14 44 12" stroke="rgba(255,248,160,0.38)" strokeWidth="1.6" strokeLinecap="round"/>
-      <path d="M68 72 C80 58 83 42 76 30 C72 20 64 14 56 12" stroke="rgba(255,248,160,0.38)" strokeWidth="1.6" strokeLinecap="round"/>
-      <path d="M44 74 C44 68 47 64 50 64 C53 64 56 68 56 74" stroke="rgba(0,0,0,0.22)" strokeWidth="2.2" fill="none"/>
-      <path d="M32 68 C22 52 20 34 28 22 C32 14 38 10 44 9 C38 13 32 22 30 36 C28 50 32 64 38 72Z" fill="url(#tg-shine)" opacity="0.85"/>
-      {/* globe */}
-      <circle cx="50" cy="12" r="11.5" stroke="url(#tg-v)" strokeWidth="2.5" filter="url(#tg-glow)"/>
-      <ellipse cx="50" cy="12" rx="6.5" ry="11.5" stroke="rgba(255,222,80,0.55)" strokeWidth="1.2"/>
-      <line x1="38.5" y1="12"   x2="61.5" y2="12"   stroke="rgba(255,222,80,0.55)" strokeWidth="1.2"/>
-      <line x1="38.5" y1="7.2"  x2="61.5" y2="7.2"  stroke="rgba(255,222,80,0.30)" strokeWidth="0.8"/>
-      <line x1="38.5" y1="16.8" x2="61.5" y2="16.8" stroke="rgba(255,222,80,0.30)" strokeWidth="0.8"/>
-      <line x1="50"   y1="0.5"  x2="50"   y2="23.5" stroke="rgba(255,222,80,0.32)" strokeWidth="0.8"/>
-      <path d="M44 5 C44 3 47 1.5 49 1.5 A10 10 0 0 0 43 7Z" fill="rgba(255,255,255,0.28)"/>
-    </svg>
+    <div
+      className="relative"
+      style={{ width: size, height: size * 1.25, perspective: "900px" }}
+    >
+      {/* halo dorado detrás */}
+      <div
+        className="absolute inset-0 rounded-full"
+        style={{
+          background: "radial-gradient(circle at 50% 60%, rgba(245,165,0,0.35) 0%, transparent 65%)",
+          animation: "pulse-glow 3s ease-in-out infinite",
+          transform: "scale(1.4)",
+        }}
+      />
+      {/* imagen girando */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/trophy.png"
+        alt="FIFA World Cup Trophy"
+        width={size}
+        height={size * 1.25}
+        className="trophy-spin-photo relative z-10"
+        style={{
+          objectFit: "contain",
+          width: size,
+          height: size * 1.25,
+          filter: "drop-shadow(0 8px 32px rgba(245,165,0,0.65)) drop-shadow(0 0 60px rgba(245,165,0,0.30))",
+        }}
+      />
+    </div>
   );
 }
 
@@ -149,22 +120,9 @@ function TrophyOverlay() {
         style={{ background: "linear-gradient(to top,#080c18 0%,rgba(8,12,24,0.5) 60%,transparent 100%)" }}
       />
 
-      {/* Trophy SVG giratorio */}
+      {/* Trofeo real girando */}
       <div className="relative z-10 pr-2 md:pr-4">
-        {/* halo dorado */}
-        <div
-          className="absolute rounded-full"
-          style={{
-            inset: "-55%",
-            background: "radial-gradient(circle,rgba(245,165,0,0.28) 0%,transparent 65%)",
-            animation: "pulse-glow 3s ease-in-out infinite",
-          }}
-        />
-        <div className="absolute inset-4 rounded-full border border-[rgba(245,165,0,.20)]"
-          style={{ animation: "pulse-glow 3s ease-in-out infinite" }}/>
-        <div className="trophy-spin-3d" style={{ perspective: "700px" }}>
-          <FIFATrophy size={180} />
-        </div>
+        <TrophyImage size={180} />
       </div>
     </motion.div>
   );

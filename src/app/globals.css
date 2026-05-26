@@ -266,6 +266,14 @@
     transform-style: preserve-3d;
   }
 
+  /* Real trophy photo — smooth Y rotation */
+  .trophy-spin-photo {
+    animation: trophy-spin-photo 10s ease-in-out infinite;
+    transform-origin: center center;
+    transform-style: preserve-3d;
+    display: block;
+  }
+
   /* Soccer ball float + slow spin combined */
   .soccer-float {
     animation: soccer-float-spin 18s linear infinite;
@@ -348,6 +356,16 @@
 @keyframes tri-sweep {
   0%,100% { opacity: 0.18; transform: translateX(0); }
   50%     { opacity: 0.28; transform: translateX(8px); }
+}
+
+/* Real trophy photo — rotateY with float */
+@keyframes trophy-spin-photo {
+  0%   { transform: perspective(900px) rotateY(0deg)   translateY(0px);   filter: drop-shadow(0 8px 32px rgba(245,165,0,.65)) drop-shadow(0 0 60px rgba(245,165,0,.30)); }
+  20%  { transform: perspective(900px) rotateY(72deg)  translateY(-8px);  filter: drop-shadow(0 12px 40px rgba(245,165,0,.85)) drop-shadow(0 0 80px rgba(245,165,0,.45)); }
+  40%  { transform: perspective(900px) rotateY(144deg) translateY(-14px); filter: drop-shadow(0 16px 48px rgba(245,165,0,1.0)) drop-shadow(0 0 90px rgba(245,165,0,.55)); }
+  60%  { transform: perspective(900px) rotateY(216deg) translateY(-8px);  filter: drop-shadow(0 12px 40px rgba(245,165,0,.85)) drop-shadow(0 0 80px rgba(245,165,0,.45)); }
+  80%  { transform: perspective(900px) rotateY(288deg) translateY(-4px);  filter: drop-shadow(0 10px 36px rgba(245,165,0,.72)) drop-shadow(0 0 70px rgba(245,165,0,.38)); }
+  100% { transform: perspective(900px) rotateY(360deg) translateY(0px);   filter: drop-shadow(0 8px 32px rgba(245,165,0,.65)) drop-shadow(0 0 60px rgba(245,165,0,.30)); }
 }
 
 /* Trophy 3-D Y-axis spin with float */
