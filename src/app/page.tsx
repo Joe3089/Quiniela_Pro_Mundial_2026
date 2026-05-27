@@ -10,19 +10,20 @@ import {
 import { Button } from "@/components/ui/button";
 
 /* ════════════════════════════════════════════════════════
-   TROPHY — imagen real llenando el panel, rotación 3D
+   TROPHY — imagen real llenando el panel, rotación 3D.
+   Fondo transparente para que se integre con la foto.
    ════════════════════════════════════════════════════════ */
 function TrophyImage() {
   return (
     <div
       className="relative w-full h-full"
-      style={{ perspective: "1200px", background: "#060202" }}
+      style={{ perspective: "1200px" }}
     >
       {/* halo dorado detrás */}
       <div
         className="absolute inset-0"
         style={{
-          background: "radial-gradient(circle at 50% 55%, rgba(245,165,0,0.28) 0%, transparent 60%)",
+          background: "radial-gradient(ellipse 70% 60% at 50% 55%, rgba(245,165,0,0.22) 0%, transparent 65%)",
           animation: "pulse-glow 3s ease-in-out infinite",
         }}
       />
@@ -33,7 +34,7 @@ function TrophyImage() {
         className="trophy-spin-photo relative z-10 w-full h-full"
         style={{
           objectFit: "contain",
-          objectPosition: "center center",
+          objectPosition: "center 42%",
           filter: "drop-shadow(0 8px 32px rgba(245,165,0,0.65)) drop-shadow(0 0 60px rgba(245,165,0,0.30))",
         }}
       />
@@ -73,11 +74,11 @@ function CityRevealPanels() {
         }}
       />
 
-      {/* Panel Toronto/trofeo (rojo) — sale tercero, queda tenue para no tapar el trofeo del fondo */}
+      {/* Panel Toronto (rojo) — sale tercero, se va a 0 para revelar la ciudad */}
       <motion.div
         className="absolute inset-0"
         initial={{ opacity: 1 }}
-        animate={{ opacity: 0.08 }}
+        animate={{ opacity: 0 }}
         transition={{ delay: 1.65, duration: 0.75, ease: "easeInOut" }}
         style={{
           clipPath: "polygon(81% 0%,100% 0%,100% 100%,65% 100%)",
@@ -89,39 +90,48 @@ function CityRevealPanels() {
 }
 
 /* ════════════════════════════════════════════════════════
-   TROPHY OVERLAY — cubre el panel derecho con la copa del
-   fondo y la reemplaza con la copa animada del mismo tamaño.
-   Toronto/CN Tower sigue visible en el panel rojo anterior.
+   TROPHY OVERLAY — cubre solo la copa estática del fondo
+   (18% derecho) con un gradiente suave que se funde con la
+   foto. La copa animada llena ese mismo espacio y gira.
    ════════════════════════════════════════════════════════ */
 function TrophyOverlay() {
   return (
     <>
-      {/* Cover: oculta la copa estática del fondo */}
+      {/* Cover gradual: la transición empieza temprano para que no
+          haya un borde duro visible entre la foto y el panel oscuro */}
       <div
         className="absolute right-0 top-0 bottom-0 pointer-events-none z-20"
         style={{
-          width: "22%",
-          background: "linear-gradient(90deg, transparent 0%, rgba(6,2,2,0.92) 14%, #060202 38%)",
+          width: "28%",
+          background:
+            "linear-gradient(90deg," +
+            "transparent 0%," +
+            "rgba(6,2,2,0.20) 20%," +
+            "rgba(6,2,2,0.72) 42%," +
+            "rgba(6,2,2,0.95) 62%," +
+            "#060202 78%)",
         }}
       />
 
-      {/* Fade inferior fuerte: tapa el logo FIFA/CANADÁ 2026 */}
+      {/* Fade inferior esquina: solo tapa el logo FIFA sin cubrir los stats.
+          zIndex 9 = por debajo del contenido (z-10) */}
       <div
-        className="absolute bottom-0 right-0 pointer-events-none z-20"
+        className="absolute bottom-0 right-0 pointer-events-none"
         style={{
-          width: "60%",
-          height: "52%",
-          background: "linear-gradient(to top, #080c18 48%, rgba(8,12,24,0.80) 72%, transparent 100%)",
+          width: "22%",
+          height: "30%",
+          zIndex: 9,
+          background: "linear-gradient(to top, rgba(6,2,2,0.98) 35%, rgba(6,2,2,0.65) 65%, transparent 100%)",
         }}
       />
 
-      {/* Copa girando — llena exactamente el panel derecho, aparece pronto */}
+      {/* Copa girando — ocupa el panel derecho oscuro */}
       <motion.div
         className="absolute right-0 top-0 bottom-0 pointer-events-none"
-        style={{ width: "22%", zIndex: 22 }}
+        style={{ width: "20%", zIndex: 22 }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.25, duration: 1.10, ease: "easeOut" }}
+        transition={{ delay: 0.25, duration: 1.20, ease: "easeOut" }}
       >
         <TrophyImage />
       </motion.div>
@@ -202,7 +212,7 @@ export default function HomePage() {
         />
 
         {/* CONTENIDO */}
-        <div className="relative z-10 max-w-[1400px] mx-auto w-full">
+        <div className="relative z-[30] max-w-[1400px] mx-auto w-full">
           <div className="flex flex-col min-h-[520px] md:min-h-[580px] lg:min-h-[620px] justify-center">
 
             <div className="px-5 md:px-10 lg:px-14 py-16 md:py-20 w-full md:max-w-[50%] lg:max-w-[46%] text-center md:text-left">
