@@ -36,7 +36,8 @@ export const metadata: Metadata = {
     description: APP_DESCRIPTION,
   },
   icons: {
-    icon: "/logo-icon.png",
+    icon: [{ url: "/logo-icon.png", type: "image/png" }],
+    shortcut: "/logo-icon.png",
     apple: "/logo-icon.png",
   },
 };
