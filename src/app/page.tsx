@@ -20,7 +20,7 @@ function TrophyImage() {
       <img
         src="/trophy.png"
         alt=""
-        className="trophy-spin-photo absolute inset-0 w-full h-full"
+        className="absolute inset-0 w-full h-full"
         style={{
           objectFit: "contain",
           objectPosition: "center 40%",
