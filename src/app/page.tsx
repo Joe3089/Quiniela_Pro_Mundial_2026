@@ -33,53 +33,6 @@ function TrophyImage() {
 }
 
 /* ════════════════════════════════════════════════════════
-   CITY REVEAL PANELS — colored covers that fade away
-   in sequence to reveal the photo underneath
-   ════════════════════════════════════════════════════════ */
-function CityRevealPanels() {
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden>
-
-      {/* Panel balón + México (verde) — sale primero */}
-      <motion.div
-        className="absolute inset-0"
-        initial={{ opacity: 1 }}
-        animate={{ opacity: 0 }}
-        transition={{ delay: 0.55, duration: 0.70, ease: "easeInOut" }}
-        style={{
-          clipPath: "polygon(33% 0%,60% 0%,44% 100%,15% 100%)",
-          background: "linear-gradient(175deg,#1d7038 0%,#0e4020 50%,#041408 100%)",
-        }}
-      />
-
-      {/* Panel Nueva York (azul) — sale segundo */}
-      <motion.div
-        className="absolute inset-0"
-        initial={{ opacity: 1 }}
-        animate={{ opacity: 0 }}
-        transition={{ delay: 1.10, duration: 0.70, ease: "easeInOut" }}
-        style={{
-          clipPath: "polygon(60% 0%,81% 0%,65% 100%,44% 100%)",
-          background: "linear-gradient(175deg,#0c2060 0%,#071440 50%,#020818 100%)",
-        }}
-      />
-
-      {/* Panel Toronto (rojo) — sale tercero, se va a 0 para revelar la ciudad */}
-      <motion.div
-        className="absolute inset-0"
-        initial={{ opacity: 1 }}
-        animate={{ opacity: 0 }}
-        transition={{ delay: 1.65, duration: 0.75, ease: "easeInOut" }}
-        style={{
-          clipPath: "polygon(81% 0%,100% 0%,100% 100%,65% 100%)",
-          background: "linear-gradient(175deg,#880e0e 0%,#500808 50%,#1e0202 100%)",
-        }}
-      />
-    </div>
-  );
-}
-
-/* ════════════════════════════════════════════════════════
    TROPHY OVERLAY — sin panel oscuro. La copa usa screen
    blend y se integra directo sobre la foto. Solo un fade
    pequeño cubre el logo FIFA del fondo.
@@ -153,36 +106,27 @@ export default function HomePage() {
           aria-hidden
         />
 
-        {/* Panels de ciudad que se van revelando */}
-        <CityRevealPanels />
-
-        {/* Trofeo giratorio (aparece al final de la secuencia) */}
+        {/* Copa giratoria */}
         <TrophyOverlay />
 
-        {/* Overlay izquierdo para legibilidad del texto */}
+        {/* Overlay izquierdo — solo oscurece lo necesario para leer el texto */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
             background:
               "linear-gradient(90deg," +
-              "rgba(5,8,16,0.97) 0%," +
-              "rgba(5,8,16,0.94) 16%," +
-              "rgba(5,8,16,0.78) 28%," +
-              "rgba(5,8,16,0.40) 40%," +
-              "rgba(5,8,16,0.08) 54%," +
-              "transparent 66%)",
+              "rgba(3,6,14,0.92) 0%," +
+              "rgba(3,6,14,0.85) 18%," +
+              "rgba(3,6,14,0.55) 30%," +
+              "rgba(3,6,14,0.18) 42%," +
+              "transparent 54%)",
           }}
         />
 
-        {/* Fade inferior */}
+        {/* Fade inferior sutil — solo la transición a la sección de abajo */}
         <div
-          className="absolute bottom-0 inset-x-0 h-32 pointer-events-none"
-          style={{ background: "linear-gradient(to top,#080c18 0%,rgba(8,12,24,0.55) 55%,transparent 100%)" }}
-        />
-        {/* Fade superior */}
-        <div
-          className="absolute top-0 inset-x-0 h-14 pointer-events-none"
-          style={{ background: "linear-gradient(to bottom,rgba(5,8,16,0.55),transparent)" }}
+          className="absolute bottom-0 inset-x-0 h-20 pointer-events-none"
+          style={{ background: "linear-gradient(to top,rgba(5,8,16,0.80) 0%,transparent 100%)" }}
         />
 
         {/* CONTENIDO */}
