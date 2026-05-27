@@ -19,7 +19,7 @@ function TrophyImage() {
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/trophy.png"
-        alt="FIFA World Cup Trophy"
+        alt=""
         className="trophy-spin-photo absolute inset-0 w-full h-full"
         style={{
           objectFit: "contain",
@@ -33,40 +33,52 @@ function TrophyImage() {
 }
 
 /* ════════════════════════════════════════════════════════
-   TROPHY OVERLAY — sin panel oscuro. La copa usa screen
-   blend y se integra directo sobre la foto. Solo un fade
-   pequeño cubre el logo FIFA del fondo.
+   CITY REVEAL PANELS — paneles de color que se desvanecen
+   para revelar cada ciudad de forma animada.
+   ════════════════════════════════════════════════════════ */
+function CityRevealPanels() {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden>
+      {/* Balón + México (verde) */}
+      <motion.div
+        className="absolute inset-0"
+        initial={{ opacity: 1 }} animate={{ opacity: 0 }}
+        transition={{ delay: 0.6, duration: 0.8, ease: "easeInOut" }}
+        style={{ clipPath: "polygon(30% 0%,56% 0%,42% 100%,13% 100%)", background: "linear-gradient(175deg,#1d7038 0%,#0a3018 60%,#020c06 100%)" }}
+      />
+      {/* Nueva York (azul) */}
+      <motion.div
+        className="absolute inset-0"
+        initial={{ opacity: 1 }} animate={{ opacity: 0 }}
+        transition={{ delay: 1.2, duration: 0.8, ease: "easeInOut" }}
+        style={{ clipPath: "polygon(56% 0%,79% 0%,65% 100%,42% 100%)", background: "linear-gradient(175deg,#0c2060 0%,#071440 60%,#020818 100%)" }}
+      />
+      {/* Toronto (rojo) */}
+      <motion.div
+        className="absolute inset-0"
+        initial={{ opacity: 1 }} animate={{ opacity: 0 }}
+        transition={{ delay: 1.8, duration: 0.8, ease: "easeInOut" }}
+        style={{ clipPath: "polygon(79% 0%,100% 0%,100% 100%,65% 100%)", background: "linear-gradient(175deg,#880e0e 0%,#500808 60%,#1e0202 100%)" }}
+      />
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════
+   TROPHY OVERLAY — copa giratoria sobre la foto.
+   El fade inferior se maneja en el hero, no aquí.
    ════════════════════════════════════════════════════════ */
 function TrophyOverlay() {
   return (
-    <>
-      {/* Cubre el texto del banner original en la zona inferior derecha */}
-      <div
-        className="absolute bottom-0 right-0 pointer-events-none"
-        style={{
-          width: "55%",
-          height: "38%",
-          zIndex: 9,
-          background:
-            "linear-gradient(135deg," +
-            "transparent 0%," +
-            "rgba(4,1,1,0.60) 35%," +
-            "rgba(4,1,1,0.95) 65%," +
-            "rgba(4,1,1,0.99) 100%)",
-        }}
-      />
-
-      {/* Copa girando — sin fondo oscuro, screen blend la integra a la foto */}
-      <motion.div
-        className="absolute right-0 top-0 bottom-0 pointer-events-none"
-        style={{ width: "22%", zIndex: 22 }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.20, duration: 1.10, ease: "easeOut" }}
-      >
-        <TrophyImage />
-      </motion.div>
-    </>
+    <motion.div
+      className="absolute right-0 top-0 bottom-0 pointer-events-none"
+      style={{ width: "22%", zIndex: 22 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: 0.20, duration: 1.10, ease: "easeOut" }}
+    >
+      <TrophyImage />
+    </motion.div>
   );
 }
 
@@ -110,6 +122,9 @@ export default function HomePage() {
           aria-hidden
         />
 
+        {/* Ciudades animadas */}
+        <CityRevealPanels />
+
         {/* Copa giratoria */}
         <TrophyOverlay />
 
@@ -127,10 +142,13 @@ export default function HomePage() {
           }}
         />
 
-        {/* Fade inferior sutil — solo la transición a la sección de abajo */}
+        {/* Fade inferior uniforme — cubre texto del banner y transiciona suavemente */}
         <div
-          className="absolute bottom-0 inset-x-0 h-20 pointer-events-none"
-          style={{ background: "linear-gradient(to top,rgba(5,8,16,0.80) 0%,transparent 100%)" }}
+          className="absolute bottom-0 inset-x-0 pointer-events-none"
+          style={{
+            height: "42%",
+            background: "linear-gradient(to top, rgba(3,6,14,0.97) 0%, rgba(3,6,14,0.70) 30%, rgba(3,6,14,0.25) 60%, transparent 100%)",
+          }}
         />
 
         {/* CONTENIDO */}
