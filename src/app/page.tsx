@@ -10,32 +10,22 @@ import {
 import { Button } from "@/components/ui/button";
 
 /* ════════════════════════════════════════════════════════
-   TROPHY — imagen real llenando el panel, rotación 3D.
-   Fondo transparente para que se integre con la foto.
+   TROPHY — mix-blend-mode: screen elimina el fondo oscuro
+   del PNG dejando solo la copa dorada sobre la foto.
    ════════════════════════════════════════════════════════ */
 function TrophyImage() {
   return (
-    <div
-      className="relative w-full h-full"
-      style={{ perspective: "1200px" }}
-    >
-      {/* halo dorado detrás */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background: "radial-gradient(ellipse 70% 60% at 50% 55%, rgba(245,165,0,0.22) 0%, transparent 65%)",
-          animation: "pulse-glow 3s ease-in-out infinite",
-        }}
-      />
+    <div className="relative w-full h-full" style={{ perspective: "1200px" }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/trophy.png"
         alt="FIFA World Cup Trophy"
-        className="trophy-spin-photo relative z-10 w-full h-full"
+        className="trophy-spin-photo absolute inset-0 w-full h-full"
         style={{
           objectFit: "contain",
-          objectPosition: "center 42%",
-          filter: "drop-shadow(0 8px 32px rgba(245,165,0,0.65)) drop-shadow(0 0 60px rgba(245,165,0,0.30))",
+          objectPosition: "center 40%",
+          mixBlendMode: "screen",
+          filter: "drop-shadow(0 4px 28px rgba(245,165,0,0.55)) drop-shadow(0 0 50px rgba(245,165,0,0.28))",
         }}
       />
     </div>
@@ -90,48 +80,32 @@ function CityRevealPanels() {
 }
 
 /* ════════════════════════════════════════════════════════
-   TROPHY OVERLAY — cubre solo la copa estática del fondo
-   (18% derecho) con un gradiente suave que se funde con la
-   foto. La copa animada llena ese mismo espacio y gira.
+   TROPHY OVERLAY — sin panel oscuro. La copa usa screen
+   blend y se integra directo sobre la foto. Solo un fade
+   pequeño cubre el logo FIFA del fondo.
    ════════════════════════════════════════════════════════ */
 function TrophyOverlay() {
   return (
     <>
-      {/* Cover gradual: la transición empieza temprano para que no
-          haya un borde duro visible entre la foto y el panel oscuro */}
-      <div
-        className="absolute right-0 top-0 bottom-0 pointer-events-none z-20"
-        style={{
-          width: "28%",
-          background:
-            "linear-gradient(90deg," +
-            "transparent 0%," +
-            "rgba(6,2,2,0.20) 20%," +
-            "rgba(6,2,2,0.72) 42%," +
-            "rgba(6,2,2,0.95) 62%," +
-            "#060202 78%)",
-        }}
-      />
-
-      {/* Fade inferior esquina: solo tapa el logo FIFA sin cubrir los stats.
-          zIndex 9 = por debajo del contenido (z-10) */}
+      {/* Cubre solo el logo FIFA en la esquina inferior derecha.
+          z-index 9: queda por debajo del contenido/stats */}
       <div
         className="absolute bottom-0 right-0 pointer-events-none"
         style={{
-          width: "22%",
-          height: "30%",
+          width: "24%",
+          height: "22%",
           zIndex: 9,
-          background: "linear-gradient(to top, rgba(6,2,2,0.98) 35%, rgba(6,2,2,0.65) 65%, transparent 100%)",
+          background: "linear-gradient(to top, rgba(5,1,1,0.97) 38%, rgba(5,1,1,0.50) 68%, transparent 100%)",
         }}
       />
 
-      {/* Copa girando — ocupa el panel derecho oscuro */}
+      {/* Copa girando — sin fondo oscuro, screen blend la integra a la foto */}
       <motion.div
         className="absolute right-0 top-0 bottom-0 pointer-events-none"
-        style={{ width: "20%", zIndex: 22 }}
+        style={{ width: "22%", zIndex: 22 }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.25, duration: 1.20, ease: "easeOut" }}
+        transition={{ delay: 0.20, duration: 1.10, ease: "easeOut" }}
       >
         <TrophyImage />
       </motion.div>
