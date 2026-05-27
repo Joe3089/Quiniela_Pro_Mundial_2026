@@ -40,15 +40,19 @@ function TrophyImage() {
 function TrophyOverlay() {
   return (
     <>
-      {/* Cubre solo el logo FIFA en la esquina inferior derecha.
-          z-index 9: queda por debajo del contenido/stats */}
+      {/* Cubre el texto del banner original en la zona inferior derecha */}
       <div
         className="absolute bottom-0 right-0 pointer-events-none"
         style={{
-          width: "24%",
-          height: "22%",
+          width: "55%",
+          height: "38%",
           zIndex: 9,
-          background: "linear-gradient(to top, rgba(5,1,1,0.97) 38%, rgba(5,1,1,0.50) 68%, transparent 100%)",
+          background:
+            "linear-gradient(135deg," +
+            "transparent 0%," +
+            "rgba(4,1,1,0.60) 35%," +
+            "rgba(4,1,1,0.95) 65%," +
+            "rgba(4,1,1,0.99) 100%)",
         }}
       />
 
@@ -109,17 +113,17 @@ export default function HomePage() {
         {/* Copa giratoria */}
         <TrophyOverlay />
 
-        {/* Overlay izquierdo — solo oscurece lo necesario para leer el texto */}
+        {/* Overlay izquierdo — sólido hasta el 44% para cubrir el texto del fondo */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
             background:
               "linear-gradient(90deg," +
-              "rgba(3,6,14,0.92) 0%," +
-              "rgba(3,6,14,0.85) 18%," +
-              "rgba(3,6,14,0.55) 30%," +
-              "rgba(3,6,14,0.18) 42%," +
-              "transparent 54%)",
+              "rgba(3,6,14,1.0) 0%," +
+              "rgba(3,6,14,1.0) 38%," +
+              "rgba(3,6,14,0.72) 48%," +
+              "rgba(3,6,14,0.22) 57%," +
+              "transparent 66%)",
           }}
         />
 
