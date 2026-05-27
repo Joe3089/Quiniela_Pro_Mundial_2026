@@ -9,28 +9,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-/* ════════════════════════════════════════════════════════
-   TROPHY — mix-blend-mode: screen elimina el fondo oscuro
-   del PNG dejando solo la copa dorada sobre la foto.
-   ════════════════════════════════════════════════════════ */
-function TrophyImage() {
-  return (
-    <div className="relative w-full h-full" style={{ perspective: "1200px" }}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/trophy.png"
-        alt=""
-        className="absolute inset-0 w-full h-full"
-        style={{
-          objectFit: "contain",
-          objectPosition: "center 40%",
-          mixBlendMode: "screen",
-          filter: "drop-shadow(0 4px 28px rgba(245,165,0,0.55)) drop-shadow(0 0 50px rgba(245,165,0,0.28))",
-        }}
-      />
-    </div>
-  );
-}
 
 /* ════════════════════════════════════════════════════════
    CITY REVEAL PANELS — paneles de color que se desvanecen
@@ -64,23 +42,6 @@ function CityRevealPanels() {
   );
 }
 
-/* ════════════════════════════════════════════════════════
-   TROPHY OVERLAY — copa giratoria sobre la foto.
-   El fade inferior se maneja en el hero, no aquí.
-   ════════════════════════════════════════════════════════ */
-function TrophyOverlay() {
-  return (
-    <motion.div
-      className="absolute right-0 top-0 bottom-0 pointer-events-none"
-      style={{ width: "22%", zIndex: 22 }}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ delay: 0.20, duration: 1.10, ease: "easeOut" }}
-    >
-      <TrophyImage />
-    </motion.div>
-  );
-}
 
 /* ════════════════════════════════════════════════════════
    FEATURE CARDS
@@ -124,9 +85,6 @@ export default function HomePage() {
 
         {/* Ciudades animadas */}
         <CityRevealPanels />
-
-        {/* Copa giratoria */}
-        <TrophyOverlay />
 
         {/* Overlay izquierdo — sólido hasta el 44% para cubrir el texto del fondo */}
         <div
