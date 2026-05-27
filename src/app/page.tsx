@@ -10,35 +10,30 @@ import {
 import { Button } from "@/components/ui/button";
 
 /* ════════════════════════════════════════════════════════
-   TROPHY — imagen real con rotación 3D
+   TROPHY — imagen real llenando el panel, rotación 3D
    ════════════════════════════════════════════════════════ */
-function TrophyImage({ size = 200 }: { size?: number }) {
+function TrophyImage() {
   return (
     <div
-      className="relative"
-      style={{ width: size, height: size * 1.25, perspective: "900px", background: "#060202" }}
+      className="relative w-full h-full"
+      style={{ perspective: "1200px", background: "#060202" }}
     >
       {/* halo dorado detrás */}
       <div
-        className="absolute inset-0 rounded-full"
+        className="absolute inset-0"
         style={{
-          background: "radial-gradient(circle at 50% 60%, rgba(245,165,0,0.35) 0%, transparent 65%)",
+          background: "radial-gradient(circle at 50% 55%, rgba(245,165,0,0.28) 0%, transparent 60%)",
           animation: "pulse-glow 3s ease-in-out infinite",
-          transform: "scale(1.4)",
         }}
       />
-      {/* imagen girando */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/trophy.png"
         alt="FIFA World Cup Trophy"
-        width={size}
-        height={size * 1.25}
-        className="trophy-spin-photo relative z-10"
+        className="trophy-spin-photo relative z-10 w-full h-full"
         style={{
           objectFit: "contain",
-          width: size,
-          height: size * 1.25,
+          objectPosition: "center center",
           filter: "drop-shadow(0 8px 32px rgba(245,165,0,0.65)) drop-shadow(0 0 60px rgba(245,165,0,0.30))",
         }}
       />
@@ -94,44 +89,41 @@ function CityRevealPanels() {
 }
 
 /* ════════════════════════════════════════════════════════
-   TROPHY OVERLAY — cubre SOLO el borde derecho donde está
-   la copa estática; deja visible la ciudad de Toronto a
-   su izquierda.
+   TROPHY OVERLAY — cubre el panel derecho con la copa del
+   fondo y la reemplaza con la copa animada del mismo tamaño.
+   Toronto/CN Tower sigue visible en el panel rojo anterior.
    ════════════════════════════════════════════════════════ */
 function TrophyOverlay() {
   return (
     <>
-      {/* Cover estrecho: solo el 17% derecho (donde está la copa del fondo).
-          Toronto/CN Tower queda visible en el resto del panel rojo. */}
+      {/* Cover: oculta la copa estática del fondo */}
       <div
         className="absolute right-0 top-0 bottom-0 pointer-events-none z-20"
         style={{
-          width: "17%",
-          background: "linear-gradient(90deg, transparent 0%, rgba(6,2,2,0.88) 20%, #060202 55%)",
+          width: "22%",
+          background: "linear-gradient(90deg, transparent 0%, rgba(6,2,2,0.92) 14%, #060202 38%)",
         }}
       />
 
-      {/* Fade inferior: tapa el logo FIFA que aparece abajo a la derecha */}
+      {/* Fade inferior fuerte: tapa el logo FIFA/CANADÁ 2026 */}
       <div
         className="absolute bottom-0 right-0 pointer-events-none z-20"
         style={{
-          width: "42%",
-          height: "38%",
-          background: "linear-gradient(to top, #080c18 35%, rgba(8,12,24,0.65) 70%, transparent 100%)",
+          width: "60%",
+          height: "52%",
+          background: "linear-gradient(to top, #080c18 48%, rgba(8,12,24,0.80) 72%, transparent 100%)",
         }}
       />
 
-      {/* Copa girando — aparece al final de la secuencia */}
+      {/* Copa girando — llena exactamente el panel derecho, aparece pronto */}
       <motion.div
-        className="absolute right-0 top-0 bottom-0 flex items-center justify-end pointer-events-none z-22"
-        style={{ width: "17%" }}
+        className="absolute right-0 top-0 bottom-0 pointer-events-none"
+        style={{ width: "22%", zIndex: 22 }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 2.10, duration: 0.60, ease: "easeOut" }}
+        transition={{ delay: 0.25, duration: 1.10, ease: "easeOut" }}
       >
-        <div className="relative z-10 pr-2 md:pr-3">
-          <TrophyImage size={150} />
-        </div>
+        <TrophyImage />
       </motion.div>
     </>
   );
