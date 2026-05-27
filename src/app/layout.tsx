@@ -36,8 +36,8 @@ export const metadata: Metadata = {
     description: APP_DESCRIPTION,
   },
   icons: {
-    icon: "/icon.svg",
-    apple: "/icons/apple-touch-icon.png",
+    icon: "/logo-icon.png",
+    apple: "/logo-icon.png",
   },
 };
 
