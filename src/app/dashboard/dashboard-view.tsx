@@ -19,7 +19,7 @@ export function DashboardView() {
   const { data: upcomingMatches, isLoading: matchesLoading } = useMatches();
 
   const nextMatches = upcomingMatches
-    ?.filter((m) => m.status === "scheduled")
+    ?.filter((m) => m.status === "scheduled" || m.status === "live")
     .slice(0, 3) ?? [];
 
   const pendingPredictions = nextMatches.filter(
@@ -234,9 +234,11 @@ export function DashboardView() {
                   );
                 })}
             {!matchesLoading && nextMatches.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-6">
-                No hay partidos próximos
-              </p>
+              <div className="text-center py-8 px-4">
+                <Calendar className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+                <p className="text-sm font-semibold text-white/60">El Mundial comienza el 11 Jun</p>
+                <p className="text-xs text-muted-foreground mt-1">Los partidos se cargarán automáticamente</p>
+              </div>
             )}
           </div>
           {nextMatches.length > 0 && (

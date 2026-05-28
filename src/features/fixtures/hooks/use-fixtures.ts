@@ -14,6 +14,12 @@ export function useMatches(phase?: MatchPhase) {
     queryFn: () => fixturesService.getTournamentMatches(activeTournament!.id, phase),
     enabled: !!activeTournament?.id,
     staleTime: 1000 * 60 * 2,
+    // Refresh every minute while there are live matches (tournament underway)
+    refetchInterval: (query) => {
+      const data = query.state.data as import("@/types/fixtures").Match[] | undefined;
+      const hasLive = data?.some((m) => m.status === "live");
+      return hasLive ? 60_000 : false;
+    },
   });
 }
 
