@@ -5,14 +5,30 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { authService } from "../services/auth.service";
 import { useAuthStore } from "@/store/auth.store";
-import type { LoginCredentials, RegisterCredentials } from "@/types/auth";
+import { createClient } from "@/lib/supabase/client";
+import type { LoginCredentials, RegisterCredentials, AuthUser } from "@/types/auth";
 
 export function useLogin() {
   const router = useRouter();
+  const { setUser, setSession } = useAuthStore();
 
   return useMutation({
     mutationFn: (creds: LoginCredentials) => authService.signIn(creds),
-    onSuccess: () => {
+    onSuccess: async (data) => {
+      if (data.session) {
+        setSession(data.session);
+        // Eagerly hydrate the store so the dashboard renders with user data immediately
+        const supabase = createClient();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: profile } = await (supabase as any)
+          .from("users")
+          .select("*")
+          .eq("id", data.user.id)
+          .maybeSingle();
+        if (profile) {
+          setUser({ ...profile, auth: data.user } as AuthUser);
+        }
+      }
       toast.success("¡Bienvenido de vuelta!");
       router.push("/dashboard");
     },

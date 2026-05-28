@@ -2,7 +2,8 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Trophy, Target, BarChart3, Calendar, TrendingUp, Zap, ArrowRight, Star } from "lucide-react";
+import { Trophy, Target, BarChart3, Calendar, TrendingUp, Zap, ArrowRight, Star, MapPin } from "lucide-react";
+import { FlagImage } from "@/components/ui/flag-image";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuthStore } from "@/store/auth.store";
@@ -166,29 +167,72 @@ export function DashboardView() {
           <div className="p-3 space-y-1">
             {matchesLoading
               ? Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-12 w-full rounded-xl" />
+                  <Skeleton key={i} className="h-16 w-full rounded-xl" />
                 ))
-              : nextMatches.map((match) => (
-                  <Link key={match.id} href={`/predictions?match=${match.id}`}>
-                    <div className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors group">
-                      <div className="flex items-center gap-2 text-sm">
-                        <span className="font-semibold text-white">
-                          {match.home_team?.short_name ?? "TBD"}
-                        </span>
-                        <span className="text-muted-foreground text-xs font-bold">vs</span>
-                        <span className="font-semibold text-white">
-                          {match.away_team?.short_name ?? "TBD"}
-                        </span>
+              : nextMatches.map((match) => {
+                  const d = new Date(match.match_date);
+                  const dateStr = d.toLocaleDateString("es-MX", { day: "numeric", month: "short" });
+                  const timeStr = d.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
+                  const statusMap: Record<string, { label: string; cls: string }> = {
+                    scheduled: { label: "Programado", cls: "bg-white/5 text-muted-foreground" },
+                    live:      { label: "EN VIVO",    cls: "bg-emerald-500/15 text-emerald-400 font-bold" },
+                    finished:  { label: "Finalizado", cls: "bg-white/5 text-muted-foreground" },
+                    postponed: { label: "Aplazado",   cls: "bg-yellow-500/15 text-yellow-400" },
+                    cancelled: { label: "Cancelado",  cls: "bg-red-500/15 text-red-400" },
+                  };
+                  const st = statusMap[match.status] ?? statusMap.scheduled;
+
+                  return (
+                    <Link key={match.id} href={`/predictions?match=${match.id}`}>
+                      <div className="px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors group">
+                        {/* Teams row */}
+                        <div className="flex items-center gap-2">
+                          {/* Home */}
+                          <div className="flex items-center gap-1.5 flex-1 justify-end">
+                            <span className="text-xs font-semibold text-white truncate max-w-[52px]">
+                              {match.home_team?.short_name ?? "TBD"}
+                            </span>
+                            {match.home_team?.fifa_code && (
+                              <FlagImage fifaCode={match.home_team.fifa_code} size="sm" />
+                            )}
+                          </div>
+                          {/* VS + date */}
+                          <div className="flex flex-col items-center shrink-0 w-14">
+                            <span className="text-[10px] text-muted-foreground font-bold leading-none">VS</span>
+                            <span className="text-[9px] text-muted-foreground/70 mt-0.5 leading-none">{dateStr}</span>
+                            <span className="text-[9px] text-muted-foreground/50 leading-none">{timeStr}</span>
+                          </div>
+                          {/* Away */}
+                          <div className="flex items-center gap-1.5 flex-1 justify-start">
+                            {match.away_team?.fifa_code && (
+                              <FlagImage fifaCode={match.away_team.fifa_code} size="sm" />
+                            )}
+                            <span className="text-xs font-semibold text-white truncate max-w-[52px]">
+                              {match.away_team?.short_name ?? "TBD"}
+                            </span>
+                          </div>
+                          {/* Status + arrow */}
+                          <div className="flex items-center gap-1 shrink-0">
+                            <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${st.cls}`}>
+                              {st.label}
+                            </span>
+                            <ArrowRight className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                        </div>
+                        {/* Venue row */}
+                        {(match.venue || match.city) && (
+                          <div className="flex items-center justify-center gap-1 mt-1">
+                            <MapPin className="h-2.5 w-2.5 text-muted-foreground/50" />
+                            <span className="text-[9px] text-muted-foreground/50 truncate">
+                              {match.venue ?? match.city}
+                              {match.venue && match.city ? `, ${match.city}` : ""}
+                            </span>
+                          </div>
+                        )}
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/5 text-muted-foreground">
-                          {match.group?.letter ? `Grupo ${match.group.letter}` : match.phase}
-                        </span>
-                        <ArrowRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </div>
-                    </div>
-                  </Link>
-                ))}
+                    </Link>
+                  );
+                })}
             {!matchesLoading && nextMatches.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-6">
                 No hay partidos próximos

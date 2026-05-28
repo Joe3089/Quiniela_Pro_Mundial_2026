@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, LayoutGrid, Target, BarChart3, Settings, LogOut, Menu, X, ChevronDown, Globe2, TrendingUp } from "lucide-react";
+import { Trophy, LayoutGrid, Target, BarChart3, Settings, LogOut, Menu, X, ChevronDown, Globe2, TrendingUp, UserCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { Logo } from "@/components/ui/logo";
 import { useAuthStore } from "@/store/auth.store";
 import { useLogout } from "@/features/auth/hooks/use-auth";
 import { getInitials, cn } from "@/lib/utils";
+import { ProfileModal } from "@/features/auth/components/profile-modal";
 
 const navItems = [
   { href: "/dashboard",    label: "Inicio",        icon: LayoutGrid },
@@ -27,6 +28,7 @@ export function Navbar() {
   const logout = useLogout();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
   const isAdmin = (user as { is_admin?: boolean } | null)?.is_admin;
@@ -121,18 +123,13 @@ export function Navbar() {
                           className="absolute right-0 mt-2 w-48 glass-card rounded-xl border border-white/10 overflow-hidden shadow-2xl"
                         >
                           <div className="p-1">
-                            <Link
-                              href="/profile"
-                              onClick={() => setUserMenuOpen(false)}
-                              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-white/5 transition-colors"
+                            <button
+                              onClick={() => { setProfileOpen(true); setUserMenuOpen(false); }}
+                              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-white/5 transition-colors text-left"
                             >
-                              <Avatar className="h-5 w-5">
-                                <AvatarFallback className="bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--brand-blue-dark))] text-white text-[10px]">
-                                  {getInitials(user.display_name ?? user.username)}
-                                </AvatarFallback>
-                              </Avatar>
-                              Mi perfil
-                            </Link>
+                              <UserCircle className="h-4 w-4 text-muted-foreground" />
+                              Mis datos
+                            </button>
                             {isAdmin && (
                               <Link
                                 href="/admin"
@@ -241,6 +238,8 @@ export function Navbar() {
       {userMenuOpen && (
         <div className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)} />
       )}
+
+      <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} />
     </>
   );
 }
