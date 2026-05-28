@@ -13,7 +13,7 @@ import { useMatches } from "@/features/fixtures/hooks/use-fixtures";
 import { SCORING } from "@/constants";
 
 export function DashboardView() {
-  const { user } = useAuthStore();
+  const { user, isLoading: authLoading } = useAuthStore();
   const { data: userRank, isLoading: rankLoading } = useUserRank();
   const { data: predictions, isLoading: predsLoading } = useUserPredictions();
   const { data: upcomingMatches, isLoading: matchesLoading } = useMatches();
@@ -82,11 +82,15 @@ export function DashboardView() {
           <Star className="h-2.5 w-2.5 fill-current" />
           FIFA World Cup 2026
         </div>
-        <h1 className="text-3xl font-black tracking-tight mb-1">
+        <h1 className="text-3xl font-black tracking-tight mb-1 flex items-center gap-2 flex-wrap">
           Hola,{" "}
-          <span className="text-gradient-vivid">
-            {user?.display_name ?? user?.username}
-          </span>
+          {authLoading ? (
+            <span className="inline-block h-9 w-36 rounded-xl bg-white/10 animate-pulse align-middle" />
+          ) : (
+            <span className="text-gradient-vivid">
+              {user?.display_name ?? user?.username ?? ""}
+            </span>
+          )}
         </h1>
         <p className="text-muted-foreground text-sm">Bienvenido a tu panel de predicciones</p>
       </motion.div>

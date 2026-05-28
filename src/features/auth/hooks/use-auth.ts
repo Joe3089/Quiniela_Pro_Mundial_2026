@@ -15,16 +15,43 @@ export function useLogin() {
   return useMutation({
     mutationFn: (creds: LoginCredentials) => authService.signIn(creds),
     onSuccess: async (data) => {
-      if (data.session) {
+      if (data.session && data.user) {
         setSession(data.session);
-        // Eagerly hydrate the store so the dashboard renders with user data immediately
-        const supabase = createClient();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: profile } = await (supabase as any)
+        const db = createClient() as any;
+
+        // Fetch existing profile
+        let { data: profile } = await db
           .from("users")
           .select("*")
           .eq("id", data.user.id)
           .maybeSingle();
+
+        // If no profile row yet, create it so setUser always fires
+        if (!profile) {
+          const meta = data.user.user_metadata ?? {};
+          const fallbackUsername = (data.user.email ?? "")
+            .split("@")[0]
+            .replace(/[^a-z0-9_]/gi, "_")
+            .toLowerCase();
+          const { data: newProfile } = await db
+            .from("users")
+            .upsert(
+              {
+                id: data.user.id,
+                email: data.user.email ?? "",
+                display_name: meta.full_name ?? meta.display_name ?? null,
+                username: meta.username ?? fallbackUsername,
+                avatar_url: meta.avatar_url ?? null,
+                is_admin: false,
+              },
+              { onConflict: "id" }
+            )
+            .select()
+            .maybeSingle();
+          profile = newProfile;
+        }
+
         if (profile) {
           setUser({ ...profile, auth: data.user } as AuthUser);
         }

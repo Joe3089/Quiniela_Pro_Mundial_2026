@@ -24,7 +24,7 @@ const navItems = [
 
 export function Navbar() {
   const pathname = usePathname();
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isLoading } = useAuthStore();
   const logout = useLogout();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -32,8 +32,10 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
 
   const isAdmin = (user as { is_admin?: boolean } | null)?.is_admin;
+  const [hasMounted, setHasMounted] = useState(false);
 
   useEffect(() => {
+    setHasMounted(true);
     const onScroll = () => setScrolled(window.scrollY > 8);
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -95,7 +97,13 @@ export function Navbar() {
 
               {/* Right side */}
               <div className="flex items-center gap-2">
-                {isAuthenticated && user ? (
+                {/* Skeleton while store is hydrating */}
+                {hasMounted && isLoading && (
+                  <div className="hidden md:flex items-center gap-2">
+                    <div className="h-8 w-28 rounded-xl bg-white/5 animate-pulse" />
+                  </div>
+                )}
+                {(!hasMounted || isLoading) ? null : user ? (
                   <div className="relative">
                     <button
                       onClick={() => setUserMenuOpen((o) => !o)}
@@ -210,7 +218,7 @@ export function Navbar() {
                       </Link>
                     );
                   })}
-                  {!isAuthenticated && (
+                  {hasMounted && !isLoading && !user && (
                     <div className="pt-2 flex gap-2">
                       <Button variant="ghost" size="sm" className="flex-1 text-muted-foreground" asChild>
                         <Link href="/auth/register" onClick={() => setMobileOpen(false)}>Registrarse</Link>
