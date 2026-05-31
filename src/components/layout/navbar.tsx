@@ -13,7 +13,7 @@ import { useLogout } from "@/features/auth/hooks/use-auth";
 import { getInitials, cn } from "@/lib/utils";
 import { ProfileModal } from "@/features/auth/components/profile-modal";
 
-const navItems = [
+const NAV_ITEMS = [
   { href: "/dashboard",    label: "Inicio",        icon: LayoutGrid },
   { href: "/fixtures",     label: "Partidos",       icon: Trophy },
   { href: "/predictions",  label: "Predicciones",   icon: Target },
@@ -25,6 +25,12 @@ const navItems = [
 export function Navbar() {
   const pathname = usePathname();
   const { user, isLoading } = useAuthStore();
+  // "Inicio" goes to dashboard when logged in, landing page when not
+  const navItems = NAV_ITEMS.map((item) =>
+    item.href === "/dashboard"
+      ? { ...item, href: user ? "/dashboard" : "/" }
+      : item
+  );
   const logout = useLogout();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);

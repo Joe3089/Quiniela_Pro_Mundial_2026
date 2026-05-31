@@ -25,13 +25,8 @@ export function RegisterForm() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="w-full max-w-sm space-y-6"
+      className="w-full space-y-5"
     >
-      <div className="text-center space-y-2">
-        <h1 className="text-2xl font-bold text-gradient">Crear cuenta</h1>
-        <p className="text-muted-foreground text-sm">Únete a la quiniela del Mundial 2026</p>
-      </div>
-
       <form
         onSubmit={handleSubmit((data) =>
           register.mutate({
