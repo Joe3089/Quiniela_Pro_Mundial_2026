@@ -1,0 +1,1 @@
+export { FixtureMundial } from './components/fixture-mundial';

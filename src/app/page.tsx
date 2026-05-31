@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+// Importamos el componente del calendario que creamos
+import { FixtureMundial } from "@/features/fixtures";
 
 /* ════════════════════════════════════════════════════════
    CITY REVEAL PANELS — paneles de color que se desvanecen
@@ -42,12 +44,11 @@ function CityRevealPanels() {
   );
 }
 
-
 /* ════════════════════════════════════════════════════════
    FEATURE CARDS
    ════════════════════════════════════════════════════════ */
 const features = [
-  { icon: Target,      title: "Predicciones",   desc: "Pronostica cada partido antes que empiece. Gana hasta 5 pts por marcador exacto.", href: "/predictions",  className: "card-blue",    iconColor: "text-[hsl(var(--brand-blue-light))]", iconBg: "bg-[hsl(var(--brand-blue)/0.2)]",   accent: "#1D4ED8" },
+  { icon: Target,      title: "Predicciones",  desc: "Pronostica cada partido antes que empiece. Gana hasta 5 pts por marcador exacto.", href: "/predictions",  className: "card-blue",    iconColor: "text-[hsl(var(--brand-blue-light))]", iconBg: "bg-[hsl(var(--brand-blue)/0.2)]",  accent: "#1D4ED8" },
   { icon: BarChart3,   title: "Ranking en vivo", desc: "Actualización en tiempo real. Compite en el leaderboard global del Mundial.",     href: "/rankings",     className: "card-gold",    iconColor: "text-[hsl(var(--brand-gold))]",       iconBg: "bg-[hsl(var(--brand-gold)/0.18)]",  accent: "#F5A500" },
   { icon: Globe2,      title: "Selecciones",     desc: "Plantillas, estadísticas históricas y formaciones de las 48 selecciones.",        href: "/selecciones",  className: "card-emerald", iconColor: "text-emerald-400",                    iconBg: "bg-[rgba(16,185,129,0.15)]",        accent: "#10B981" },
   { icon: ShieldCheck, title: "Estadísticas",    desc: "Datos históricos desde 1930. Récords mundiales, goleadores y más.",              href: "/estadisticas", className: "card-violet",  iconColor: "text-violet-400",                     iconBg: "bg-[rgba(139,92,246,0.15)]",        accent: "#8B5CF6" },
@@ -275,11 +276,11 @@ export default function HomePage() {
             className="glass-card rounded-3xl p-8 border border-[hsl(var(--brand-gold)/0.15)]">
             <div className="flex items-center gap-2 mb-6 justify-center">
               <Zap className="h-5 w-5 text-[hsl(var(--brand-gold))]"/>
-              <h2 className="text-base font-bold tracking-wide">SISTEMA DE PUNTOS</h2>
+              <h2 className="text-base font-bold tracking-wide text-white">SISTEMA DE PUNTOS</h2>
             </div>
             <div className="space-y-4">
               {[
-                { pts: 5, label: "Marcador exacto + ganador",   pct: "100%", color: "#F5A500" },
+                { pts: 5, label: "Marcador exacto + ganador",  pct: "100%", color: "#F5A500" },
                 { pts: 3, label: "Ganador correcto",             pct: "60%",  color: "#1D4ED8" },
                 { pts: 2, label: "Empate exacto",                pct: "40%",  color: "#60A5FA" },
                 { pts: 1, label: "Empate (resultado correcto)",  pct: "20%",  color: "#94a3b8" },
@@ -296,6 +297,16 @@ export default function HomePage() {
                 </div>
               ))}
             </div>
+          </motion.div>
+        </section>
+
+        {/* ══ FIXTURE (NUEVO COMPONENTE) ════════════════════ */}
+        <section className="pb-20">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+          >
+            {/* Aquí se renderiza tu conexión en vivo con Supabase */}
+            <FixtureMundial />
           </motion.div>
         </section>
 
