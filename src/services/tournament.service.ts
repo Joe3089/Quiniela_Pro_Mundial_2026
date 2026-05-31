@@ -32,7 +32,16 @@ export const tournamentService = {
       .select("*")
       .eq("id", TOURNAMENT_ID)
       .maybeSingle();
+    if (byId) return byId as TournamentRow;
 
-    return (byId as TournamentRow) ?? null;
+    // 4th try: just grab the first tournament in the DB (any)
+    const { data: any } = await supabase
+      .from("tournaments")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    return (any as TournamentRow) ?? null;
   },
 };
