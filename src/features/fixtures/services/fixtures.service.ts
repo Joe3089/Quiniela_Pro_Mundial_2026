@@ -1,11 +1,22 @@
 import { createClient } from "@/lib/supabase/client";
 import type { Match, Group, Standing } from "@/types/fixtures";
-import type { GroupRow } from "@/types/database";
+import type { GroupRow, TeamRow } from "@/types/database";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = () => createClient() as any;
 
 export const fixturesService = {
+  async getTeams(tournamentId: string): Promise<TeamRow[]> {
+    const supabase = db();
+    const { data, error } = await supabase
+      .from("teams")
+      .select("*")
+      .eq("tournament_id", tournamentId)
+      .order("name", { ascending: true });
+    if (error) throw error;
+    return (data as TeamRow[]) ?? [];
+  },
+
   async getTournamentMatches(tournamentId: string, phase?: string): Promise<Match[]> {
     const supabase = db();
     let query = supabase

@@ -6,6 +6,17 @@ import { QUERY_KEYS } from "@/constants";
 import { useTournamentStore } from "@/store/tournament.store";
 import type { MatchPhase } from "@/types/database";
 
+export function useTeams() {
+  const { activeTournament } = useTournamentStore();
+
+  return useQuery({
+    queryKey: [QUERY_KEYS.teams, activeTournament?.id],
+    queryFn: () => fixturesService.getTeams(activeTournament!.id),
+    enabled: !!activeTournament?.id,
+    staleTime: 1000 * 60 * 30,
+  });
+}
+
 export function useMatches(phase?: MatchPhase) {
   const { activeTournament } = useTournamentStore();
 

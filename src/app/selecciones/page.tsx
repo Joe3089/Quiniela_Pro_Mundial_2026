@@ -1,44 +1,78 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Globe2, Search } from "lucide-react";
+import { Globe2, Search, Users } from "lucide-react";
 import Link from "next/link";
-import {
-  WC2026_TEAMS,
-  CONFEDERATION_ORDER,
-  CONFEDERATION_LABELS,
-  CONFEDERATION_SPOTS,
-  type Confederation,
-  type WCTeam,
-} from "@/data/wc2026-teams";
-import { ConfederationBadge } from "@/components/ui/confederation-badge";
 import { FlagImage } from "@/components/ui/flag-image";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ConfederationBadge } from "@/components/ui/confederation-badge";
+import { useTeams } from "@/features/fixtures/hooks/use-fixtures";
 import { cn } from "@/lib/utils";
+import type { TeamRow } from "@/types/database";
 
-function TeamCard({ team, index }: { team: WCTeam; index: number }) {
+// Normalize continent values from Supabase to confederation codes
+function toConf(continent: string): string {
+  const map: Record<string, string> = {
+    europe: "UEFA",      uefa: "UEFA",
+    "south america": "CONMEBOL", conmebol: "CONMEBOL", "america del sur": "CONMEBOL",
+    concacaf: "CONCACAF", "north america": "CONCACAF", "norte america": "CONCACAF",
+    asia: "AFC",         afc: "AFC",
+    africa: "CAF",       caf: "CAF",
+    oceania: "OFC",      ofc: "OFC",
+  };
+  return map[continent.toLowerCase()] ?? continent.toUpperCase();
+}
+
+const CONF_ORDER = ["UEFA", "CONMEBOL", "CONCACAF", "AFC", "CAF", "OFC"];
+const CONF_LABELS: Record<string, string> = {
+  UEFA: "Europa",
+  CONMEBOL: "Sudamérica",
+  CONCACAF: "Norte, Centroamérica y Caribe",
+  AFC: "Asia",
+  CAF: "África",
+  OFC: "Oceanía",
+};
+const CONF_COLORS: Record<string, string> = {
+  UEFA:     "text-blue-400 border-blue-400/30 bg-blue-400/10",
+  CONMEBOL: "text-yellow-400 border-yellow-400/30 bg-yellow-400/10",
+  CONCACAF: "text-green-400 border-green-400/30 bg-green-400/10",
+  AFC:      "text-red-400 border-red-400/30 bg-red-400/10",
+  CAF:      "text-orange-400 border-orange-400/30 bg-orange-400/10",
+  OFC:      "text-teal-400 border-teal-400/30 bg-teal-400/10",
+};
+
+function TeamCard({ team, index }: { team: TeamRow; index: number }) {
+  const conf = toConf(team.continent);
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.03 }}
+      transition={{ delay: Math.min(index * 0.02, 0.4) }}
     >
-      <Link href={`/selecciones/${team.code}`}>
-        <div className="glass rounded-xl border border-white/5 hover:border-[hsl(var(--brand-blue)/0.4)] p-3 flex items-center gap-3 transition-all hover:-translate-y-0.5 hover:shadow-lg group cursor-pointer relative overflow-hidden">
-          {/* Flag image */}
-          <FlagImage fifaCode={team.code} fallbackEmoji={team.flag} size="lg" />
+      <Link href={`/selecciones/${team.fifa_code}`}>
+        <div className="glass rounded-xl border border-white/5 hover:border-[hsl(var(--brand-blue)/0.4)] p-3 flex items-center gap-3 transition-all hover:-translate-y-0.5 hover:shadow-lg group cursor-pointer">
+          {/* Flag */}
+          {team.flag_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={team.flag_url}
+              alt={team.name}
+              width={48}
+              height={32}
+              className="rounded-sm object-cover w-12 h-8 shrink-0 shadow-sm"
+            />
+          ) : (
+            <FlagImage fifaCode={team.fifa_code} size="lg" />
+          )}
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold text-white truncate group-hover:text-[hsl(var(--brand-blue-light))] transition-colors">
               {team.name}
             </p>
             <div className="flex items-center gap-1.5 mt-0.5">
-              <ConfederationBadge confederation={team.confederation} size="sm" />
-              <span className="text-[10px] text-muted-foreground">#{team.fifaRanking}</span>
+              <ConfederationBadge confederation={conf as never} size="sm" />
+              <span className="text-[10px] text-muted-foreground font-mono uppercase">{team.fifa_code}</span>
             </div>
-          </div>
-          <div className="text-right shrink-0">
-            <p className="text-[10px] text-muted-foreground">{team.worldCupAppearances} Mundiales</p>
-            <p className="text-[10px] text-[hsl(var(--brand-gold))]">{team.bestResult}</p>
           </div>
         </div>
       </Link>
@@ -46,33 +80,46 @@ function TeamCard({ team, index }: { team: WCTeam; index: number }) {
   );
 }
 
-const confColors: Record<Confederation, string> = {
-  UEFA:      "text-blue-400 border-blue-400/30 bg-blue-400/10",
-  CONMEBOL:  "text-yellow-400 border-yellow-400/30 bg-yellow-400/10",
-  CONCACAF:  "text-green-400 border-green-400/30 bg-green-400/10",
-  AFC:       "text-red-400 border-red-400/30 bg-red-400/10",
-  CAF:       "text-orange-400 border-orange-400/30 bg-orange-400/10",
-  OFC:       "text-teal-400 border-teal-400/30 bg-teal-400/10",
-};
-
 export default function SeleccionesPage() {
+  const { data: teams = [], isLoading } = useTeams();
   const [search, setSearch] = useState("");
-  const [activeConf, setActiveConf] = useState<Confederation | "all">("all");
+  const [activeConf, setActiveConf] = useState<string>("all");
 
-  const filtered = WC2026_TEAMS.filter((t) => {
-    const matchesSearch =
-      search === "" ||
-      t.name.toLowerCase().includes(search.toLowerCase()) ||
-      t.shortName.toLowerCase().includes(search.toLowerCase()) ||
-      t.code.toLowerCase().includes(search.toLowerCase());
-    const matchesConf = activeConf === "all" || t.confederation === activeConf;
-    return matchesSearch && matchesConf;
-  });
+  const enriched = useMemo(
+    () => teams.map((t) => ({ ...t, conf: toConf(t.continent) })),
+    [teams]
+  );
 
-  const grouped = CONFEDERATION_ORDER.map((conf) => ({
-    conf,
-    teams: filtered.filter((t) => t.confederation === conf),
-  })).filter((g) => g.teams.length > 0);
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    return enriched.filter((t) => {
+      const matchSearch =
+        !q ||
+        t.name.toLowerCase().includes(q) ||
+        t.short_name.toLowerCase().includes(q) ||
+        t.fifa_code.toLowerCase().includes(q);
+      const matchConf = activeConf === "all" || t.conf === activeConf;
+      return matchSearch && matchConf;
+    });
+  }, [enriched, search, activeConf]);
+
+  const grouped = useMemo(
+    () =>
+      CONF_ORDER.map((conf) => ({
+        conf,
+        teams: filtered.filter((t) => t.conf === conf),
+      })).filter((g) => g.teams.length > 0),
+    [filtered]
+  );
+
+  // Count by confederation
+  const confCounts = useMemo(
+    () =>
+      Object.fromEntries(
+        CONF_ORDER.map((c) => [c, enriched.filter((t) => t.conf === c).length])
+      ),
+    [enriched]
+  );
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
@@ -89,23 +136,25 @@ export default function SeleccionesPage() {
         <h1 className="text-3xl font-black tracking-tight mb-1">
           <span className="text-gradient-vivid">Selecciones</span>
         </h1>
-        <p className="text-muted-foreground text-sm">48 selecciones clasificadas · 6 confederaciones</p>
+        <p className="text-muted-foreground text-sm">
+          {isLoading ? "Cargando…" : `${teams.length} selecciones clasificadas · 6 confederaciones`}
+        </p>
       </motion.div>
 
-      {/* Confederation summary */}
+      {/* Confederation filter */}
       <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mb-6">
-        {CONFEDERATION_ORDER.map((conf) => (
+        {CONF_ORDER.map((conf) => (
           <button
             key={conf}
             onClick={() => setActiveConf(activeConf === conf ? "all" : conf)}
             className={cn(
               "rounded-xl p-2 border text-center transition-all",
               activeConf === conf
-                ? confColors[conf]
+                ? CONF_COLORS[conf]
                 : "glass border-white/5 hover:border-white/15 text-muted-foreground"
             )}
           >
-            <div className="text-lg font-black">{CONFEDERATION_SPOTS[conf]}</div>
+            <div className="text-lg font-black">{isLoading ? "–" : (confCounts[conf] ?? 0)}</div>
             <div className="text-[10px] font-bold">{conf}</div>
           </button>
         ))}
@@ -119,33 +168,42 @@ export default function SeleccionesPage() {
           placeholder="Buscar selección..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-blue)/0.5)] focus:border-[hsl(var(--brand-blue)/0.4)] transition-all"
+          className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-blue)/0.5)] transition-all"
         />
       </div>
 
-      {/* Teams by confederation */}
-      {grouped.length === 0 ? (
+      {/* Loading skeletons */}
+      {isLoading && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full rounded-xl" />
+          ))}
+        </div>
+      )}
+
+      {/* Teams grouped by confederation */}
+      {!isLoading && grouped.length === 0 && (
         <div className="text-center py-16 text-muted-foreground">
-          <Globe2 className="h-12 w-12 mx-auto mb-3 opacity-20" />
+          <Users className="h-12 w-12 mx-auto mb-3 opacity-20" />
           <p>No se encontraron selecciones</p>
         </div>
-      ) : (
+      )}
+
+      {!isLoading && grouped.length > 0 && (
         <div className="space-y-8">
-          {grouped.map(({ conf, teams }) => (
+          {grouped.map(({ conf, teams: confTeams }) => (
             <div key={conf}>
               <div className="flex items-center gap-3 mb-3">
-                <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full border", confColors[conf])}>
+                <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full border", CONF_COLORS[conf])}>
                   {conf}
                 </span>
-                <span className="text-sm text-muted-foreground">{CONFEDERATION_LABELS[conf]}</span>
-                <span className="text-xs text-muted-foreground ml-auto">{teams.length} selecciones</span>
+                <span className="text-sm text-muted-foreground">{CONF_LABELS[conf]}</span>
+                <span className="text-xs text-muted-foreground ml-auto">{confTeams.length} selecciones</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                {teams
-                  .sort((a, b) => a.fifaRanking - b.fifaRanking)
-                  .map((team, i) => (
-                    <TeamCard key={team.code} team={team} index={i} />
-                  ))}
+                {confTeams.map((team, i) => (
+                  <TeamCard key={team.id} team={team} index={i} />
+                ))}
               </div>
             </div>
           ))}
