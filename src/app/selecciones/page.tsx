@@ -42,15 +42,32 @@ const CONF_COLORS: Record<string, string> = {
   OFC:      "text-teal-400 border-teal-400/30 bg-teal-400/10",
 };
 
-function TeamCard({ team, index }: { team: TeamRow; index: number }) {
+// Normalize a raw DB row to TeamRow — handles both English and Spanish column names
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function normalizeTeam(raw: any): TeamRow {
+  return {
+    id:            raw.id            ?? "",
+    name:          raw.name          ?? raw.nombre        ?? raw.pais        ?? "",
+    short_name:    raw.short_name     ?? raw.nombre_corto  ?? raw.nombre      ?? raw.name ?? "",
+    flag_url:      raw.flag_url       ?? raw.bandera       ?? raw.escudo      ?? null,
+    fifa_code:     raw.fifa_code      ?? raw.codigo_fifa   ?? raw.codigo      ?? raw.code ?? "",
+    continent:     raw.continent      ?? raw.confederacion ?? raw.continente  ?? "",
+    tournament_id: raw.tournament_id  ?? raw.torneo_id     ?? "",
+  };
+}
+
+function TeamCard({ team: raw, index }: { team: TeamRow; index: number }) {
+  const team = normalizeTeam(raw);
   const conf = toConf(team.continent);
+  const code = team.fifa_code.toUpperCase();
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: Math.min(index * 0.02, 0.4) }}
     >
-      <Link href={`/selecciones/${team.fifa_code}`}>
+      <Link href={`/selecciones/${code}`}>
         <div className="glass rounded-xl border border-white/5 hover:border-[hsl(var(--brand-blue)/0.4)] p-3 flex items-center gap-3 transition-all hover:-translate-y-0.5 hover:shadow-lg group cursor-pointer">
           {/* Flag */}
           {team.flag_url ? (
@@ -63,7 +80,7 @@ function TeamCard({ team, index }: { team: TeamRow; index: number }) {
               className="rounded-sm object-cover w-12 h-8 shrink-0 shadow-sm"
             />
           ) : (
-            <FlagImage fifaCode={team.fifa_code} size="lg" />
+            <FlagImage fifaCode={code} size="lg" />
           )}
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold text-white truncate group-hover:text-[hsl(var(--brand-blue-light))] transition-colors">
@@ -71,7 +88,7 @@ function TeamCard({ team, index }: { team: TeamRow; index: number }) {
             </p>
             <div className="flex items-center gap-1.5 mt-0.5">
               <ConfederationBadge confederation={conf as never} size="sm" />
-              <span className="text-[10px] text-muted-foreground font-mono uppercase">{team.fifa_code}</span>
+              <span className="text-[10px] text-muted-foreground font-mono uppercase">{code}</span>
             </div>
           </div>
         </div>
@@ -86,7 +103,8 @@ export default function SeleccionesPage() {
   const [activeConf, setActiveConf] = useState<string>("all");
 
   const enriched = useMemo(
-    () => teams.map((t) => ({ ...t, conf: toConf(t.continent) })),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    () => teams.map((t: any) => ({ ...normalizeTeam(t), conf: toConf(normalizeTeam(t).continent) })),
     [teams]
   );
 

@@ -5,86 +5,122 @@ import type { GroupRow, TeamRow } from "@/types/database";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = () => createClient() as any;
 
+// Try a table with tournament_id filter first, then without, then try an alternate table name
+async function queryTeams(
+  supabase: ReturnType<typeof db>,
+  primaryTable: string,
+  fallbackTable: string,
+  tournamentId: string
+): Promise<TeamRow[]> {
+  // 1. Primary table, with tournament_id
+  const { data: d1 } = await supabase
+    .from(primaryTable)
+    .select("*")
+    .eq("tournament_id", tournamentId)
+    .order("name", { ascending: true });
+  if (d1?.length) return d1 as TeamRow[];
+
+  // 2. Primary table, all rows
+  const { data: d2 } = await supabase
+    .from(primaryTable)
+    .select("*")
+    .order("name", { ascending: true });
+  if (d2?.length) return d2 as TeamRow[];
+
+  // 3. Fallback table, with tournament_id
+  const { data: d3 } = await supabase
+    .from(fallbackTable)
+    .select("*")
+    .eq("tournament_id", tournamentId)
+    .order("name", { ascending: true });
+  if (d3?.length) return d3 as TeamRow[];
+
+  // 4. Fallback table, all rows
+  const { data: d4 } = await supabase
+    .from(fallbackTable)
+    .select("*")
+    .order("name", { ascending: true });
+  return (d4 as TeamRow[]) ?? [];
+}
+
 export const fixturesService = {
   async getTeams(tournamentId: string): Promise<TeamRow[]> {
     const supabase = db();
-
-    // Try with tournament_id first
-    const { data, error } = await supabase
-      .from("teams")
-      .select("*")
-      .eq("tournament_id", tournamentId)
-      .order("name", { ascending: true });
-
-    if (!error && data && (data as TeamRow[]).length > 0) {
-      return data as TeamRow[];
-    }
-
-    // Fallback: all teams in the DB regardless of tournament
-    const { data: all } = await supabase
-      .from("teams")
-      .select("*")
-      .order("name", { ascending: true });
-
-    return (all as TeamRow[]) ?? [];
+    return queryTeams(supabase, "teams", "selecciones", tournamentId);
   },
 
   async getTournamentMatches(tournamentId: string, phase?: string): Promise<Match[]> {
     const supabase = db();
 
-    const buildQuery = (tid: string) => {
-      let q = supabase
-        .from("matches")
-        .select(
-          `*, home_team:teams!matches_home_team_id_fkey(*), away_team:teams!matches_away_team_id_fkey(*), group:groups(*)`
-        )
-        .eq("tournament_id", tid)
-        .order("match_date", { ascending: true });
-      if (phase) q = q.eq("phase", phase);
-      return q;
+    // Helper: build match query for a given table + team table
+    const tryMatches = async (
+      matchTable: string,
+      teamTable: string,
+      groupTable: string,
+      tid?: string
+    ): Promise<Match[] | null> => {
+      try {
+        let q = supabase
+          .from(matchTable)
+          .select(`*, home_team:${teamTable}(*), away_team:${teamTable}(*), group:${groupTable}(*)`)
+          .order("match_date", { ascending: true });
+        if (tid) q = q.eq("tournament_id", tid);
+        if (phase) q = q.eq("phase", phase);
+        const { data, error } = await q;
+        if (!error && data?.length) return data as Match[];
+        return null;
+      } catch {
+        return null;
+      }
     };
 
-    const { data, error } = await buildQuery(tournamentId);
+    // 1. English tables with tournament_id
+    const r1 = await tryMatches("matches", "teams", "groups", tournamentId);
+    if (r1) return r1;
 
-    if (!error && data && (data as Match[]).length > 0) {
-      return data as Match[];
-    }
+    // 2. Spanish tables with tournament_id
+    const r2 = await tryMatches("partidos", "selecciones", "grupos", tournamentId);
+    if (r2) return r2;
 
-    // Fallback: all matches regardless of tournament_id
-    let fallback = supabase
-      .from("matches")
-      .select(
-        `*, home_team:teams!matches_home_team_id_fkey(*), away_team:teams!matches_away_team_id_fkey(*), group:groups(*)`
-      )
-      .order("match_date", { ascending: true });
-    if (phase) fallback = fallback.eq("phase", phase);
+    // 3. English tables, all matches (no tournament filter)
+    const r3 = await tryMatches("matches", "teams", "groups");
+    if (r3) return r3;
 
-    const { data: all } = await fallback;
-    return (all as Match[]) ?? [];
+    // 4. Spanish tables, all matches
+    const r4 = await tryMatches("partidos", "selecciones", "grupos");
+    return r4 ?? [];
   },
 
   async getGroups(tournamentId: string): Promise<Group[]> {
     const supabase = db();
-    const { data: groups, error } = await supabase
-      .from("groups")
-      .select("*")
-      .eq("tournament_id", tournamentId)
-      .order("letter");
 
-    if (error) throw error;
+    // Try English "groups" first, then Spanish "grupos"
+    const fetchGroups = async (table: string) => {
+      const { data } = await supabase
+        .from(table)
+        .select("*")
+        .eq("tournament_id", tournamentId)
+        .order("letter");
+      return data as GroupRow[] | null;
+    };
+
+    const groups = (await fetchGroups("groups")) ?? (await fetchGroups("grupos")) ?? [];
 
     const groupsWithData = await Promise.all(
-      ((groups as GroupRow[]) ?? []).map(async (group: GroupRow) => {
+      groups.map(async (group: GroupRow) => {
+        const teamsTable = "teams";
+        const matchTable = "matches";
+
         const [teamsResult, matchesResult, standingsResult] = await Promise.all([
-          supabase.from("teams").select("*").eq("tournament_id", tournamentId),
+          supabase.from(teamsTable).select("*").eq("tournament_id", tournamentId),
           supabase
-            .from("matches")
-            .select(`*, home_team:teams!matches_home_team_id_fkey(*), away_team:teams!matches_away_team_id_fkey(*), group:groups(*)`)
+            .from(matchTable)
+            .select(`*, home_team:${teamsTable}(*), away_team:${teamsTable}(*), group:groups(*)`)
             .eq("group_id", group.id)
             .order("match_date"),
           supabase
             .from("standings")
-            .select(`*, team:teams(*)`)
+            .select(`*, team:${teamsTable}(*)`)
             .eq("group_id", group.id)
             .order("points", { ascending: false }),
         ]);
