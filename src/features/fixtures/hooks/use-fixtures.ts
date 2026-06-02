@@ -40,6 +40,6 @@ export function useGroups() {
     queryKey: [QUERY_KEYS.groups, activeTournament?.id],
     queryFn: () => fixturesService.getGroups(activeTournament!.id),
     enabled: !!activeTournament?.id,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 0,
   });
 }
