@@ -128,48 +128,54 @@ export const fixturesService = {
   },
 
   // ── Groups ─────────────────────────────────────────────────────────────────
+  // Derives groups directly from partidos data — no dependency on groups table
   async getGroups(tournamentId: string): Promise<Group[]> {
     const supabase = db();
 
-    // Fetch group definitions (with timeout)
-    const groupsRaw = await queryWithTimeout<GroupRow[]>(
-      supabase.from("groups").select("*").eq("tournament_id", tournamentId).order("letter")
-    );
-    const groups = groupsRaw ?? [];
+    // Get ALL partidos for this tournament (one query)
+    const allPartidos = (await queryWithTimeout(
+      supabase.from("partidos").select("*")
+        .eq("tournament_id", tournamentId)
+        .order("fecha_hora", { ascending: true })
+    )) as any[] | null;
 
-    if (!groups.length) return [];
+    if (!allPartidos?.length) return [];
 
-    const enriched = await Promise.all(
-      groups.map(async (group: GroupRow) => {
-        // Matches from partidos for this group
-        const partidosRaw = (await queryWithTimeout(
-          supabase.from("partidos").select("*").eq("grupo_id", group.letter).order("fecha_hora")
-        )) as any[] | null ?? [];
+    // Extract unique group letters sorted A-L
+    const letters = [...new Set(allPartidos.map((m: any) => m.grupo_id).filter(Boolean))].sort() as string[];
 
-        // Team IDs from those matches
-        const teamIds = [...new Set(
-          partidosRaw.flatMap((m: any) => [m.equipo_1_id, m.equipo_2_id]).filter(Boolean)
-        )] as string[];
+    // Fetch all teams used in these matches (single query with timeout)
+    const teamIds = [...new Set(
+      allPartidos.flatMap((m: any) => [m.equipo_1_id, m.equipo_2_id]).filter(Boolean)
+    )] as string[];
+    const teamsById = await fetchTeamsById(supabase, teamIds);
 
-        const teamsById = await fetchTeamsById(supabase, teamIds);
+    // Try to get groups table for IDs/names (best-effort, not required)
+    const groupsFromDB = (await queryWithTimeout(
+      supabase.from("groups").select("*").eq("tournament_id", tournamentId)
+    )) as GroupRow[] | null ?? [];
+    const groupsByLetter = Object.fromEntries((groupsFromDB).map((g: any) => [g.letter, g]));
 
-        const matches = partidosRaw.map((m: any) =>
-          mapPartido(m, teamsById, { [group.letter]: group })
-        );
+    return letters.map((letter) => {
+      const dbGroup = groupsByLetter[letter];
+      const group: GroupRow = dbGroup ?? {
+        id: `group-${letter}`,
+        name: `Grupo ${letter}`,
+        letter,
+        tournament_id: tournamentId,
+      };
 
-        const standingsRaw = (await queryWithTimeout(
-          supabase.from("standings").select("*").eq("group_id", group.id).order("points", { ascending: false })
-        )) as Standing[] | null ?? [];
+      const groupMatches = allPartidos
+        .filter((m: any) => m.grupo_id === letter)
+        .map((m: any) => mapPartido(m, teamsById, { [letter]: group }));
 
-        return {
-          ...group,
-          teams:     Object.values(teamsById) as TeamRow[],
-          matches,
-          standings: standingsRaw,
-        } as Group;
-      })
-    );
+      const groupTeamIds = [...new Set(
+        allPartidos.filter((m: any) => m.grupo_id === letter)
+          .flatMap((m: any) => [m.equipo_1_id, m.equipo_2_id]).filter(Boolean)
+      )] as string[];
+      const groupTeams = groupTeamIds.map((id) => teamsById[id]).filter(Boolean) as TeamRow[];
 
-    return enriched;
+      return { ...group, teams: groupTeams, matches: groupMatches, standings: [] } as Group;
+    });
   },
 };

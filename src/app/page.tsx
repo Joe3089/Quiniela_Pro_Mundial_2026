@@ -9,9 +9,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-// Importamos el componente del calendario que creamos
-import { FixtureMundial } from "@/features/fixtures";
-
 /* ════════════════════════════════════════════════════════
    CITY REVEAL PANELS — paneles de color que se desvanecen
    para revelar cada ciudad de forma animada.
@@ -297,16 +294,6 @@ export default function HomePage() {
                 </div>
               ))}
             </div>
-          </motion.div>
-        </section>
-
-        {/* ══ FIXTURE (NUEVO COMPONENTE) ════════════════════ */}
-        <section className="pb-20">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-          >
-            {/* Aquí se renderiza tu conexión en vivo con Supabase */}
-            <FixtureMundial />
           </motion.div>
         </section>
 
