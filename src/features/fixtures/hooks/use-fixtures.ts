@@ -13,7 +13,7 @@ export function useTeams() {
     queryKey: [QUERY_KEYS.teams, activeTournament?.id],
     queryFn: () => fixturesService.getTeams(activeTournament!.id),
     enabled: !!activeTournament?.id,
-    staleTime: 1000 * 60 * 30,
+    staleTime: 0,
   });
 }
 
@@ -24,8 +24,7 @@ export function useMatches(phase?: MatchPhase) {
     queryKey: [QUERY_KEYS.matches, activeTournament?.id, phase],
     queryFn: () => fixturesService.getTournamentMatches(activeTournament!.id, phase),
     enabled: !!activeTournament?.id,
-    staleTime: 1000 * 60 * 2,
-    // Refresh every minute while there are live matches (tournament underway)
+    staleTime: 0,
     refetchInterval: (query) => {
       const data = query.state.data as import("@/types/fixtures").Match[] | undefined;
       const hasLive = data?.some((m) => m.status === "live");

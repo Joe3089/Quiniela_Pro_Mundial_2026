@@ -7,7 +7,7 @@ import Link from "next/link";
 import { FlagImage } from "@/components/ui/flag-image";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ConfederationBadge } from "@/components/ui/confederation-badge";
-import { useTeams } from "@/features/fixtures/hooks/use-fixtures";
+import { useTeams, useMatches } from "@/features/fixtures/hooks/use-fixtures";
 import { cn } from "@/lib/utils";
 import type { TeamRow } from "@/types/database";
 
@@ -98,7 +98,24 @@ function TeamCard({ team: raw, index }: { team: TeamRow; index: number }) {
 }
 
 export default function SeleccionesPage() {
-  const { data: teams = [], isLoading } = useTeams();
+  const { data: teamsData = [], isLoading: teamsLoading } = useTeams();
+  const { data: matches, isLoading: matchesLoading } = useMatches();
+
+  // Derive teams from matches as fallback when direct query is slow/empty
+  const teamsFromMatches = useMemo<TeamRow[]>(() => {
+    if (!matches?.length) return [];
+    const map = new Map<string, TeamRow>();
+    matches.forEach((m) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (m.home_team) map.set(m.home_team.id, m.home_team as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (m.away_team) map.set(m.away_team.id, m.away_team as any);
+    });
+    return Array.from(map.values()).sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""));
+  }, [matches]);
+
+  const teams = teamsData.length ? teamsData : teamsFromMatches;
+  const isLoading = teamsLoading && matchesLoading;
   const [search, setSearch] = useState("");
   const [activeConf, setActiveConf] = useState<string>("all");
 
