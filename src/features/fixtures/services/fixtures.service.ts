@@ -26,7 +26,7 @@ const PHASE_MAP: Record<string, string> = {
 
 // ── Query with race-timeout to avoid hanging if a table is slow ──────────────
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function queryWithTimeout<T>(query: Promise<{ data: T | null; error: unknown }>, ms = 7000): Promise<T | null> {
+async function queryWithTimeout<T>(query: Promise<{ data: T | null; error: unknown }>, ms = 25000): Promise<T | null> {
   const timeout = new Promise<{ data: null }>((resolve) => setTimeout(() => resolve({ data: null }), ms));
   const result = await Promise.race([query, timeout]);
   return result.data ?? null;
