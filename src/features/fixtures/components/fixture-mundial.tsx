@@ -6,11 +6,11 @@ import { createClient } from '@/lib/supabase/client';
 
 interface Equipo {
   name: string;
-  bandera_url: string;
+  flag_url: string;
 }
 
 interface Partido {
-  id: number;
+  id: string;
   fase: string;
   fecha_hora: string;
   local: Equipo;
@@ -28,15 +28,15 @@ export function FixtureMundial() {
     async function cargarPartidos() {
       try {
         const { data, error } = await supabase
-          .from('partidos')
+          .from('matches')
           .select(`
             id,
-            fase,
-            fecha_hora,
-            local:teams!partidos_equipo_1_fkey(name, bandera_url),
-            visitante:teams!partidos_equipo_2_fkey(name, bandera_url)
+            phase as fase,
+            match_date as fecha_hora,
+            local:teams!matches_home_team_id_fkey(name, flag_url),
+            visitante:teams!matches_away_team_id_fkey(name, flag_url)
           `)
-          .order('fecha_hora', { ascending: true });
+          .order('match_date', { ascending: true });
 
         if (error) throw error;
         
@@ -78,7 +78,7 @@ export function FixtureMundial() {
             <div className="flex justify-between items-center">
               <div className="flex flex-col items-center w-1/3 text-center">
                 <img 
-                  src={partido.local?.bandera_url} 
+                  src={partido.local?.flag_url} 
                   alt={partido.local?.name} 
                   className="w-16 h-10 object-cover rounded border border-gray-300 shadow-sm mb-2"
                 />
@@ -91,7 +91,7 @@ export function FixtureMundial() {
 
               <div className="flex flex-col items-center w-1/3 text-center">
                 <img 
-                  src={partido.visitante?.bandera_url} 
+                  src={partido.visitante?.flag_url} 
                   alt={partido.visitante?.name} 
                   className="w-16 h-10 object-cover rounded border border-gray-300 shadow-sm mb-2"
                 />

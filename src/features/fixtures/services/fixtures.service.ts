@@ -42,32 +42,32 @@ async function fetchTeamsById(supabase: any, ids: string[]): Promise<Record<stri
   return Object.fromEntries((data as any[]).map((t: any) => [t.id, t]));
 }
 
-// ── Map a partidos row to Match type ─────────────────────────────────────────
+// ── Map a matches row to Match type ─────────────────────────────────────────
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapPartido(m: any, teamsById: Record<string, any>, groupsByLetter: Record<string, any>): Match {
-  const homeScore = m.goles_equipo_1 ?? m.goles_equipo1 ?? m.goles_local    ?? null;
-  const awayScore = m.goles_equipo_2 ?? m.goles_equipo2 ?? m.goles_visitante ?? null;
-  const groupObj  = groupsByLetter[m.grupo_id] ?? null;
+function mapPartido(m: any, teamsById: Record<string, any>, groupsById: Record<string, any>): Match {
+  const homeScore = m.home_score ?? m.goles_equipo_1 ?? m.goles_equipo1 ?? m.goles_local ?? null;
+  const awayScore = m.away_score ?? m.goles_equipo_2 ?? m.goles_equipo2 ?? m.goles_visitante ?? null;
+  const groupObj = groupsById[m.group_id] ?? null;
 
   return {
     id:                   String(m.id),
     tournament_id:        m.tournament_id         ?? "",
-    phase:                (PHASE_MAP[m.fase]       ?? "group") as never,
-    round_number:         m.jornada ?? m.ronda     ?? null,
-    group_id:             groupObj?.id             ?? null,
-    home_team_id:         m.equipo_1_id            ?? null,
-    away_team_id:         m.equipo_2_id            ?? null,
+    phase:                (PHASE_MAP[m.phase]      ?? "group") as never,
+    round_number:         m.round_number ?? m.jornada ?? m.ronda ?? null,
+    group_id:             m.group_id              ?? groupObj?.id ?? null,
+    home_team_id:         m.home_team_id          ?? m.equipo_1_id ?? null,
+    away_team_id:         m.away_team_id          ?? m.equipo_2_id ?? null,
     home_score:           homeScore,
     away_score:           awayScore,
-    home_score_penalties: null,
-    away_score_penalties: null,
-    match_date:           m.fecha_hora ?? m.fecha  ?? new Date().toISOString(),
-    venue:                m.sede                   ?? null,
-    city:                 m.ciudad                 ?? null,
-    status:               (STATUS_MAP[m.estado]    ?? "scheduled") as never,
-    created_at:           new Date().toISOString(),
-    home_team: teamsById[m.equipo_1_id]            ?? null,
-    away_team: teamsById[m.equipo_2_id]            ?? null,
+    home_score_penalties: m.home_score_penalties   ?? null,
+    away_score_penalties: m.away_score_penalties   ?? null,
+    match_date:           m.match_date ?? m.fecha_hora ?? m.fecha ?? new Date().toISOString(),
+    venue:                m.venue                  ?? m.sede ?? null,
+    city:                 m.city                   ?? m.ciudad ?? null,
+    status:               (STATUS_MAP[m.status]    ?? "scheduled") as never,
+    created_at:           m.created_at ?? new Date().toISOString(),
+    home_team: teamsById[m.home_team_id]            ?? teamsById[m.equipo_1_id] ?? null,
+    away_team: teamsById[m.away_team_id]            ?? teamsById[m.equipo_2_id] ?? null,
     group:     groupObj,
   } as Match;
 }
@@ -96,29 +96,29 @@ export const fixturesService = {
 
     const run = async (tid?: string): Promise<Match[] | null> => {
       try {
-        let q = supabase.from("partidos").select("*").order("fecha_hora", { ascending: true });
+        let q = supabase.from("matches").select("*").order("match_date", { ascending: true });
         if (tid) q = q.eq("tournament_id", tid);
 
         const rows = (await queryWithTimeout(q)) as any[] | null;
         if (!rows?.length) return null;
 
-        // Collect unique IDs / letters
-        const teamIds = [...new Set(rows.flatMap((m: any) => [m.equipo_1_id, m.equipo_2_id]).filter(Boolean))] as string[];
-        const letters = [...new Set(rows.map((m: any) => m.grupo_id).filter(Boolean))] as string[];
+        // Collect unique IDs / group IDs
+        const teamIds = [...new Set(rows.flatMap((m: any) => [m.home_team_id, m.away_team_id, m.equipo_1_id, m.equipo_2_id]).filter(Boolean))] as string[];
+        const groupIds = [...new Set(rows.map((m: any) => m.group_id).filter(Boolean))] as string[];
 
         // Parallel lookups — both wrapped in timeout
         const [teamsById, groupsData] = await Promise.all([
           fetchTeamsById(supabase, teamIds),
-          queryWithTimeout(supabase.from("groups").select("*").in("letter", letters)),
+          queryWithTimeout(supabase.from("groups").select("*").in("id", groupIds)),
         ]);
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const groupsByLetter: Record<string, any> = Object.fromEntries(
+        const groupsById: Record<string, any> = Object.fromEntries(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          ((groupsData as any[]) ?? []).map((g: any) => [g.letter, g])
+          ((groupsData as any[]) ?? []).map((g: any) => [g.id, g])
         );
 
-        return rows.map((m: any) => mapPartido(m, teamsById, groupsByLetter));
+        return rows.map((m: any) => mapPartido(m, teamsById, groupsById));
       } catch {
         return null;
       }
@@ -133,45 +133,44 @@ export const fixturesService = {
     const supabase = db();
 
     // Get ALL partidos for this tournament (one query)
-    const allPartidos = (await queryWithTimeout(
-      supabase.from("partidos").select("*")
+    const allMatches = (await queryWithTimeout(
+      supabase.from("matches").select("*")
         .eq("tournament_id", tournamentId)
-        .order("fecha_hora", { ascending: true })
+        .order("match_date", { ascending: true })
     )) as any[] | null;
 
-    if (!allPartidos?.length) return [];
+    if (!allMatches?.length) return [];
 
-    // Extract unique group letters sorted A-L
-    const letters = [...new Set(allPartidos.map((m: any) => m.grupo_id).filter(Boolean))].sort() as string[];
+    const groupIds = [...new Set(allMatches.map((m: any) => m.group_id).filter(Boolean))] as string[];
 
     // Fetch all teams used in these matches (single query with timeout)
     const teamIds = [...new Set(
-      allPartidos.flatMap((m: any) => [m.equipo_1_id, m.equipo_2_id]).filter(Boolean)
+      allMatches.flatMap((m: any) => [m.home_team_id, m.away_team_id, m.equipo_1_id, m.equipo_2_id]).filter(Boolean)
     )] as string[];
     const teamsById = await fetchTeamsById(supabase, teamIds);
 
     // Try to get groups table for IDs/names (best-effort, not required)
     const groupsFromDB = (await queryWithTimeout(
-      supabase.from("groups").select("*").eq("tournament_id", tournamentId)
+      supabase.from("groups").select("*").eq("tournament_id", tournamentId).in("id", groupIds)
     )) as GroupRow[] | null ?? [];
-    const groupsByLetter = Object.fromEntries((groupsFromDB).map((g: any) => [g.letter, g]));
+    const groupsById = Object.fromEntries((groupsFromDB).map((g: any) => [g.id, g]));
 
-    return letters.map((letter) => {
-      const dbGroup = groupsByLetter[letter];
+    return groupIds.map((groupId) => {
+      const dbGroup = groupsById[groupId];
       const group: GroupRow = dbGroup ?? {
-        id: `group-${letter}`,
-        name: `Grupo ${letter}`,
-        letter,
+        id: groupId,
+        name: `Grupo ${groupId}`,
+        letter: "?",
         tournament_id: tournamentId,
       };
 
-      const groupMatches = allPartidos
-        .filter((m: any) => m.grupo_id === letter)
-        .map((m: any) => mapPartido(m, teamsById, { [letter]: group }));
+      const groupMatches = allMatches
+        .filter((m: any) => m.group_id === groupId)
+        .map((m: any) => mapPartido(m, teamsById, groupsById));
 
       const groupTeamIds = [...new Set(
-        allPartidos.filter((m: any) => m.grupo_id === letter)
-          .flatMap((m: any) => [m.equipo_1_id, m.equipo_2_id]).filter(Boolean)
+        allMatches.filter((m: any) => m.group_id === groupId)
+          .flatMap((m: any) => [m.home_team_id, m.away_team_id, m.equipo_1_id, m.equipo_2_id]).filter(Boolean)
       )] as string[];
       const groupTeams = groupTeamIds.map((id) => teamsById[id]).filter(Boolean) as TeamRow[];
 
