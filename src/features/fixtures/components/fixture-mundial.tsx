@@ -1,20 +1,28 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-// Ajusta esto a tu alias absoluto si usas @, o usa la ruta relativa: '../../../lib/supabase/client'
-import { createClient } from '@/lib/supabase/client'; 
+import { createClient } from '@/lib/supabase/client';
 
-interface Equipo {
+interface Team {
+  id: string;
   name: string;
-  flag_url: string;
+  flag_url: string | null;
+}
+
+interface Match {
+  id: string;
+  phase: string;
+  match_date: string;
+  home_team_id: string;
+  away_team_id: string;
 }
 
 interface Partido {
   id: string;
   fase: string;
   fecha_hora: string;
-  local: Equipo;
-  visitante: Equipo;
+  local: Team;
+  visitante: Team;
 }
 
 export function FixtureMundial() {
@@ -27,22 +35,52 @@ export function FixtureMundial() {
   useEffect(() => {
     async function cargarPartidos() {
       try {
-        const { data, error } = await supabase
+        // Fetch matches
+        const { data: matches, error: matchError } = await supabase
           .from('matches')
-          .select(`
-            id,
-            phase as fase,
-            match_date as fecha_hora,
-            local:teams!matches_home_team_id_fkey(name, flag_url),
-            visitante:teams!matches_away_team_id_fkey(name, flag_url)
-          `)
+          .select('id, phase, match_date, home_team_id, away_team_id')
           .order('match_date', { ascending: true });
 
-        if (error) throw error;
-        
-        setPartidos(data as unknown as Partido[]);
+        if (matchError) throw matchError;
+        if (!matches || matches.length === 0) {
+          setPartidos([]);
+          return;
+        }
+
+        // Collect all unique team IDs
+        const teamIds = new Set<string>();
+        matches.forEach((m: Match) => {
+          if (m.home_team_id) teamIds.add(m.home_team_id);
+          if (m.away_team_id) teamIds.add(m.away_team_id);
+        });
+
+        // Fetch all teams at once
+        const { data: teams, error: teamError } = await supabase
+          .from('teams')
+          .select('id, name, flag_url')
+          .in('id', Array.from(teamIds));
+
+        if (teamError) throw teamError;
+
+        // Create a map of teams by ID for quick lookup
+        const teamMap = new Map<string, Team>();
+        (teams || []).forEach((team: Team) => {
+          teamMap.set(team.id, team);
+        });
+
+        // Map matches to partido format
+        const partidosMapeados: Partido[] = matches.map((match: Match) => ({
+          id: match.id,
+          fase: match.phase,
+          fecha_hora: match.match_date,
+          local: teamMap.get(match.home_team_id) || { id: '', name: 'TBD', flag_url: null },
+          visitante: teamMap.get(match.away_team_id) || { id: '', name: 'TBD', flag_url: null },
+        }));
+
+        setPartidos(partidosMapeados);
       } catch (err: any) {
-        setError(err.message);
+        console.error('Error loading matches:', err);
+        setError(err.message || 'Error loading matches');
       } finally {
         setCargando(false);
       }
@@ -77,11 +115,13 @@ export function FixtureMundial() {
 
             <div className="flex justify-between items-center">
               <div className="flex flex-col items-center w-1/3 text-center">
-                <img 
-                  src={partido.local?.flag_url} 
-                  alt={partido.local?.name} 
-                  className="w-16 h-10 object-cover rounded border border-gray-300 shadow-sm mb-2"
-                />
+                {partido.local?.flag_url && (
+                  <img 
+                    src={partido.local.flag_url} 
+                    alt={partido.local?.name} 
+                    className="w-16 h-10 object-cover rounded border border-gray-300 shadow-sm mb-2"
+                  />
+                )}
                 <span className="font-bold text-gray-800">{partido.local?.name}</span>
               </div>
 
@@ -90,11 +130,13 @@ export function FixtureMundial() {
               </div>
 
               <div className="flex flex-col items-center w-1/3 text-center">
-                <img 
-                  src={partido.visitante?.flag_url} 
-                  alt={partido.visitante?.name} 
-                  className="w-16 h-10 object-cover rounded border border-gray-300 shadow-sm mb-2"
-                />
+                {partido.visitante?.flag_url && (
+                  <img 
+                    src={partido.visitante.flag_url} 
+                    alt={partido.visitante?.name} 
+                    className="w-16 h-10 object-cover rounded border border-gray-300 shadow-sm mb-2"
+                  />
+                )}
                 <span className="font-bold text-gray-800">{partido.visitante?.name}</span>
               </div>
             </div>
