@@ -103,7 +103,7 @@ export function GroupStandings({ group }: { group: Group }) {
             )}
             <div className="min-w-0">
               <p className="text-xs font-semibold truncate">{team.name}</p>
-              <p className="text-[9px] text-muted-foreground">{team.confederation}</p>
+              <p className="text-[9px] text-muted-foreground">{(team as any).confederation ?? ""}</p>
             </div>
           </div>
         ))}
