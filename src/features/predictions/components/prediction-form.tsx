@@ -53,8 +53,7 @@ function ScoreInput({
 export function PredictionForm({ match, existingPrediction, onSuccess }: PredictionFormProps) {
   const save = useSavePrediction();
   const isLocked = match.status !== "scheduled";
-  const lockoutTime = new Date(new Date(match.match_date).getTime() - 2 * 60 * 60 * 1000);
-  const isBeforeLockout = new Date() >= lockoutTime;
+  const isBeforeLockout = false; // predictions open until kickoff
 
   const { watch, setValue, handleSubmit } = useForm<PredictionInput>({
     resolver: zodResolver(predictionSchema),

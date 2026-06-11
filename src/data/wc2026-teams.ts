@@ -925,10 +925,38 @@ export const WC2026_TEAMS: WCTeam[] = [
     ],
     rosterPublished: false,
   },
+  {
+    code: "CZE", name: "República Checa", shortName: "CZE", flag: "🇨🇿",
+    confederation: "UEFA", fifaRanking: 36, coach: "Miroslav Koubek",
+    qualifiedAs: "direct", worldCupAppearances: 9, bestResult: "Semifinal (1990 como TCH)",
+    keyPlayers: ["Patrik Schick", "Tomáš Souček", "Vladimír Coufal", "Lukáš Horníček"],
+    topScorer: { name: "Jan Koller", goals: 55 },
+    description: "Chequia regresa al Mundial con Schick como referente y Souček como motor del mediocampo.",
+    formation: "4-2-3-1",
+    xi: ["Staněk", "Coufal", "Holeš", "Zima", "Jurásek", "Souček", "Sadílek", "Provod", "Lingr", "Schick", "Chytil"],
+    players: [
+      { name: "Jindřich Staněk",  position: "GK",  club: "Slavia Praga",   age: 27, dorsal: 1 },
+      { name: "Vladimír Coufal",  position: "DEF", club: "West Ham",        age: 32, dorsal: 5 },
+      { name: "Tomáš Holeš",      position: "DEF", club: "Slavia Praga",   age: 29, dorsal: 6 },
+      { name: "David Zima",        position: "DEF", club: "Turín",           age: 24, dorsal: 4 },
+      { name: "David Jurásek",     position: "DEF", club: "Bayer Leverkusen",age: 22, dorsal: 3 },
+      { name: "Tomáš Souček",     position: "MID", club: "West Ham",        age: 29, dorsal: 8, isCaptain: true, isKeyPlayer: true },
+      { name: "Michal Sadílek",   position: "MID", club: "Twente",          age: 25, dorsal: 15 },
+      { name: "Lukáš Provod",     position: "MID", club: "Slavia Praga",   age: 26, dorsal: 11 },
+      { name: "Tomáš Lingr",      position: "MID", club: "Feyenoord",       age: 26, dorsal: 7 },
+      { name: "Patrik Schick",    position: "FWD", club: "Bayer Leverkusen",age: 29, dorsal: 9, isKeyPlayer: true },
+      { name: "Mojmír Chytil",    position: "FWD", club: "Feyenoord",       age: 24, dorsal: 10 },
+      { name: "Adam Hložek",      position: "FWD", club: "Bayer Leverkusen",age: 22, dorsal: 17 },
+      { name: "Jan Kuchta",       position: "FWD", club: "Slavia Praga",   age: 27, dorsal: 18 },
+    ],
+    rosterPublished: true,
+  },
 ];
 
 export function getTeamByCode(code: string): WCTeam | undefined {
-  return WC2026_TEAMS.find(t => t.code === code);
+  if (!code) return undefined;
+  const upper = code.toUpperCase();
+  return WC2026_TEAMS.find(t => t.code === upper || t.shortName === upper);
 }
 
 export function getTeamsByConfederation(conf: Confederation): WCTeam[] {
