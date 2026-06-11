@@ -418,7 +418,7 @@ function useCountdown(matchDate: string) {
     return () => clearInterval(id);
   }, []);
 
-  const LOCKOUT_MS = 2 * 60 * 60 * 1000;
+  const LOCKOUT_MS = 0; // Lock only at kickoff (status change), not before
   const matchTime = new Date(matchDate).getTime();
   const ms = matchTime - now;
   const totalMinutes = Math.floor(ms / 60_000);
@@ -580,7 +580,7 @@ function TodayMatchesBanner({ matches, predictionMap }: {
   matches: Match[];
   predictionMap: Map<string, { home: number; away: number }>;
 }) {
-  const LOCKOUT_MS = 2 * 60 * 60 * 1000;
+  const LOCKOUT_MS = 0; // Lock only at kickoff (status change), not before
   const now = Date.now();
   const today = new Date().toDateString();
 
