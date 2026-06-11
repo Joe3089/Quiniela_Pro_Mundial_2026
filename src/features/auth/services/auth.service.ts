@@ -42,8 +42,10 @@ export const authService = {
 
   async resetPassword(email: string) {
     const supabase = createClient();
+    // Route through /auth/callback so the code exchange happens there,
+    // then redirect to /auth/reset-password with an active session.
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/reset-password`,
+      redirectTo: `${window.location.origin}/auth/callback?next=/auth/reset-password`,
     });
     if (error) throw error;
   },
