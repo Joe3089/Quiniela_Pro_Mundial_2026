@@ -23,9 +23,13 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
+  // Use getSession() instead of getUser() — reads from cookies, no network call.
+  // getUser() validates with Supabase API on every request which can timeout on
+  // Vercel free tier and falsely return null, redirecting authenticated users to login.
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
+  const user = session?.user ?? null;
 
   const protectedRoutes = ["/dashboard", "/fixtures", "/predictions", "/rankings", "/selecciones", "/estadisticas", "/profile", "/admin"];
   const authRoutes = ["/auth/login", "/auth/register"];
