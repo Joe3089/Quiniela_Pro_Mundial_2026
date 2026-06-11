@@ -8,6 +8,10 @@ export interface WCPlayer {
   dorsal?: number;
   isCaptain?: boolean;
   isKeyPlayer?: boolean;
+  /** API-Football player ID — populate via /api/players sync to get real photos */
+  apiFootballId?: number;
+  /** Override photo URL. If absent, falls back to ui-avatars generated from name. */
+  photo?: string;
 }
 
 export interface WCTeam {

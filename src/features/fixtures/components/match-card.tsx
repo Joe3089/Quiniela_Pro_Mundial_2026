@@ -4,7 +4,9 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import { Clock, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { cn, formatTime, formatDateShort } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { useFormatDate } from "@/hooks/use-format-date";
+import { TeamCrest } from "@/components/ui/team-crest";
 import { MATCH_STATUS_LABELS } from "@/constants";
 import type { Match } from "@/types/fixtures";
 
@@ -17,6 +19,7 @@ interface MatchCardProps {
 }
 
 export function MatchCard({ match, showPrediction, prediction, onClick, compact }: MatchCardProps) {
+  const { formatTime, formatDateShort } = useFormatDate();
   const isLive = match.status === "live";
   const isFinished = match.status === "finished";
   const hasScore = match.home_score !== null && match.away_score !== null;
@@ -57,15 +60,7 @@ export function MatchCard({ match, showPrediction, prediction, onClick, compact 
           <span className={cn("font-semibold text-sm text-right", compact && "text-xs")}>
             {match.home_team?.short_name ?? "TBD"}
           </span>
-          {match.home_team?.flag_url && (
-            <Image
-              src={match.home_team.flag_url}
-              alt={match.home_team.name}
-              width={compact ? 24 : 28}
-              height={compact ? 16 : 20}
-              className="rounded-sm object-cover"
-            />
-          )}
+          <TeamCrest team={match.home_team as any} size={compact ? "xs" : "sm"} showCrest={false} />
         </div>
 
         {/* Score / VS */}
@@ -90,15 +85,7 @@ export function MatchCard({ match, showPrediction, prediction, onClick, compact 
 
         {/* Away */}
         <div className="flex-1 flex items-center gap-2">
-          {match.away_team?.flag_url && (
-            <Image
-              src={match.away_team.flag_url}
-              alt={match.away_team.name}
-              width={compact ? 24 : 28}
-              height={compact ? 16 : 20}
-              className="rounded-sm object-cover"
-            />
-          )}
+          <TeamCrest team={match.away_team as any} size={compact ? "xs" : "sm"} showCrest={false} />
           <span className={cn("font-semibold text-sm", compact && "text-xs")}>
             {match.away_team?.short_name ?? "TBD"}
           </span>

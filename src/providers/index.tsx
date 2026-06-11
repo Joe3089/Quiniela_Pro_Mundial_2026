@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { QueryProvider } from "./query-provider";
 import { ThemeProvider } from "./theme-provider";
 import { AuthProvider } from "./auth-provider";
+import { TimezoneProvider } from "./timezone-provider";
 import { InstallPrompt } from "@/components/shared/install-prompt";
 import { TournamentProvider } from "./tournament-provider";
 import { Toaster } from "sonner";
@@ -21,6 +22,7 @@ function ServiceWorkerRegistrar() {
 export function Providers({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider>
+      <TimezoneProvider>
       <QueryProvider>
         <AuthProvider>
           <TournamentProvider>
@@ -40,6 +42,7 @@ export function Providers({ children }: { children: ReactNode }) {
           />
         </AuthProvider>
       </QueryProvider>
+      </TimezoneProvider>
     </ThemeProvider>
   );
 }

@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Trophy, Target, BarChart3, Calendar, TrendingUp, Zap, ArrowRight, Star, MapPin } from "lucide-react";
-import { FlagImage } from "@/components/ui/flag-image";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuthStore } from "@/store/auth.store";
@@ -11,12 +11,14 @@ import { useUserRank } from "@/features/rankings/hooks/use-rankings";
 import { useUserPredictions } from "@/features/predictions/hooks/use-predictions";
 import { useMatches } from "@/features/fixtures/hooks/use-fixtures";
 import { SCORING } from "@/constants";
+import { useFormatDate } from "@/hooks/use-format-date";
 
 export function DashboardView() {
   const { user, isLoading: authLoading } = useAuthStore();
   const { data: userRank, isLoading: rankLoading } = useUserRank();
   const { data: predictions, isLoading: predsLoading } = useUserPredictions();
   const { data: upcomingMatches, isLoading: matchesLoading } = useMatches();
+  const { formatTime, formatDateShort } = useFormatDate();
 
   const nextMatches = upcomingMatches
     ?.filter((m) => m.status === "scheduled" || m.status === "live")
@@ -174,9 +176,8 @@ export function DashboardView() {
                   <Skeleton key={i} className="h-16 w-full rounded-xl" />
                 ))
               : nextMatches.map((match) => {
-                  const d = new Date(match.match_date);
-                  const dateStr = d.toLocaleDateString("es-MX", { day: "numeric", month: "short" });
-                  const timeStr = d.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
+                  const dateStr = formatDateShort(match.match_date);
+                  const timeStr = formatTime(match.match_date);
                   const statusMap: Record<string, { label: string; cls: string }> = {
                     scheduled: { label: "Programado", cls: "bg-white/5 text-muted-foreground" },
                     live:      { label: "EN VIVO",    cls: "bg-emerald-500/15 text-emerald-400 font-bold" },
@@ -196,8 +197,13 @@ export function DashboardView() {
                             <span className="text-xs font-semibold text-white truncate max-w-[52px]">
                               {match.home_team?.short_name ?? "TBD"}
                             </span>
-                            {match.home_team?.fifa_code && (
-                              <FlagImage fifaCode={match.home_team.fifa_code} size="sm" />
+                            {(match.home_team as any)?.flag_url && (
+                              <Image
+                                src={(match.home_team as any).flag_url}
+                                alt={match.home_team?.short_name ?? ""}
+                                width={24} height={16}
+                                className="rounded-sm object-cover shadow-sm shrink-0"
+                              />
                             )}
                           </div>
                           {/* VS + date */}
@@ -208,8 +214,13 @@ export function DashboardView() {
                           </div>
                           {/* Away */}
                           <div className="flex items-center gap-1.5 flex-1 justify-start">
-                            {match.away_team?.fifa_code && (
-                              <FlagImage fifaCode={match.away_team.fifa_code} size="sm" />
+                            {(match.away_team as any)?.flag_url && (
+                              <Image
+                                src={(match.away_team as any).flag_url}
+                                alt={match.away_team?.short_name ?? ""}
+                                width={24} height={16}
+                                className="rounded-sm object-cover shadow-sm shrink-0"
+                              />
                             )}
                             <span className="text-xs font-semibold text-white truncate max-w-[52px]">
                               {match.away_team?.short_name ?? "TBD"}

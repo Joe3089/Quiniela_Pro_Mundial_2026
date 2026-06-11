@@ -42,6 +42,19 @@ async function fetchTeamsById(supabase: any, ids: string[]): Promise<Record<stri
   return Object.fromEntries((data as any[]).map((t: any) => [t.id, t]));
 }
 
+// ── Deduplicate matches that were inserted multiple times ───────────────────
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function dedupeMatches(rows: any[]): any[] {
+  const seen = new Map<string, any>();
+  for (const row of rows) {
+    const key = [row.phase, row.group_id, row.home_team_id, row.away_team_id, row.match_date, row.status].join("|");
+    if (!seen.has(key)) {
+      seen.set(key, row);
+    }
+  }
+  return Array.from(seen.values());
+}
+
 // ── Map a matches row to Match type ─────────────────────────────────────────
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapPartido(m: any, teamsById: Record<string, any>, groupsById: Record<string, any>): Match {
@@ -102,11 +115,12 @@ export const fixturesService = {
         const rows = (await queryWithTimeout(q)) as any[] | null;
         if (!rows?.length) return null;
 
-        // Collect unique IDs / group IDs
-        const teamIds = [...new Set(rows.flatMap((m: any) => [m.home_team_id, m.away_team_id, m.equipo_1_id, m.equipo_2_id]).filter(Boolean))] as string[];
-        const groupIds = [...new Set(rows.map((m: any) => m.group_id).filter(Boolean))] as string[];
+        const uniqueRows = dedupeMatches(rows);
 
-        // Parallel lookups — both wrapped in timeout
+        // Collect unique IDs / group IDs
+        const teamIds = [...new Set(uniqueRows.flatMap((m: any) => [m.home_team_id, m.away_team_id, m.equipo_1_id, m.equipo_2_id]).filter(Boolean))] as string[];
+        const groupIds = [...new Set(uniqueRows.map((m: any) => m.group_id).filter(Boolean))] as string[];
+
         const [teamsById, groupsData] = await Promise.all([
           fetchTeamsById(supabase, teamIds),
           queryWithTimeout(supabase.from("groups").select("*").in("id", groupIds)),
@@ -118,7 +132,7 @@ export const fixturesService = {
           ((groupsData as any[]) ?? []).map((g: any) => [g.id, g])
         );
 
-        return rows.map((m: any) => mapPartido(m, teamsById, groupsById));
+        return uniqueRows.map((m: any) => mapPartido(m, teamsById, groupsById));
       } catch {
         return null;
       }
@@ -141,11 +155,15 @@ export const fixturesService = {
 
     if (!allMatches?.length) return [];
 
-    const groupIds = [...new Set(allMatches.map((m: any) => m.group_id).filter(Boolean))] as string[];
+    const uniqueMatches = dedupeMatches(allMatches);
+    // Sort group UUIDs so groups always appear in order A→B→C...→L
+    // UUIDs follow pattern aa000000-...-000000000001 (A) through ...000000000c (L)
+    const groupIds = [...new Set(uniqueMatches.map((m: any) => m.group_id).filter(Boolean))]
+      .sort() as string[];
 
     // Fetch all teams used in these matches (single query with timeout)
     const teamIds = [...new Set(
-      allMatches.flatMap((m: any) => [m.home_team_id, m.away_team_id, m.equipo_1_id, m.equipo_2_id]).filter(Boolean)
+      uniqueMatches.flatMap((m: any) => [m.home_team_id, m.away_team_id, m.equipo_1_id, m.equipo_2_id]).filter(Boolean)
     )] as string[];
     const teamsById = await fetchTeamsById(supabase, teamIds);
 
@@ -164,12 +182,12 @@ export const fixturesService = {
         tournament_id: tournamentId,
       };
 
-      const groupMatches = allMatches
+      const groupMatches = uniqueMatches
         .filter((m: any) => m.group_id === groupId)
         .map((m: any) => mapPartido(m, teamsById, groupsById));
 
       const groupTeamIds = [...new Set(
-        allMatches.filter((m: any) => m.group_id === groupId)
+        uniqueMatches.filter((m: any) => m.group_id === groupId)
           .flatMap((m: any) => [m.home_team_id, m.away_team_id, m.equipo_1_id, m.equipo_2_id]).filter(Boolean)
       )] as string[];
       const groupTeams = groupTeamIds.map((id) => teamsById[id]).filter(Boolean) as TeamRow[];

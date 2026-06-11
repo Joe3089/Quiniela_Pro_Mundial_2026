@@ -12,6 +12,7 @@ import { useAuthStore } from "@/store/auth.store";
 import { useLogout } from "@/features/auth/hooks/use-auth";
 import { getInitials, cn } from "@/lib/utils";
 import { ProfileModal } from "@/features/auth/components/profile-modal";
+import { TimezoneSelector } from "@/components/ui/timezone-selector";
 
 const NAV_ITEMS = [
   { href: "/dashboard",    label: "Inicio",        icon: LayoutGrid },
@@ -24,7 +25,8 @@ const NAV_ITEMS = [
 
 export function Navbar() {
   const pathname = usePathname();
-  const { user, isLoading } = useAuthStore();
+  const { user, isLoading, isInitialized } = useAuthStore();
+  const authReady = isInitialized && !isLoading;
   // "Inicio" goes to dashboard when logged in, landing page when not
   const navItems = NAV_ITEMS.map((item) =>
     item.href === "/dashboard"
@@ -103,13 +105,14 @@ export function Navbar() {
 
               {/* Right side */}
               <div className="flex items-center gap-2">
-                {/* Skeleton while store is hydrating */}
-                {hasMounted && isLoading && (
+                <TimezoneSelector compact />
+                {/* Skeleton while session is being confirmed */}
+                {hasMounted && !authReady && (
                   <div className="hidden md:flex items-center gap-2">
                     <div className="h-8 w-28 rounded-xl bg-white/5 animate-pulse" />
                   </div>
                 )}
-                {(!hasMounted || isLoading) ? null : user ? (
+                {(!hasMounted || !authReady) ? null : user ? (
                   <div className="relative">
                     <button
                       onClick={() => setUserMenuOpen((o) => !o)}

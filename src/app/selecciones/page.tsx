@@ -46,13 +46,13 @@ const CONF_COLORS: Record<string, string> = {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function normalizeTeam(raw: any): TeamRow {
   return {
-    id:            raw.id            ?? "",
-    name:          raw.name          ?? raw.nombre        ?? raw.pais        ?? "",
-    short_name:    raw.short_name     ?? raw.nombre_corto  ?? raw.nombre      ?? raw.name ?? "",
-    flag_url:      raw.flag_url       ?? raw.bandera       ?? raw.escudo      ?? null,
-    fifa_code:     raw.fifa_code      ?? raw.codigo_fifa   ?? raw.codigo      ?? raw.code ?? "",
-    continent:     raw.continent      ?? raw.confederacion ?? raw.continente  ?? "",
-    tournament_id: raw.tournament_id  ?? raw.torneo_id     ?? "",
+    id:            raw.id               ?? "",
+    name:          raw.name             ?? raw.nombre        ?? raw.pais        ?? "",
+    short_name:    raw.short_name       ?? raw.nombre_corto  ?? raw.nombre      ?? raw.name ?? "",
+    flag_url:      raw.flag_url         ?? raw.bandera_url   ?? raw.bandera     ?? raw.escudo_url ?? raw.escudo ?? null,
+    fifa_code:     raw.fifa_code        ?? raw.codigo_fifa   ?? raw.codigo      ?? raw.code ?? "",
+    continent:     raw.confederation    ?? raw.continent     ?? raw.confederacion ?? raw.continente  ?? "",
+    tournament_id: raw.tournament_id    ?? raw.torneo_id     ?? "",
   };
 }
 

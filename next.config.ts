@@ -20,6 +20,11 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "ui-avatars.com",
       },
+      {
+        // Wikipedia/Wikimedia images for historical player photos
+        protocol: "https",
+        hostname: "upload.wikimedia.org",
+      },
     ],
   },
   experimental: {

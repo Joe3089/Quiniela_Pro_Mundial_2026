@@ -13,7 +13,107 @@ import {
 } from "@/data/wc-history";
 import { FlagImage } from "@/components/ui/flag-image";
 import { ConfederationBadge } from "@/components/ui/confederation-badge";
-import { cn } from "@/lib/utils";
+import { cn, getPlayerPhotoUrl } from "@/lib/utils";
+
+// Verified API-Football national team IDs → federation crest URLs
+const FEDERATION_CRESTS: Record<string, string> = {
+  MEX: "https://media.api-sports.io/football/teams/16.png",
+  BRA: "https://media.api-sports.io/football/teams/6.png",
+  ARG: "https://media.api-sports.io/football/teams/26.png",
+  FRA: "https://media.api-sports.io/football/teams/2.png",
+  ESP: "https://media.api-sports.io/football/teams/9.png",
+  GER: "https://media.api-sports.io/football/teams/25.png",
+  ENG: "https://media.api-sports.io/football/teams/10.png",
+  CRO: "https://media.api-sports.io/football/teams/3.png",
+  POR: "https://media.api-sports.io/football/teams/27.png",
+  BEL: "https://media.api-sports.io/football/teams/1.png",
+  NED: "https://media.api-sports.io/football/teams/1118.png",
+  SUI: "https://media.api-sports.io/football/teams/15.png",
+  URU: "https://media.api-sports.io/football/teams/40.png",
+  COL: "https://media.api-sports.io/football/teams/39.png",
+  JPN: "https://media.api-sports.io/football/teams/21.png",
+  KOR: "https://media.api-sports.io/football/teams/149.png",
+  TUR: "https://media.api-sports.io/football/teams/19.png",
+  NOR: "https://media.api-sports.io/football/teams/772.png",
+};
+
+// Verified API-Football player IDs (tested against API)
+const PLAYER_API_IDS: Record<string, number> = {
+  // Current players — IDs verified ✓
+  "Kylian Mbappé":      278,
+  "Lionel Messi":       154,
+  "Erling Haaland":     1100,
+  "Harry Kane":         184,
+  "Cristiano Ronaldo":  874,
+  "Neymar Jr.":         276,
+  "Neymar":             276,
+  "Vinícius Jr.":       384384,
+  "Julián Álvarez":     342666,
+};
+
+// Direct photo URLs for historical players not available in API-Football
+const PLAYER_PHOTO_URLS: Record<string, string> = {
+  "Miroslav Klose":
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/Miroslav_Klose_2014.jpg/220px-Miroslav_Klose_2014.jpg",
+  "Ronaldo (R9)":
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Ronaldo_Fenomeno.jpg/220px-Ronaldo_Fenomeno.jpg",
+  "Gerd Müller":
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/Gerd_M%C3%BCller_-_1974_WM.jpg/220px-Gerd_M%C3%BCller_-_1974_WM.jpg",
+  "Pelé":
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Pel%C3%A9_col%C3%B3mbia_1970_%28cropped%29.jpg/220px-Pel%C3%A9_col%C3%B3mbia_1970_%28cropped%29.jpg",
+  "Just Fontaine":
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/JustFontaine.jpg/220px-JustFontaine.jpg",
+};
+
+// Team kit primary colors (for avatar backgrounds)
+const TEAM_COLORS: Record<string, string> = {
+  GER: "1C1C1C", BRA: "009C3B", FRA: "002395", ARG: "74ACDF",
+  ITA: "003DA5", ENG: "CF081F", ESP: "AA151B", POR: "006600",
+  URU: "72A7D3", NED: "FF6600", HUN: "CE2939", CZE: "D7141A",
+};
+
+function PlayerPhoto({ name, fifaCode, size = 32 }: { name: string; fifaCode?: string; size?: number }) {
+  const apiId = PLAYER_API_IDS[name];
+  const directUrl = PLAYER_PHOTO_URLS[name];
+  const kitColor = fifaCode ? (TEAM_COLORS[fifaCode] ?? "1D4ED8") : "1D4ED8";
+
+  // Priority: 1) direct Wikipedia/official URL  2) API-Football  3) ui-avatars fallback
+  const src = directUrl
+    ? directUrl
+    : getPlayerPhotoUrl({ name, apiFootballId: apiId }, kitColor);
+
+  const avatarFallback = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${kitColor}&color=fff&size=${size * 2}&bold=true&format=png`;
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt={name}
+      width={size}
+      height={size}
+      style={{ width: size, height: size, objectFit: "cover" }}
+      className="rounded-full border border-white/15 shadow-md shrink-0 bg-white/5"
+      loading="lazy"
+      onError={(e) => {
+        const img = e.currentTarget as HTMLImageElement;
+        if (img.src !== avatarFallback) img.src = avatarFallback;
+      }}
+    />
+  );
+}
+
+// Shield-style team badge using flag
+function TeamBadge({ fifaCode, flag, size = "md" }: { fifaCode: string; flag?: string; size?: "sm" | "md" | "lg" }) {
+  const sizeMap = { sm: "h-8 w-8", md: "h-10 w-10", lg: "h-14 w-14" };
+  return (
+    <div className={cn(
+      "rounded-lg overflow-hidden border border-white/15 shadow-md shrink-0 flex items-center justify-center bg-black/20",
+      sizeMap[size]
+    )}>
+      <FlagImage fifaCode={fifaCode} fallbackEmoji={flag} size={size === "lg" ? "md" : "sm"} />
+    </div>
+  );
+}
 
 function SectionTitle({ icon: Icon, title, color }: { icon: React.ElementType; title: string; color: string }) {
   return (
@@ -43,7 +143,7 @@ function CampeonesTab() {
               className="glass rounded-xl border border-white/5 p-3 flex items-center gap-3"
             >
               <span className="text-xl font-black text-muted-foreground w-5 shrink-0">{i + 1}</span>
-              <FlagImage fifaCode={c.fifaCode} fallbackEmoji={c.flag} size="md" className="shrink-0" />
+              <TeamBadge fifaCode={c.fifaCode} flag={c.flag} size="md" />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 mb-0.5">
                   <p className="text-sm font-bold text-white">{c.country}</p>
@@ -178,15 +278,17 @@ function GoladoresTab() {
               "text-sm font-black w-5 shrink-0 text-center",
               i === 0 ? "text-[hsl(var(--brand-gold))]" : "text-muted-foreground"
             )}>{s.rank}</span>
-            <img
-              src={`https://ui-avatars.com/api/?name=${encodeURIComponent(s.name)}&background=0f172a&color=94a3b8&size=56&bold=true&format=svg`}
-              alt={s.name}
-              width={32}
-              height={32}
-              className="h-8 w-8 rounded-full object-cover shrink-0 border border-white/10"
-              loading="lazy"
-            />
-            <FlagImage fifaCode={s.fifaCode ?? ""} fallbackEmoji={s.flag} size="sm" className="shrink-0" />
+            <div className="relative shrink-0">
+              <PlayerPhoto name={s.name} fifaCode={s.fifaCode} size={36} />
+              <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full overflow-hidden border border-white/20 bg-white/5 flex items-center justify-center">
+                {FEDERATION_CRESTS[s.fifaCode ?? ""] ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={FEDERATION_CRESTS[s.fifaCode ?? ""]} alt={s.fifaCode ?? ""} className="w-full h-full object-contain" />
+                ) : (
+                  <FlagImage fifaCode={s.fifaCode ?? ""} fallbackEmoji={s.flag} size="sm" />
+                )}
+              </div>
+            </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-white">{s.name}</p>
               <div className="flex items-center gap-1.5 mt-0.5">
@@ -266,18 +368,21 @@ function Mundial2026Tab() {
         <div className="space-y-2">
           {topCandidates.map((c, i) => (
             <div key={c.name} className="glass rounded-xl border border-white/5 p-3 flex items-center gap-3">
-              <span className="text-xs text-muted-foreground w-4 text-right shrink-0">{i + 1}</span>
-              <img
-                src={`https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=1D4ED8&color=fff&size=56&bold=true&format=svg`}
-                alt={c.name}
-                width={32}
-                height={32}
-                className="h-8 w-8 rounded-full object-cover shrink-0"
-                loading="lazy"
-              />
-              <FlagImage fifaCode={c.fifaCode} fallbackEmoji={c.flag} size="sm" className="shrink-0" />
+              <span className="text-xs font-bold text-muted-foreground w-4 text-right shrink-0">{i + 1}</span>
+              <div className="relative shrink-0">
+                <PlayerPhoto name={c.name} fifaCode={c.fifaCode} size={40} />
+                {/* Federation crest badge */}
+                <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full overflow-hidden shadow-md border border-white/20 bg-white/5 flex items-center justify-center">
+                  {FEDERATION_CRESTS[c.fifaCode] ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={FEDERATION_CRESTS[c.fifaCode]} alt={c.fifaCode} className="w-full h-full object-contain" />
+                  ) : (
+                    <FlagImage fifaCode={c.fifaCode} fallbackEmoji={c.flag} size="sm" />
+                  )}
+                </div>
+              </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-white">{c.name}</p>
+                <p className="text-sm font-bold text-white">{c.name}</p>
                 <p className="text-[11px] text-muted-foreground">{c.country}</p>
               </div>
               <div className="text-right shrink-0">
