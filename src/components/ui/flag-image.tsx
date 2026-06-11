@@ -35,11 +35,12 @@ interface FlagImageProps {
   className?: string;
 }
 
-// Width & Height in px (3:2 flag aspect ratio), CSS class for display size
+// flagcdn.com ONLY supports these widths: 20, 40, 80, 160, 320
+// Using unsupported widths (24, 32, 48, 64) returns 404
 const SIZES = {
-  sm:  { w: 24,  h: 16,  cls: "w-6 h-4"      },
+  sm:  { w: 20,  h: 13,  cls: "w-5 h-[13px]"  },
   md:  { w: 40,  h: 27,  cls: "w-10 h-[27px]" },
-  lg:  { w: 64,  h: 43,  cls: "w-16 h-11"     },
+  lg:  { w: 80,  h: 54,  cls: "w-20 h-[54px]" },
   xl:  { w: 80,  h: 54,  cls: "w-20 h-[54px]" },
 };
 
