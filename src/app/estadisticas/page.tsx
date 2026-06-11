@@ -34,7 +34,8 @@ const FEDERATION_CRESTS: Record<string, string> = {
   JPN: "https://media.api-sports.io/football/teams/21.png",
   KOR: "https://media.api-sports.io/football/teams/149.png",
   TUR: "https://media.api-sports.io/football/teams/19.png",
-  NOR: "https://media.api-sports.io/football/teams/772.png",
+  // NOR removed — ID 772 shows wrong team; falls back to flag
+
 };
 
 // Verified API-Football player IDs (tested against API)
@@ -266,7 +267,7 @@ function GoladoresTab() {
     <div className="space-y-6">
       <SectionTitle icon={Star} title="Máximos goleadores históricos" color="#F5A500" />
       <div className="space-y-2">
-        {ALL_TIME_SCORERS.map((s, i) => (
+        {[...ALL_TIME_SCORERS].sort((a, b) => b.goals - a.goals || a.name.localeCompare(b.name)).map((s, i) => (
           <motion.div
             key={s.name + s.country}
             initial={{ opacity: 0, x: -12 }}
