@@ -3,120 +3,210 @@
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import type { Group } from "@/types/fixtures";
+import { useFormatDate } from "@/hooks/use-format-date";
+import type { Group, Match } from "@/types/fixtures";
+import type { TeamRow } from "@/types/database";
 
-interface GroupStandingsProps {
-  group: Group;
+interface ComputedStanding {
+  team: TeamRow;
+  played: number;
+  won: number;
+  drawn: number;
+  lost: number;
+  gf: number;
+  gc: number;
+  diff: number;
+  pts: number;
 }
 
-export function GroupStandings({ group }: GroupStandingsProps) {
+function computeStandings(teams: TeamRow[], matches: Match[]): ComputedStanding[] {
+  const map = new Map<string, ComputedStanding>();
+
+  for (const team of teams) {
+    map.set(team.id, { team, played: 0, won: 0, drawn: 0, lost: 0, gf: 0, gc: 0, diff: 0, pts: 0 });
+  }
+
+  for (const m of matches) {
+    if (m.status !== "finished" || m.home_score === null || m.away_score === null) continue;
+    const hId = m.home_team_id ?? m.home_team?.id;
+    const aId = m.away_team_id ?? m.away_team?.id;
+    const home = hId ? map.get(hId) : undefined;
+    const away = aId ? map.get(aId) : undefined;
+    if (!home || !away) continue;
+
+    home.played++; away.played++;
+    home.gf += m.home_score; home.gc += m.away_score;
+    away.gf += m.away_score; away.gc += m.home_score;
+
+    if (m.home_score > m.away_score) {
+      home.won++; home.pts += 3; away.lost++;
+    } else if (m.home_score < m.away_score) {
+      away.won++; away.pts += 3; home.lost++;
+    } else {
+      home.drawn++; home.pts++; away.drawn++; away.pts++;
+    }
+  }
+
+  for (const s of map.values()) s.diff = s.gf - s.gc;
+
+  return [...map.values()].sort((a, b) =>
+    b.pts - a.pts || b.diff - a.diff || b.gf - a.gf || a.gc - b.gc ||
+    (a.team.name ?? "").localeCompare(b.team.name ?? "")
+  );
+}
+
+function TeamFlag({ team }: { team: TeamRow }) {
+  if (team.flag_url) {
+    return (
+      <Image src={team.flag_url} alt={team.name} width={20} height={13}
+        className="rounded-sm object-cover shrink-0" unoptimized />
+    );
+  }
+  return (
+    <span className="text-xs font-bold text-muted-foreground shrink-0 w-5">
+      {team.fifa_code?.slice(0, 3)}
+    </span>
+  );
+}
+
+const QUALIFY_LABEL: Record<number, string> = { 1: "🥇", 2: "🥈" };
+
+export function GroupStandings({ group }: { group: Group }) {
+  const { formatDateShort, formatTime } = useFormatDate();
+  const standings = computeStandings(group.teams, group.matches);
+  const letter = group.letter ?? group.name?.replace("Group ", "") ?? "?";
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className="glass rounded-xl border border-border/50 overflow-hidden"
     >
+      {/* Header */}
       <div className="px-4 py-3 border-b border-border/50 flex items-center justify-between">
-        <div>
-          <span className="font-bold text-sm">Grupo {group.letter}</span>
-          <p className="text-[11px] text-muted-foreground">{group.teams.length} equipos</p>
-        </div>
-        <span className="text-xs text-muted-foreground">{group.matches.length} partidos</span>
+        <span className="font-bold text-sm">Grupo {letter}</span>
+        <span className="text-xs text-muted-foreground">{group.teams.length} equipos</span>
       </div>
 
-      {group.standings.length > 0 ? (
+      {/* Teams grid */}
+      <div className="grid grid-cols-2 gap-2 p-3">
+        {group.teams.map((team) => (
+          <div key={team.id}
+            className="flex items-center gap-2 rounded-xl border border-white/8 bg-white/4 px-3 py-2">
+            {team.flag_url ? (
+              <Image src={team.flag_url} alt={team.name} width={24} height={16}
+                className="rounded-sm object-cover shrink-0" unoptimized />
+            ) : (
+              <div className="h-4 w-6 rounded bg-white/10 flex items-center justify-center">
+                <span className="text-[8px] font-bold text-muted-foreground">{team.fifa_code?.slice(0, 3)}</span>
+              </div>
+            )}
+            <div className="min-w-0">
+              <p className="text-xs font-semibold truncate">{team.name}</p>
+              <p className="text-[9px] text-muted-foreground">{team.confederation}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Standings table */}
+      <div className="border-t border-border/30">
+        <div className="px-3 py-2 flex items-center gap-1.5">
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.15em]">
+            Tabla de Posiciones
+          </span>
+        </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-xs">
+          <table className="w-full text-[11px] min-w-[480px]">
             <thead>
-              <tr className="border-b border-border/30">
-                <th className="text-left px-4 py-2 text-muted-foreground font-medium w-8">#</th>
-                <th className="text-left px-2 py-2 text-muted-foreground font-medium">Equipo</th>
-                <th className="text-center px-2 py-2 text-muted-foreground font-medium w-8">J</th>
-                <th className="text-center px-2 py-2 text-muted-foreground font-medium w-8">G</th>
-                <th className="text-center px-2 py-2 text-muted-foreground font-medium w-8">E</th>
-                <th className="text-center px-2 py-2 text-muted-foreground font-medium w-8">P</th>
-                <th className="text-center px-2 py-2 text-muted-foreground font-medium w-10">GD</th>
-                <th className="text-center px-4 py-2 text-primary font-bold w-8">Pts</th>
+              <tr className="border-y border-border/30 bg-white/3">
+                <th className="text-center px-2 py-1.5 text-muted-foreground font-medium w-7">Pos</th>
+                <th className="text-left px-2 py-1.5 text-muted-foreground font-medium">Selección</th>
+                <th className="text-center px-2 py-1.5 text-muted-foreground font-medium w-8">PJ</th>
+                <th className="text-center px-2 py-1.5 text-muted-foreground font-medium w-8">PG</th>
+                <th className="text-center px-2 py-1.5 text-muted-foreground font-medium w-8">PE</th>
+                <th className="text-center px-2 py-1.5 text-muted-foreground font-medium w-8">PP</th>
+                <th className="text-center px-2 py-1.5 text-muted-foreground font-medium w-8">GF</th>
+                <th className="text-center px-2 py-1.5 text-muted-foreground font-medium w-8">GC</th>
+                <th className="text-center px-2 py-1.5 text-muted-foreground font-medium w-10">DIF</th>
+                <th className="text-center px-2 py-1.5 text-[hsl(var(--brand-gold))] font-bold w-9">PTS</th>
               </tr>
             </thead>
             <tbody>
-              {group.standings.map((standing, idx) => (
-                <tr
-                  key={standing.id}
+              {standings.map((s, idx) => (
+                <tr key={s.team.id}
                   className={cn(
-                    "border-b border-border/20 transition-colors hover:bg-muted/10",
-                    idx < 2 && "border-l-2 border-l-primary"
+                    "border-b border-border/15 transition-colors hover:bg-white/3",
+                    idx === 0 && "border-l-2 border-l-[hsl(var(--brand-gold))]",
+                    idx === 1 && "border-l-2 border-l-[hsl(var(--primary))]"
                   )}
                 >
-                  <td className="px-4 py-2.5 text-muted-foreground font-medium">{idx + 1}</td>
-                  <td className="px-2 py-2.5">
-                    <div className="flex items-center gap-2">
-                      {standing.team?.flag_url && (
-                        <Image
-                          src={standing.team.flag_url}
-                          alt={standing.team.name}
-                          width={20}
-                          height={14}
-                          className="rounded-sm object-cover shrink-0"
-                        />
-                      )}
-                      <span className="font-medium truncate max-w-[100px]">
-                        {standing.team?.short_name ?? "—"}
+                  <td className="text-center px-2 py-2">
+                    <span className={cn(
+                      "font-bold",
+                      idx === 0 ? "text-[hsl(var(--brand-gold))]" :
+                      idx === 1 ? "text-[hsl(var(--primary))]" : "text-muted-foreground"
+                    )}>
+                      {QUALIFY_LABEL[idx + 1] ?? idx + 1}
+                    </span>
+                  </td>
+                  <td className="px-2 py-2">
+                    <div className="flex items-center gap-1.5">
+                      <TeamFlag team={s.team} />
+                      <span className="font-medium truncate max-w-[90px]">
+                        {s.team.short_name ?? s.team.name}
                       </span>
                     </div>
                   </td>
-                  <td className="text-center px-2 py-2.5 text-muted-foreground">{standing.played}</td>
-                  <td className="text-center px-2 py-2.5 text-green-400">{standing.won}</td>
-                  <td className="text-center px-2 py-2.5 text-yellow-400">{standing.drawn}</td>
-                  <td className="text-center px-2 py-2.5 text-red-400">{standing.lost}</td>
-                  <td className={cn("text-center px-2 py-2.5", standing.goal_difference > 0 ? "text-green-400" : standing.goal_difference < 0 ? "text-red-400" : "text-muted-foreground")}>
-                    {standing.goal_difference > 0 ? "+" : ""}
-                    {standing.goal_difference}
+                  <td className="text-center px-2 py-2 text-muted-foreground">{s.played}</td>
+                  <td className="text-center px-2 py-2 text-emerald-400">{s.won}</td>
+                  <td className="text-center px-2 py-2 text-yellow-400">{s.drawn}</td>
+                  <td className="text-center px-2 py-2 text-red-400">{s.lost}</td>
+                  <td className="text-center px-2 py-2 text-muted-foreground">{s.gf}</td>
+                  <td className="text-center px-2 py-2 text-muted-foreground">{s.gc}</td>
+                  <td className={cn("text-center px-2 py-2 font-medium",
+                    s.diff > 0 ? "text-emerald-400" : s.diff < 0 ? "text-red-400" : "text-muted-foreground"
+                  )}>
+                    {s.diff > 0 ? "+" : ""}{s.diff}
                   </td>
-                  <td className="text-center px-4 py-2.5 font-bold text-foreground">{standing.points}</td>
+                  <td className="text-center px-2 py-2 font-bold text-white">{s.pts}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      ) : (
-        <div className="p-4 space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            {group.teams.map((team) => (
-              <div key={team.id} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-3">
-                {team.flag_url ? (
-                  <Image
-                    src={team.flag_url}
-                    alt={team.name}
-                    width={28}
-                    height={18}
-                    className="rounded-sm object-cover shrink-0"
-                  />
+        <div className="flex items-center gap-3 px-3 py-2 border-t border-border/15">
+          <span className="flex items-center gap-1 text-[9px] text-muted-foreground">
+            <span className="w-2 h-2 rounded-sm bg-[hsl(var(--brand-gold))] inline-block" /> Clasifican al siguiente round
+          </span>
+        </div>
+      </div>
+
+      {/* Matches */}
+      {group.matches.length > 0 && (
+        <div className="border-t border-border/30 p-3">
+          <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground mb-2">
+            Partidos del grupo
+          </p>
+          <div className="space-y-1.5">
+            {group.matches.map((match) => (
+              <div key={match.id}
+                className="flex items-center gap-2 rounded-xl border border-white/8 bg-black/15 px-3 py-2 text-[11px]">
+                <span className="font-semibold flex-1 truncate">
+                  {match.home_team?.short_name ?? "TBD"} vs {match.away_team?.short_name ?? "TBD"}
+                </span>
+                {match.status === "finished" && match.home_score !== null ? (
+                  <span className="font-bold text-[hsl(var(--brand-gold))] shrink-0">
+                    {match.home_score} – {match.away_score}
+                  </span>
                 ) : (
-                  <div className="h-9 w-12 rounded-lg bg-white/10 flex items-center justify-center text-[10px] font-semibold uppercase text-muted-foreground">
-                    {team.fifa_code ?? team.short_name ?? "--"}
-                  </div>
+                  <span className="text-muted-foreground shrink-0">
+                    {formatDateShort(match.match_date)} {formatTime(match.match_date)}
+                  </span>
                 )}
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold truncate">{team.name}</p>
-                  <p className="text-[10px] uppercase text-muted-foreground">{team.fifa_code}</p>
-                </div>
               </div>
             ))}
           </div>
-          {group.matches.length > 0 && (
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-3">Próximos partidos</p>
-              <div className="space-y-2">
-                {group.matches.map((match) => (
-                  <div key={match.id} className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-xs">
-                    <span className="font-semibold truncate">{match.home_team?.short_name ?? "TBD"} vs {match.away_team?.short_name ?? "TBD"}</span>
-                    <span className="text-muted-foreground">{new Date(match.match_date).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       )}
     </motion.div>
