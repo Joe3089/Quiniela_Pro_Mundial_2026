@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Trophy, Users, GitBranch, Database } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -84,6 +85,7 @@ function buildBracketRounds(matches: ReturnType<typeof useMatches>["data"]): Bra
 
 export function FixturesView() {
   const [activeTab, setActiveTab] = useState("grupos");
+  const router = useRouter();
   const { data: matches, isLoading: matchesLoading } = useMatches();
   const { data: groups, isLoading: groupsLoading } = useGroups();
 
@@ -160,7 +162,7 @@ export function FixturesView() {
           ) : groupMatches.length > 0 ? (
             <div className="space-y-2">
               {groupMatches.map((match) => (
-                <MatchCard key={match.id} match={match} />
+                <MatchCard key={match.id} match={match} onClick={() => router.push(`/fixtures/${match.id}`)} />
               ))}
             </div>
           ) : (

@@ -147,6 +147,32 @@ export const fixturesService = {
     return (await run(tournamentId)) ?? (await run()) ?? [];
   },
 
+  // ── Single match by ID ────────────────────────────────────────────────────
+  async getMatchById(matchId: string): Promise<Match | null> {
+    const supabase = db();
+    try {
+      const row = (await queryWithTimeout(
+        supabase.from("matches").select("*").eq("id", matchId).single()
+      )) as any | null;
+      if (!row) return null;
+
+      const teamIds = [row.home_team_id, row.away_team_id].filter(Boolean) as string[];
+      const teamsById = await fetchTeamsById(supabase, teamIds);
+
+      let groupsById: Record<string, any> = {};
+      if (row.group_id) {
+        const gData = (await queryWithTimeout(
+          supabase.from("groups").select("*").eq("id", row.group_id)
+        )) as any[] | null;
+        groupsById = Object.fromEntries((gData ?? []).map((g: any) => [g.id, g]));
+      }
+
+      return mapPartido(row, teamsById, groupsById);
+    } catch {
+      return null;
+    }
+  },
+
   // ── Groups ─────────────────────────────────────────────────────────────────
   // Derives groups directly from partidos data — no dependency on groups table
   async getGroups(tournamentId: string): Promise<Group[]> {

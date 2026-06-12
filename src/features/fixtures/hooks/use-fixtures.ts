@@ -33,6 +33,19 @@ export function useMatches(phase?: MatchPhase) {
   });
 }
 
+export function useMatch(matchId: string | null) {
+  return useQuery({
+    queryKey: [QUERY_KEYS.matches, "single", matchId],
+    queryFn: () => fixturesService.getMatchById(matchId!),
+    enabled: !!matchId,
+    staleTime: 0,
+    refetchInterval: (query) => {
+      const data = query.state.data as import("@/types/fixtures").Match | null | undefined;
+      return data?.status === "live" ? 60_000 : false;
+    },
+  });
+}
+
 export function useGroups() {
   const { activeTournament } = useTournamentStore();
 
