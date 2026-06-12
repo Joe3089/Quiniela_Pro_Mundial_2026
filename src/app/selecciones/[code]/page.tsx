@@ -23,11 +23,6 @@ export default function TeamDetailPage({ params }: { params: Promise<{ code: str
 
   if (!team) notFound();
 
-  const gk  = team.players.filter(p => p.position === "GK");
-  const def = team.players.filter(p => p.position === "DEF");
-  const mid = team.players.filter(p => p.position === "MID");
-  const fwd = team.players.filter(p => p.position === "FWD");
-
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       {/* Back */}
@@ -74,173 +69,178 @@ export default function TeamDetailPage({ params }: { params: Promise<{ code: str
         </div>
       </motion.div>
 
-      <div className="grid md:grid-cols-2 gap-6">
-        {/* Jugadores clave */}
-        <motion.div
-          initial={{ opacity: 0, x: -16 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.1 }}
-          className="glass-card rounded-2xl border border-white/8 overflow-hidden"
-        >
-          <div className="p-4 border-b border-white/5 flex items-center gap-2">
-            <div className="h-7 w-7 rounded-lg bg-[hsl(var(--brand-gold)/0.15)] flex items-center justify-center">
-              <Star className="h-3.5 w-3.5 text-[hsl(var(--brand-gold))]" />
-            </div>
-            <h2 className="font-bold text-sm">Jugadores clave</h2>
-          </div>
-          <div className="p-4 space-y-2">
-            {team.keyPlayers.map((player) => (
-              <div key={player} className="flex items-center gap-2.5 text-sm">
-                <Star className="h-3 w-3 text-[hsl(var(--brand-gold))] shrink-0" />
-                <span className="text-white">{player}</span>
-              </div>
-            ))}
-            <div className="pt-2 border-t border-white/5 mt-2">
-              <p className="text-xs text-muted-foreground">Máximo goleador histórico</p>
-              <p className="text-sm font-bold text-white">{team.topScorer.name} <span className="text-[hsl(var(--brand-gold))]">({team.topScorer.goals} goles)</span></p>
-            </div>
-          </div>
-        </motion.div>
+      {/* Titulares + Suplentes */}
+      <PlayerRoster team={team} />
+    </div>
+  );
+}
 
-        {/* Once titular */}
-        <motion.div
-          initial={{ opacity: 0, x: 16 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.15 }}
-          className="glass-card rounded-2xl border border-white/8 overflow-hidden"
-        >
-          <div className="p-4 border-b border-white/5 flex items-center gap-2">
-            <div className="h-7 w-7 rounded-lg bg-[hsl(var(--brand-blue)/0.15)] flex items-center justify-center">
-              <Trophy className="h-3.5 w-3.5 text-[hsl(var(--brand-blue-light))]" />
-            </div>
-            <h2 className="font-bold text-sm">XI Posible {team.formation}</h2>
-          </div>
-          {/* Field visualization */}
-          <div className="relative mx-4 my-3 rounded-xl overflow-hidden" style={{ height: 240 }}>
-            <div
-              className="absolute inset-0 rounded-xl"
-              style={{
-                background: "linear-gradient(180deg, #166534 0%, #14532d 50%, #166534 100%)",
-                border: "1px solid rgba(255,255,255,0.1)",
-              }}
-            />
-            {/* Field lines */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <div className="w-24 h-14 border border-white/20 rounded-sm" />
-              <div className="w-full border-t border-white/20 absolute top-1/2" />
-              <div className="w-12 h-12 border border-white/20 rounded-full absolute top-1/2 -translate-y-1/2" />
-            </div>
-            {/* Players */}
-            <div className="absolute inset-2 flex flex-col justify-between p-1">
-              {/* GK */}
-              <div className="flex justify-center">
-                <span className="text-[9px] font-bold text-white bg-black/40 rounded px-1">{team.xi[0]}</span>
-              </div>
-              {/* DEF */}
-              <div className="flex justify-around">
-                {team.xi.slice(1, 5).map((p, i) => (
-                  <span key={i} className="text-[9px] font-bold text-white bg-black/40 rounded px-1">{p}</span>
-                ))}
-              </div>
-              {/* MID */}
-              <div className="flex justify-around">
-                {team.xi.slice(5, 8).map((p, i) => (
-                  <span key={i} className="text-[9px] font-bold text-white bg-black/40 rounded px-1">{p}</span>
-                ))}
-              </div>
-              {/* FWD */}
-              <div className="flex justify-around">
-                {team.xi.slice(8, 11).map((p, i) => (
-                  <span key={i} className="text-[9px] font-bold text-white bg-black/40 rounded px-1">{p}</span>
-                ))}
-              </div>
-            </div>
-          </div>
-        </motion.div>
+// ── PlayerRoster: Titulares and Suplentes sections ─────────────────────────
+
+function playerPhotoUrl(player: import("@/data/wc2026-teams").WCPlayer): string {
+  if (player.photo) return player.photo;
+  if (player.apiFootballId)
+    return `https://media.api-sports.io/football/players/${player.apiFootballId}.png`;
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(player.name)}&background=1D4ED8&color=fff&size=64&bold=true&format=svg`;
+}
+
+function isStarter(player: import("@/data/wc2026-teams").WCPlayer, xi: string[]): boolean {
+  const fullLower = player.name.toLowerCase();
+  return xi.some((xiName) => {
+    const n = xiName.toLowerCase();
+    return fullLower.includes(n) || n.includes(fullLower.split(" ").pop() ?? "");
+  });
+}
+
+function PlayerRow({
+  player,
+  flagUrl,
+  isTitle,
+}: {
+  player: import("@/data/wc2026-teams").WCPlayer;
+  flagUrl?: string | null;
+  isTitle: boolean;
+}) {
+  const posColors = positionColors[player.position];
+  return (
+    <div className="flex items-center gap-3 px-4 py-2.5 hover:bg-white/3 transition-colors">
+      {/* Photo */}
+      <div className="relative shrink-0">
+        <img
+          src={playerPhotoUrl(player)}
+          alt={player.name}
+          width={36}
+          height={36}
+          className="h-9 w-9 rounded-xl object-cover border border-white/10"
+          loading="lazy"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(player.name)}&background=1D4ED8&color=fff&size=64&bold=true&format=svg`;
+          }}
+        />
+        {isTitle && (
+          <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-400 border border-black" />
+        )}
       </div>
 
-      {/* Plantilla completa */}
+      {/* Info */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-sm font-semibold text-white truncate">{player.name}</span>
+          {player.isCaptain && (
+            <span className="text-[9px] font-bold px-1 rounded bg-[hsl(var(--brand-gold)/0.2)] text-[hsl(var(--brand-gold))] border border-[hsl(var(--brand-gold)/0.3)] shrink-0">C</span>
+          )}
+          {player.isKeyPlayer && (
+            <Star className="h-2.5 w-2.5 text-[hsl(var(--brand-gold))] shrink-0" />
+          )}
+        </div>
+        <div className="flex items-center gap-1.5 mt-0.5">
+          {/* Flag */}
+          {flagUrl ? (
+            <img src={flagUrl} alt="" width={14} height={10}
+              className="rounded-sm object-cover shrink-0 opacity-70" />
+          ) : null}
+          <span className="text-[10px] text-muted-foreground truncate">{player.club}</span>
+        </div>
+      </div>
+
+      {/* Position + age + dorsal */}
+      <div className="flex items-center gap-2 shrink-0">
+        <span className={cn("text-[9px] font-bold px-1.5 py-0.5 rounded border", posColors)}>
+          {player.position}
+        </span>
+        <span className="text-xs text-muted-foreground">{player.age}a</span>
+        {player.dorsal ? (
+          <span className="text-xs font-bold text-white/80 w-5 text-right">#{player.dorsal}</span>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function PlayerRoster({ team }: { team: import("@/data/wc2026-teams").WCTeam }) {
+  const starters = team.players.filter((p) => isStarter(p, team.xi));
+  const subs = team.players.filter((p) => !isStarter(p, team.xi));
+
+  // Use first-available flag URL (team flag from teams table if available)
+  const flagUrl: string | null = null; // UI-avatars doesn't do flags; FlagImage component handles it
+
+  if (team.rosterPublished === false) {
+    return (
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.25 }}
-        className="mt-6 glass-card rounded-2xl border border-white/8 overflow-hidden"
+        transition={{ delay: 0.2 }}
+        className="mt-6 glass-card rounded-2xl border border-white/8 p-10 flex flex-col items-center text-center gap-3"
+      >
+        <div className="h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center">
+          <Clock className="h-6 w-6 text-muted-foreground/50" />
+        </div>
+        <div>
+          <p className="text-sm font-bold text-white mb-1">Convocatoria no publicada</p>
+          <p className="text-xs text-muted-foreground max-w-xs">La FIFA exige la presentación oficial de convocatorias 10 días antes del inicio del torneo.</p>
+        </div>
+        <div className="flex items-center gap-1.5 text-[10px] font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-3 py-1 rounded-full">
+          <AlertTriangle className="h-3 w-3" />
+          Pendiente de publicación
+        </div>
+      </motion.div>
+    );
+  }
+
+  return (
+    <div className="mt-6 space-y-4">
+      {/* 11 Titular */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="glass-card rounded-2xl border border-white/8 overflow-hidden"
       >
         <div className="p-4 border-b border-white/5 flex items-center gap-2">
-          <div className="h-7 w-7 rounded-lg bg-[rgba(139,92,246,0.15)] flex items-center justify-center">
-            <Users className="h-3.5 w-3.5 text-violet-400" />
+          <div className="h-7 w-7 rounded-lg bg-emerald-500/15 flex items-center justify-center">
+            <Trophy className="h-3.5 w-3.5 text-emerald-400" />
           </div>
-          <h2 className="font-bold text-sm">Plantilla convocada</h2>
-          {team.rosterPublished !== false && (
-            <span className="ml-auto text-xs text-muted-foreground">{team.players.length} jugadores</span>
-          )}
+          <h2 className="font-bold text-sm">XI Titular · {team.formation}</h2>
+          <span className="ml-auto text-xs text-muted-foreground">{starters.length} jugadores</span>
         </div>
-
-        {team.rosterPublished === false ? (
-          <div className="p-10 flex flex-col items-center text-center gap-3">
-            <div className="h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center">
-              <Clock className="h-6 w-6 text-muted-foreground/50" />
-            </div>
-            <div>
-              <p className="text-sm font-bold text-white mb-1">Convocatoria no publicada</p>
-              <p className="text-xs text-muted-foreground max-w-xs">La FIFA exige la presentación oficial de convocatorias 10 días antes del inicio del torneo (1 de junio).</p>
-            </div>
-            <div className="flex items-center gap-1.5 text-[10px] font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-3 py-1 rounded-full">
-              <AlertTriangle className="h-3 w-3" />
-              Pendiente de publicación
-            </div>
-          </div>
-        ) : (
-          <>
-            {[
-              { label: "Porteros", players: gk, pos: "GK" as const },
-              { label: "Defensas", players: def, pos: "DEF" as const },
-              { label: "Mediocampistas", players: mid, pos: "MID" as const },
-              { label: "Delanteros", players: fwd, pos: "FWD" as const },
-            ].map(({ label, players, pos }) =>
-              players.length > 0 ? (
-                <div key={pos}>
-                  <div className={cn("px-4 py-2 text-[10px] font-bold tracking-widest uppercase border-b border-white/5", positionColors[pos])}>
-                    {label}
+        <div className="divide-y divide-white/5">
+          {starters.length > 0
+            ? starters.map((p) => (
+                <PlayerRow key={p.name} player={p} flagUrl={flagUrl} isTitle />
+              ))
+            : team.xi.map((name, i) => (
+                <div key={i} className="flex items-center gap-3 px-4 py-2.5">
+                  <div className="h-9 w-9 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
+                    <span className="text-xs font-bold text-muted-foreground">{i + 1}</span>
                   </div>
-                  <div className="divide-y divide-white/5">
-                    {players.map((player) => (
-                      <div key={player.name} className="flex items-center gap-3 px-4 py-2.5 hover:bg-white/2 transition-colors">
-                        <img
-                          src={`https://ui-avatars.com/api/?name=${encodeURIComponent(player.name)}&background=1D4ED8&color=fff&size=64&bold=true&format=svg`}
-                          alt={player.name}
-                          width={28}
-                          height={28}
-                          className="h-7 w-7 rounded-lg object-cover shrink-0"
-                          loading="lazy"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-sm font-semibold text-white truncate">{player.name}</span>
-                            {player.isCaptain && (
-                              <span className="text-[9px] font-bold px-1 rounded bg-[hsl(var(--brand-gold)/0.2)] text-[hsl(var(--brand-gold))] border border-[hsl(var(--brand-gold)/0.3)] shrink-0">C</span>
-                            )}
-                            {player.isKeyPlayer && (
-                              <Star className="h-2.5 w-2.5 text-[hsl(var(--brand-gold))] shrink-0" />
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground">{player.club}</p>
-                        </div>
-                        <div className="flex items-center gap-3 shrink-0">
-                          <span className="text-xs text-muted-foreground">{player.age} años</span>
-                          {player.dorsal && (
-                            <span className="text-xs font-bold text-white w-5 text-right">#{player.dorsal}</span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  <span className="text-sm font-semibold text-white">{name}</span>
                 </div>
-              ) : null
-            )}
-          </>
-        )}
+              ))}
+        </div>
       </motion.div>
+
+      {/* Suplentes */}
+      {subs.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="glass-card rounded-2xl border border-white/8 overflow-hidden"
+        >
+          <div className="p-4 border-b border-white/5 flex items-center gap-2">
+            <div className="h-7 w-7 rounded-lg bg-[rgba(139,92,246,0.15)] flex items-center justify-center">
+              <Users className="h-3.5 w-3.5 text-violet-400" />
+            </div>
+            <h2 className="font-bold text-sm">Suplentes</h2>
+            <span className="ml-auto text-xs text-muted-foreground">{subs.length} jugadores</span>
+          </div>
+          <div className="divide-y divide-white/5">
+            {subs.map((p) => (
+              <PlayerRow key={p.name} player={p} flagUrl={flagUrl} isTitle={false} />
+            ))}
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 }
