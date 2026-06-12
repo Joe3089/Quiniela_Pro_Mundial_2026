@@ -23,10 +23,15 @@ function headers() {
   };
 }
 
-async function get<T>(path: string): Promise<T> {
+async function get<T>(
+  path: string,
+  options: { revalidate?: number | false } = { revalidate: 3600 }
+): Promise<T> {
+  const revalidate = options.revalidate ?? 3600;
   const res = await fetch(`${BASE}${path}`, {
     headers: headers(),
-    next: { revalidate: 3600 }, // cache 1 hour
+    cache: revalidate === 0 ? "no-store" : undefined,
+    next: revalidate === 0 ? undefined : { revalidate },
   });
   if (!res.ok) throw new Error(`API-Football error ${res.status}: ${path}`);
   const json = await res.json();
@@ -117,18 +122,18 @@ export async function searchPlayer(name: string): Promise<AFPlayer[]> {
 }
 
 /** All fixtures for WC 2026 */
-export async function getWCFixtures(): Promise<AFFixture[]> {
-  return get<AFFixture[]>(`/fixtures?league=${FIFA_WC_LEAGUE}&season=${SEASON}`);
+export async function getWCFixtures(options?: { revalidate?: number | false }): Promise<AFFixture[]> {
+  return get<AFFixture[]>(`/fixtures?league=${FIFA_WC_LEAGUE}&season=${SEASON}`, options);
 }
 
 /** Live fixtures right now */
 export async function getLiveFixtures(): Promise<AFFixture[]> {
-  return get<AFFixture[]>(`/fixtures?league=${FIFA_WC_LEAGUE}&season=${SEASON}&live=all`);
+  return get<AFFixture[]>(`/fixtures?league=${FIFA_WC_LEAGUE}&season=${SEASON}&live=all`, { revalidate: 0 });
 }
 
 /** Fixture by API-Football fixture ID */
 export async function getFixture(fixtureId: number): Promise<AFFixture[]> {
-  return get<AFFixture[]>(`/fixtures?id=${fixtureId}`);
+  return get<AFFixture[]>(`/fixtures?id=${fixtureId}`, { revalidate: 0 });
 }
 
 /** Group standings for WC 2026 */

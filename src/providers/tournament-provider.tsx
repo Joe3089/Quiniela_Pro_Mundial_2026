@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { tournamentService } from "@/services/tournament.service";
 import { useTournamentStore } from "@/store/tournament.store";
 import { QUERY_KEYS, TOURNAMENT_SLUG } from "@/constants";
+import { useRealtimeMatches } from "@/hooks/use-realtime";
 
 export function TournamentProvider({ children }: { children: ReactNode }) {
   const { setActiveTournament } = useTournamentStore();
@@ -14,6 +15,8 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     queryFn: () => tournamentService.getActiveTournament(),
     staleTime: 1000 * 60 * 60,
   });
+
+  useRealtimeMatches(tournament?.id);
 
   useEffect(() => {
     if (tournament) setActiveTournament(tournament);

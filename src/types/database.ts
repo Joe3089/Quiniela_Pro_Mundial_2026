@@ -15,7 +15,7 @@ export interface Database {
       };
       teams: {
         Row: TeamRow;
-        Insert: Omit<TeamRow, "id">;
+        Insert: Omit<TeamRow, "id" | "api_football_team_id"> & Partial<Pick<TeamRow, "api_football_team_id">>;
         Update: Partial<Omit<TeamRow, "id">>;
       };
       groups: {
@@ -25,7 +25,27 @@ export interface Database {
       };
       matches: {
         Row: MatchRow;
-        Insert: Omit<MatchRow, "id" | "created_at">;
+        Insert: Omit<
+          MatchRow,
+          | "id"
+          | "created_at"
+          | "updated_at"
+          | "api_football_fixture_id"
+          | "api_football_home_team_id"
+          | "api_football_away_team_id"
+          | "api_football_status"
+          | "elapsed"
+        > &
+          Partial<
+            Pick<
+              MatchRow,
+              | "api_football_fixture_id"
+              | "api_football_home_team_id"
+              | "api_football_away_team_id"
+              | "api_football_status"
+              | "elapsed"
+            >
+          >;
         Update: Partial<Omit<MatchRow, "id" | "created_at">>;
       };
       predictions: {
@@ -93,6 +113,7 @@ export interface TeamRow {
   name: string;
   short_name: string;
   flag_url: string | null;
+  api_football_team_id: number | null;
   fifa_code: string;
   continent: string;
   tournament_id: string;
@@ -117,11 +138,17 @@ export interface MatchRow {
   away_score: number | null;
   home_score_penalties: number | null;
   away_score_penalties: number | null;
+  api_football_fixture_id: number | null;
+  api_football_home_team_id: number | null;
+  api_football_away_team_id: number | null;
+  api_football_status: string | null;
+  elapsed: number | null;
   match_date: string;
   venue: string | null;
   city: string | null;
   status: MatchStatus;
   created_at: string;
+  updated_at: string;
 }
 
 export interface PredictionRow {

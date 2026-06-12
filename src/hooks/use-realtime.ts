@@ -13,16 +13,35 @@ export function useRealtimeMatches(tournamentId: string | undefined) {
     const supabase = createClient();
 
     const channel = supabase
-      .channel(`matches:${tournamentId}`)
+      .channel(`tournament:${tournamentId}`)
       .on(
         "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "matches", filter: `tournament_id=eq.${tournamentId}` },
+        { event: "*", schema: "public", table: "matches", filter: `tournament_id=eq.${tournamentId}` },
         () => {
           queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.matches, tournamentId] });
+          queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.groups, tournamentId] });
+          queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.predictions] });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "standings", filter: `tournament_id=eq.${tournamentId}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.groups, tournamentId] });
+          queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.standings] });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "rankings", filter: `tournament_id=eq.${tournamentId}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.rankings] });
         }
       )
       .subscribe();
 
-    return () => { channel.unsubscribe(); };
+    return () => {
+      channel.unsubscribe();
+    };
   }, [tournamentId, queryClient]);
 }

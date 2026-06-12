@@ -257,10 +257,15 @@ function ApiFootballPanel() {
                     </p>
                   )}
                   {result?.ok && result.results && (
-                    <p className="text-[11px] text-emerald-400 mt-1 flex items-center gap-1">
-                      <CheckCircle2 className="h-3 w-3" />
-                      {JSON.stringify(result.results).slice(0, 120)}
-                    </p>
+                    <div className="mt-2 rounded-lg border border-emerald-400/20 bg-emerald-400/5 p-2">
+                      <p className="text-[11px] text-emerald-400 mb-1 flex items-center gap-1">
+                        <CheckCircle2 className="h-3 w-3" />
+                        Sincronizacion ejecutada
+                      </p>
+                      <pre className="max-h-40 overflow-auto whitespace-pre-wrap break-words text-[10px] leading-relaxed text-emerald-100/90">
+                        {JSON.stringify(result.results, null, 2)}
+                      </pre>
+                    </div>
                   )}
                 </div>
                 <Button
