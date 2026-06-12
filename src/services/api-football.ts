@@ -157,3 +157,38 @@ export async function getApiStatus(): Promise<{
   const data = await get<{ requests: { current: number; limit_day: number }; subscription: { plan: string; end: string } }>("/status");
   return data as any;
 }
+
+// ── Events & Statistics ────────────────────────────────────────────────────
+
+export interface AFFixtureEvent {
+  time: { elapsed: number; extra: number | null };
+  team: { id: number; name: string; logo: string };
+  player: { id: number | null; name: string };
+  assist: { id: number | null; name: string | null };
+  type: "Goal" | "Card" | "subst" | "Var";
+  detail: string;
+  comments: string | null;
+}
+
+export interface AFFixtureStats {
+  team: { id: number; name: string; logo: string };
+  statistics: Array<{
+    type: string;
+    value: number | string | null;
+  }>;
+}
+
+/** All events for a fixture (goals, cards, subs, VAR) */
+export async function getFixtureEvents(fixtureId: number): Promise<AFFixtureEvent[]> {
+  return get<AFFixtureEvent[]>(`/fixtures/events?fixture=${fixtureId}`, { revalidate: 0 });
+}
+
+/** Statistics for both teams in a fixture */
+export async function getFixtureStats(fixtureId: number): Promise<AFFixtureStats[]> {
+  return get<AFFixtureStats[]>(`/fixtures/statistics?fixture=${fixtureId}`, { revalidate: 0 });
+}
+
+/** Lineups for both teams in a fixture */
+export async function getFixtureLineups(fixtureId: number): Promise<unknown[]> {
+  return get<unknown[]>(`/fixtures/lineups?fixture=${fixtureId}`, { revalidate: 60 });
+}

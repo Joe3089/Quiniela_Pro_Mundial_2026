@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, LayoutGrid, Target, BarChart3, Settings, LogOut, Menu, X, ChevronDown, Globe2, TrendingUp, UserCircle } from "lucide-react";
+import { Trophy, LayoutGrid, Target, BarChart3, Settings, LogOut, Menu, X, ChevronDown, Globe2, TrendingUp, UserCircle, Radio } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -15,12 +15,13 @@ import { ProfileModal } from "@/features/auth/components/profile-modal";
 import { TimezoneSelector } from "@/components/ui/timezone-selector";
 
 const NAV_ITEMS = [
-  { href: "/dashboard",    label: "Inicio",        icon: LayoutGrid },
-  { href: "/fixtures",     label: "Partidos",       icon: Trophy },
-  { href: "/predictions",  label: "Predicciones",   icon: Target },
-  { href: "/rankings",     label: "Ranking",        icon: BarChart3 },
-  { href: "/selecciones",  label: "Selecciones",    icon: Globe2 },
-  { href: "/estadisticas", label: "Estadísticas",   icon: TrendingUp },
+  { href: "/dashboard",    label: "Inicio",         icon: LayoutGrid,  live: false },
+  { href: "/en-vivo",      label: "En Vivo",        icon: Radio,       live: true  },
+  { href: "/fixtures",     label: "Partidos",       icon: Trophy,      live: false },
+  { href: "/predictions",  label: "Predicciones",   icon: Target,      live: false },
+  { href: "/rankings",     label: "Ranking",        icon: BarChart3,   live: false },
+  { href: "/selecciones",  label: "Selecciones",    icon: Globe2,      live: false },
+  { href: "/estadisticas", label: "Estadísticas",   icon: TrendingUp,  live: false },
 ];
 
 export function Navbar() {
@@ -82,11 +83,16 @@ export function Navbar() {
                         "relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200",
                         active
                           ? "text-white"
+                          : item.live
+                          ? "text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/5"
                           : "text-muted-foreground hover:text-white hover:bg-white/5"
                       )}
                     >
                       <item.icon className="h-3.5 w-3.5" />
                       {item.label}
+                      {item.live && !active && (
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      )}
                       {active && (
                         <motion.div
                           layoutId="nav-pill"
@@ -219,11 +225,16 @@ export function Navbar() {
                           "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
                           active
                             ? "bg-gradient-to-r from-[hsl(var(--primary)/0.15)] to-[hsl(var(--brand-blue-dark)/0.15)] text-white border border-[hsl(var(--primary)/0.2)]"
+                            : item.live
+                            ? "text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/5"
                             : "text-muted-foreground hover:text-white hover:bg-white/5"
                         )}
                       >
                         <item.icon className="h-4 w-4" />
                         {item.label}
+                        {item.live && !active && (
+                          <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse ml-auto" />
+                        )}
                       </Link>
                     );
                   })}
