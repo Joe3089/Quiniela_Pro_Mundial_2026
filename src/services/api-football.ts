@@ -192,3 +192,43 @@ export async function getFixtureStats(fixtureId: number): Promise<AFFixtureStats
 export async function getFixtureLineups(fixtureId: number): Promise<unknown[]> {
   return get<unknown[]>(`/fixtures/lineups?fixture=${fixtureId}`, { revalidate: 60 });
 }
+
+// ── Tournament-wide statistics ─────────────────────────────────────────────
+
+export interface AFTopScorer {
+  player: {
+    id: number;
+    name: string;
+    firstname: string;
+    lastname: string;
+    age: number;
+    nationality: string;
+    photo: string;
+  };
+  statistics: Array<{
+    team: { id: number; name: string; logo: string };
+    goals: { total: number | null; assists: number | null; saves: number | null; conceded: number | null };
+    games: { position: string; appearances: number | null };
+    cards: { yellow: number; red: number };
+  }>;
+}
+
+/** Top scorers for WC 2026 (cached 1h) */
+export async function getTopScorers(): Promise<AFTopScorer[]> {
+  return get<AFTopScorer[]>(`/players/topscorers?league=${FIFA_WC_LEAGUE}&season=${SEASON}`, { revalidate: 3600 });
+}
+
+/** Top assists for WC 2026 (cached 1h) */
+export async function getTopAssists(): Promise<AFTopScorer[]> {
+  return get<AFTopScorer[]>(`/players/topassists?league=${FIFA_WC_LEAGUE}&season=${SEASON}`, { revalidate: 3600 });
+}
+
+/** Top yellow cards for WC 2026 (cached 1h) */
+export async function getTopYellowCards(): Promise<AFTopScorer[]> {
+  return get<AFTopScorer[]>(`/players/topyellowcards?league=${FIFA_WC_LEAGUE}&season=${SEASON}`, { revalidate: 3600 });
+}
+
+/** Top red cards for WC 2026 (cached 1h) */
+export async function getTopRedCards(): Promise<AFTopScorer[]> {
+  return get<AFTopScorer[]>(`/players/topredcards?league=${FIFA_WC_LEAGUE}&season=${SEASON}`, { revalidate: 3600 });
+}

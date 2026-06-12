@@ -163,6 +163,17 @@ async function syncFixtures(
   let inserted = 0;
   let skipped = 0;
 
+  // Pre-load all teams → group_id mapping to assign group on insert
+  const { data: allMatches } = await supabase
+    .from("matches")
+    .select("home_team_id, away_team_id, group_id")
+    .not("group_id", "is", null);
+  const teamGroupMap = new Map<string, string>();
+  for (const m of (allMatches ?? []) as { home_team_id: string; away_team_id: string; group_id: string }[]) {
+    if (m.home_team_id) teamGroupMap.set(m.home_team_id, m.group_id);
+    if (m.away_team_id) teamGroupMap.set(m.away_team_id, m.group_id);
+  }
+
   for (const fixture of selectedFixtures) {
     const home = await findTeam(supabase, fixture.teams.home);
     const away = await findTeam(supabase, fixture.teams.away);
@@ -173,7 +184,8 @@ async function syncFixtures(
     }
 
     const existing = await findExistingMatch(supabase, fixture, home.data.id, away.data.id);
-    const matchData = toMatchRow(fixture, home.data.id, away.data.id);
+    const groupId = teamGroupMap.get(home.data.id) ?? teamGroupMap.get(away.data.id) ?? null;
+    const matchData = toMatchRow(fixture, home.data.id, away.data.id, groupId);
 
     if (existing?.id) {
       const { error } = await supabase.from("matches").update(matchData).eq("id", existing.id);
@@ -227,6 +239,7 @@ async function findExistingMatch(
   homeTeamId: string,
   awayTeamId: string
 ) {
+  // 1. Exact match by API fixture ID (fastest)
   const byApiId = await supabase
     .from("matches")
     .select("id")
@@ -236,7 +249,8 @@ async function findExistingMatch(
   if (byApiId.data?.id) return byApiId.data;
   if (byApiId.error) throw byApiId.error;
 
-  const { data, error } = await supabase
+  // 2. Match by team pair + exact date
+  const { data: byDate, error: e2 } = await supabase
     .from("matches")
     .select("id")
     .eq("tournament_id", TOURNAMENT_ID)
@@ -245,13 +259,46 @@ async function findExistingMatch(
     .eq("match_date", fixture.fixture.date)
     .maybeSingle();
 
-  if (error) throw error;
-  return data;
+  if (e2) throw e2;
+  if (byDate?.id) return byDate;
+
+  // 3. Lenient: same team pair within 4-hour window (handles timezone offsets)
+  const fixtureTime = new Date(fixture.fixture.date).getTime();
+  const windowMs = 4 * 60 * 60 * 1000;
+  const from = new Date(fixtureTime - windowMs).toISOString();
+  const to   = new Date(fixtureTime + windowMs).toISOString();
+
+  const { data: byWindow, error: e3 } = await supabase
+    .from("matches")
+    .select("id")
+    .eq("tournament_id", TOURNAMENT_ID)
+    .eq("home_team_id", homeTeamId)
+    .eq("away_team_id", awayTeamId)
+    .gte("match_date", from)
+    .lte("match_date", to)
+    .maybeSingle();
+
+  if (e3) throw e3;
+  if (byWindow?.id) return byWindow;
+
+  // 4. Last resort for group stage: same team pair, any date (each pair plays once)
+  const { data: byTeams, error: e4 } = await supabase
+    .from("matches")
+    .select("id")
+    .eq("tournament_id", TOURNAMENT_ID)
+    .eq("home_team_id", homeTeamId)
+    .eq("away_team_id", awayTeamId)
+    .not("group_id", "is", null)
+    .maybeSingle();
+
+  if (e4) throw e4;
+  return byTeams;
 }
 
-function toMatchRow(fixture: AFFixture, homeTeamId: string, awayTeamId: string) {
+function toMatchRow(fixture: AFFixture, homeTeamId: string, awayTeamId: string, groupId: string | null = null) {
   return {
     tournament_id: TOURNAMENT_ID,
+    group_id: groupId,
     api_football_fixture_id: fixture.fixture.id,
     api_football_status: fixture.fixture.status.short,
     api_football_home_team_id: fixture.teams.home.id,

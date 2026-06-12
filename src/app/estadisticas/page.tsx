@@ -1,7 +1,9 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { TrendingUp, Trophy, Clock, Star, AlertTriangle, Globe2, Users, Zap } from "lucide-react";
+import { TrendingUp, Trophy, Clock, Star, AlertTriangle, Globe2, Users, Zap, Loader2 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   WC_EDITIONS,
@@ -315,22 +317,61 @@ function GoladoresTab() {
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function fetchMatchStats(): Promise<{ played: number; goals: number; yellows: number; reds: number }> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const supabase = createClient() as any;
+  const { data } = await supabase
+    .from("matches")
+    .select("status, home_score, away_score")
+    .neq("status", "scheduled");
+
+  if (!data) return { played: 0, goals: 0, yellows: 0, reds: 0 };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const finished = (data as any[]).filter((m: any) => m.status === "finished");
+  const played = finished.length;
+  const goals = finished.reduce((acc: number, m: any) =>
+    acc + (m.home_score ?? 0) + (m.away_score ?? 0), 0);
+
+  return { played, goals, yellows: 0, reds: 0 };
+}
+
+async function fetchTopScorers(type = "scorers"): Promise<import("@/services/api-football").AFTopScorer[]> {
+  const res = await fetch(`/api/football/topscorers?type=${type}`, { cache: "no-store" });
+  if (!res.ok) return [];
+  return res.json();
+}
+
 /* ── MUNDIAL 2026 TAB ───────────────────────────────────────── */
 function Mundial2026Tab() {
-  const liveStats = [
-    { label: "Partidos jugados",  value: "0",   max: 104, color: "#3b82f6" },
-    { label: "Goles marcados",    value: "0",   max: 300, color: "#F5A500" },
-    { label: "Tarjetas amarillas",value: "0",   max: 400, color: "#eab308" },
-    { label: "Tarjetas rojas",    value: "0",   max: 30,  color: "#ef4444" },
-  ];
+  const { data: matchStats } = useQuery({
+    queryKey: ["match-stats-summary"],
+    queryFn: fetchMatchStats,
+    staleTime: 60_000,
+    refetchInterval: 120_000,
+  });
 
-  const topCandidates = [
-    { name: "Kylian Mbappé",      country: "Francia",    fifaCode: "FRA", flag: "🇫🇷", goals: 0 },
-    { name: "Lionel Messi",       country: "Argentina",  fifaCode: "ARG", flag: "🇦🇷", goals: 0 },
-    { name: "Julián Álvarez",     country: "Argentina",  fifaCode: "ARG", flag: "🇦🇷", goals: 0 },
-    { name: "Vinícius Jr.",       country: "Brasil",     fifaCode: "BRA", flag: "🇧🇷", goals: 0 },
-    { name: "Erling Haaland",     country: "Noruega",    fifaCode: "NOR", flag: "🇳🇴", goals: 0 },
-    { name: "Harry Kane",         country: "Inglaterra", fifaCode: "ENG", flag: "󠁧󠁢󠁥󠁮󠁧󠁿🏴󠁧󠁢󠁥󠁮󠁧󠁿", goals: 0 },
+  const { data: scorers = [], isLoading: scorersLoading } = useQuery({
+    queryKey: ["top-scorers"],
+    queryFn: () => fetchTopScorers("scorers"),
+    staleTime: 3_600_000,
+  });
+
+  const { data: assists = [], isLoading: assistsLoading } = useQuery({
+    queryKey: ["top-assists"],
+    queryFn: () => fetchTopScorers("assists"),
+    staleTime: 3_600_000,
+  });
+
+  const played = matchStats?.played ?? 0;
+  const goals = matchStats?.goals ?? 0;
+
+  const liveStats = [
+    { label: "Partidos jugados",   value: String(played), max: 104, pct: Math.round((played / 104) * 100), color: "#3b82f6" },
+    { label: "Goles marcados",     value: String(goals),  max: 300, pct: Math.round((goals / 300) * 100),  color: "#F5A500" },
+    { label: "Promedio goles/ptdo",value: played > 0 ? (goals / played).toFixed(1) : "—", max: 0, pct: 0, color: "#10b981" },
+    { label: "Equipos activos",    value: "48",           max: 48,  pct: 100,                              color: "#8b5cf6" },
   ];
 
   return (
@@ -338,9 +379,9 @@ function Mundial2026Tab() {
       {/* Banner */}
       <div className="glass-card rounded-2xl border border-[hsl(var(--brand-blue)/0.3)] p-5 text-center relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--brand-blue)/0.08)] to-transparent pointer-events-none" />
-        <div className="inline-flex items-center gap-2 text-[10px] font-bold text-[hsl(var(--brand-blue-light))] bg-[hsl(var(--brand-blue)/0.1)] border border-[hsl(var(--brand-blue)/0.25)] px-3 py-1 rounded-full mb-3">
-          <Zap className="h-3 w-3" />
-          EN VIVO · EMPIEZA EL 11 DE JUNIO 2026
+        <div className="inline-flex items-center gap-2 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 px-3 py-1 rounded-full mb-3">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          EN CURSO · DESDE EL 11 DE JUNIO 2026
         </div>
         <p className="text-2xl font-black text-white mb-1">Mundial FIFA 2026</p>
         <p className="text-sm text-muted-foreground">EE.UU. · Canadá · México · 48 equipos · 104 partidos</p>
@@ -348,51 +389,111 @@ function Mundial2026Tab() {
 
       {/* Live stats grid */}
       <div>
-        <SectionTitle icon={TrendingUp} title="Estadísticas en vivo" color="#3b82f6" />
+        <SectionTitle icon={TrendingUp} title="Estadísticas del torneo" color="#3b82f6" />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {liveStats.map((s) => (
             <div key={s.label} className="glass rounded-xl border border-white/5 p-3 text-center">
               <div className="text-3xl font-black mb-1" style={{ color: s.color }}>{s.value}</div>
               <div className="text-[11px] text-muted-foreground">{s.label}</div>
-              <div className="mt-2 h-1 bg-white/5 rounded-full overflow-hidden">
-                <div className="h-full rounded-full" style={{ width: "0%", background: s.color }} />
-              </div>
-              <div className="text-[9px] text-muted-foreground mt-1">de {s.max} posibles</div>
+              {s.max > 0 && (
+                <>
+                  <div className="mt-2 h-1 bg-white/5 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full transition-all duration-500" style={{ width: `${s.pct}%`, background: s.color }} />
+                  </div>
+                  <div className="text-[9px] text-muted-foreground mt-1">{s.pct}% de {s.max} posibles</div>
+                </>
+              )}
             </div>
           ))}
         </div>
       </div>
 
-      {/* Top scorer candidates */}
+      {/* Top scorers from API-Football */}
       <div>
-        <SectionTitle icon={Star} title="Candidatos al Bota de Oro" color="#F5A500" />
-        <div className="space-y-2">
-          {topCandidates.map((c, i) => (
-            <div key={c.name} className="glass rounded-xl border border-white/5 p-3 flex items-center gap-3">
-              <span className="text-xs font-bold text-muted-foreground w-4 text-right shrink-0">{i + 1}</span>
-              <div className="relative shrink-0">
-                <PlayerPhoto name={c.name} fifaCode={c.fifaCode} size={40} />
-                {/* Federation crest badge */}
-                <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full overflow-hidden shadow-md border border-white/20 bg-white/5 flex items-center justify-center">
-                  {FEDERATION_CRESTS[c.fifaCode] ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={FEDERATION_CRESTS[c.fifaCode]} alt={c.fifaCode} className="w-full h-full object-contain" />
-                  ) : (
-                    <FlagImage fifaCode={c.fifaCode} fallbackEmoji={c.flag} size="sm" />
-                  )}
+        <SectionTitle icon={Star} title="Tabla de goleadores · WC 2026" color="#F5A500" />
+        {scorersLoading ? (
+          <div className="flex items-center justify-center py-8 gap-2 text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-sm">Cargando datos de API-Football…</span>
+          </div>
+        ) : scorers.length > 0 ? (
+          <div className="space-y-2">
+            {scorers.slice(0, 10).map((entry, i) => {
+              const stat = entry.statistics[0];
+              const goals = stat?.goals?.total ?? 0;
+              const teamName = stat?.team?.name ?? "";
+              return (
+                <div key={entry.player.id} className="glass rounded-xl border border-white/5 p-3 flex items-center gap-3">
+                  <span className="text-xs font-bold text-muted-foreground w-4 text-right shrink-0">{i + 1}</span>
+                  <img
+                    src={entry.player.photo}
+                    alt={entry.player.name}
+                    width={40} height={40}
+                    className="h-10 w-10 rounded-full object-cover border border-white/15 shrink-0"
+                    loading="lazy"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(entry.player.name)}&background=1D4ED8&color=fff&size=80&format=svg`;
+                    }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-white truncate">{entry.player.name}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">{teamName}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <span className="text-2xl font-black text-[hsl(var(--brand-gold))]">{goals}</span>
+                    <p className="text-[9px] text-muted-foreground">goles</p>
+                  </div>
                 </div>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-white">{c.name}</p>
-                <p className="text-[11px] text-muted-foreground">{c.country}</p>
-              </div>
-              <div className="text-right shrink-0">
-                <span className="text-2xl font-black text-[hsl(var(--brand-gold))]">{c.goals}</span>
-                <p className="text-[9px] text-muted-foreground">goles</p>
-              </div>
-            </div>
-          ))}
-        </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-center text-sm text-muted-foreground py-6">Sin datos disponibles todavía. Los goleadores se actualizan a partir de los primeros partidos.</p>
+        )}
+      </div>
+
+      {/* Top assists from API-Football */}
+      <div>
+        <SectionTitle icon={Users} title="Tabla de asistencias · WC 2026" color="#8b5cf6" />
+        {assistsLoading ? (
+          <div className="flex items-center justify-center py-8 gap-2 text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-sm">Cargando asistencias…</span>
+          </div>
+        ) : assists.length > 0 ? (
+          <div className="space-y-2">
+            {assists.slice(0, 10).map((entry, i) => {
+              const stat = entry.statistics[0];
+              const asst = stat?.goals?.assists ?? 0;
+              const teamName = stat?.team?.name ?? "";
+              return (
+                <div key={entry.player.id} className="glass rounded-xl border border-white/5 p-3 flex items-center gap-3">
+                  <span className="text-xs font-bold text-muted-foreground w-4 text-right shrink-0">{i + 1}</span>
+                  <img
+                    src={entry.player.photo}
+                    alt={entry.player.name}
+                    width={40} height={40}
+                    className="h-10 w-10 rounded-full object-cover border border-white/15 shrink-0"
+                    loading="lazy"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(entry.player.name)}&background=7C3AED&color=fff&size=80&format=svg`;
+                    }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-white truncate">{entry.player.name}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">{teamName}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <span className="text-2xl font-black text-violet-400">{asst}</span>
+                    <p className="text-[9px] text-muted-foreground">asistencias</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-center text-sm text-muted-foreground py-6">Sin datos disponibles todavía.</p>
+        )}
       </div>
 
       {/* Tournament info */}
