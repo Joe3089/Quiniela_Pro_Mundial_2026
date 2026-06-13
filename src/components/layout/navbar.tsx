@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, LayoutGrid, Target, BarChart3, Settings, LogOut, Menu, X, ChevronDown, Globe2, TrendingUp, UserCircle, Radio } from "lucide-react";
+import { Trophy, LayoutGrid, Target, BarChart3, Settings, LogOut, Menu, X, ChevronDown, Globe2, TrendingUp, UserCircle, Radio, Newspaper } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ const NAV_ITEMS = [
   { href: "/rankings",     label: "Ranking",        icon: BarChart3,   live: false },
   { href: "/selecciones",  label: "Selecciones",    icon: Globe2,      live: false },
   { href: "/estadisticas", label: "Estadísticas",   icon: TrendingUp,  live: false },
+  { href: "/noticias",     label: "Noticias",       icon: Newspaper,   live: false },
 ];
 
 export function Navbar() {

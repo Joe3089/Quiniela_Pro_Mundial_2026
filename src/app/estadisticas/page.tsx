@@ -220,8 +220,50 @@ function CampeonesTab() {
 
 /* ── HISTORIAL TAB ──────────────────────────────────────────── */
 function HistorialTab() {
+  const { data: matchStats } = useQuery({
+    queryKey: ["match-stats-summary"],
+    queryFn: fetchMatchStats,
+    staleTime: 60_000,
+  });
+
+  // Historical totals from all past editions (1930–2022)
+  const histGoals   = WC_EDITIONS.reduce((s, e) => s + e.totalGoals, 0);
+  const histMatches = WC_EDITIONS.reduce((s, e) => s + e.matches,    0);
+  const histEditions = WC_EDITIONS.length;
+
+  // Live WC 2026 additions
+  const liveGoals   = matchStats?.goals   ?? 0;
+  const livePlayed  = matchStats?.played  ?? 0;
+
+  const totalGoals   = histGoals   + liveGoals;
+  const totalMatches = histMatches + livePlayed;
+  const totalEditions = histEditions + 1;
+
   return (
     <div className="space-y-6">
+      {/* Cumulative stats banner */}
+      <div className="glass-card rounded-2xl border border-[hsl(var(--brand-gold)/0.25)] bg-[hsl(var(--brand-gold)/0.05)] p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Zap className="h-4 w-4 text-[hsl(var(--brand-gold))]" />
+          <span className="text-xs font-bold text-[hsl(var(--brand-gold))] uppercase tracking-wider">
+            Acumulado histórico · 1930–2026 (en curso)
+          </span>
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { label: "Ediciones", value: totalEditions, note: `${histEditions} pasadas + WC 2026`, color: "#8b5cf6" },
+            { label: "Partidos jugados", value: totalMatches.toLocaleString("es"), note: `${histMatches.toLocaleString("es")} histórico + ${livePlayed} WC 2026`, color: "#3b82f6" },
+            { label: "Goles marcados", value: totalGoals.toLocaleString("es"), note: `${histGoals.toLocaleString("es")} histórico + ${liveGoals} WC 2026`, color: "#F5A500" },
+          ].map((s) => (
+            <div key={s.label} className="text-center">
+              <div className="text-2xl font-black" style={{ color: s.color }}>{s.value}</div>
+              <div className="text-[10px] font-bold text-white mb-0.5">{s.label}</div>
+              <div className="text-[9px] text-muted-foreground leading-tight">{s.note}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <SectionTitle icon={Clock} title="Historial de ediciones (1930–2022)" color="#8b5cf6" />
       <div className="space-y-2">
         {[...WC_EDITIONS].reverse().map((ed, i) => (

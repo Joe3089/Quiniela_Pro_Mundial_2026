@@ -7,6 +7,10 @@ const db = () => createClient() as any;
 
 // ── Status / phase mapping ───────────────────────────────────────────────────
 const STATUS_MAP: Record<string, string> = {
+  // English pass-through (stored by sync route)
+  scheduled: "scheduled", live: "live", finished: "finished",
+  postponed: "postponed", cancelled: "cancelled",
+  // Spanish legacy labels
   Programado: "scheduled", programado: "scheduled",
   "En Vivo": "live", "en vivo": "live", Live: "live",
   Finalizado: "finished",  finalizado: "finished",
