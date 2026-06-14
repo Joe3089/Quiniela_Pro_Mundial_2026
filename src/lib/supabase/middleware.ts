@@ -23,17 +23,24 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // Attempt to get session — must complete fully so token-refresh cookies are
-  // written back. A race timeout would prevent cookie updates and eventually
-  // cause the session to become unrecoverable (expired + no refresh).
+  // Next.js App Router fires a server fetch for every <Link> navigation (RSC).
+  // These requests carry the Next-Router-State-Tree header. During such navigations
+  // the client already owns the Supabase auth state via the Zustand store; a server
+  // redirect here would overrule a perfectly valid client session and send the user
+  // to /auth/login. We refresh cookies for RSC requests but skip route-protection
+  // redirects — the client handles those gracefully.
+  const isRSCNavigation =
+    request.headers.get("rsc") === "1" ||
+    request.headers.has("next-router-state-tree") ||
+    request.headers.has("next-url");
+
+  // Attempt to get session so that token-refresh cookies are written back.
   let user = null;
-  let sessionAttempted = false;
   try {
     const { data } = await supabase.auth.getSession();
     user = data.session?.user ?? null;
-    sessionAttempted = true;
   } catch {
-    // Network/timeout error — fall through to cookie check below
+    // Network/timeout — fall through to cookie check below
   }
 
   const protectedRoutes = ["/dashboard", "/fixtures", "/predictions", "/rankings", "/selecciones", "/estadisticas", "/profile", "/admin", "/en-vivo", "/noticias"];
@@ -41,32 +48,26 @@ export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // Accept ANY sb-*-auth-token cookie (chunked or not) as proof of a prior
-  // authenticated session. Supabase stores the JWT as:
-  //   sb-<project-ref>-auth-token       (small sessions)
-  //   sb-<project-ref>-auth-token.0     (chunked, part 0)
-  //   sb-<project-ref>-auth-token.1     (chunked, part 1)  …
-  // Checking the prefix covers every format and prevents false logouts when
-  // getSession() encounters a transient error on cold starts.
+  // authenticated session. Also accept any sb-* cookie as a broader signal.
   const allCookies = request.cookies.getAll();
   const hasAuthCookie = allCookies.some(
-    (c) => c.name.startsWith("sb-") && c.name.includes("auth-token")
+    (c) => c.name.startsWith("sb-") && (c.name.includes("auth-token") || c.name.includes("auth"))
   );
 
-  // Only redirect to login if we definitively have NO session AND NO auth cookie.
-  // If getSession() failed (sessionAttempted=false) we trust the cookie alone.
-  if (!user && !hasAuthCookie && protectedRoutes.some((r) => pathname.startsWith(r))) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/auth/login";
-    url.searchParams.set("redirectTo", pathname);
-    return NextResponse.redirect(url);
-  }
+  // For RSC navigations the client is responsible for auth — skip redirects.
+  if (!isRSCNavigation) {
+    if (!user && !hasAuthCookie && protectedRoutes.some((r) => pathname.startsWith(r))) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/auth/login";
+      url.searchParams.set("redirectTo", pathname);
+      return NextResponse.redirect(url);
+    }
 
-  // Only redirect authenticated users away from auth routes when session is
-  // confirmed (not just cookie presence) to avoid redirect loops.
-  if (user && authRoutes.some((r) => pathname.startsWith(r))) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
+    if (user && authRoutes.some((r) => pathname.startsWith(r))) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/dashboard";
+      return NextResponse.redirect(url);
+    }
   }
 
   return supabaseResponse;

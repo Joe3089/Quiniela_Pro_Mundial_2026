@@ -7,13 +7,13 @@ import Link from "next/link";
 import {
   Radio,
   RefreshCw,
-  Clock,
   MapPin,
   Zap,
   ArrowRight,
   Trophy,
   AlertCircle,
 } from "lucide-react";
+import { useAuthStore } from "@/store/auth.store";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { TOURNAMENT_ID } from "@/constants";
@@ -449,6 +449,8 @@ function UpcomingRow({ match }: { match: UpcomingMatch }) {
 export default function EnVivoPage() {
   const queryClient = useQueryClient();
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const { user } = useAuthStore();
+  const isAdmin = (user as { is_admin?: boolean } | null)?.is_admin;
 
   const {
     data: liveFixtures = [],
@@ -533,19 +535,23 @@ export default function EnVivoPage() {
             <h1 className="text-2xl font-black tracking-tight text-white">
               Partidos en <span className="text-gradient-vivid">Vivo</span>
             </h1>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Actualización automática cada 90 seg · {timeStr}
-            </p>
+            {isAdmin && (
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Actualización automática cada 90 seg · {timeStr}
+              </p>
+            )}
           </div>
 
-          <button
-            onClick={handleRefresh}
-            disabled={isFetching}
-            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl px-3 py-2 transition-all disabled:opacity-50"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
-            Actualizar
-          </button>
+          {isAdmin && (
+            <button
+              onClick={handleRefresh}
+              disabled={isFetching}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl px-3 py-2 transition-all disabled:opacity-50"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
+              Actualizar
+            </button>
+          )}
         </div>
       </motion.div>
 
@@ -651,14 +657,16 @@ export default function EnVivoPage() {
         </div>
       )}
 
-      {/* API usage note */}
-      <div className="mt-8 flex items-start gap-2 p-3 rounded-xl bg-white/3 border border-white/8">
-        <Zap className="h-3.5 w-3.5 text-[hsl(var(--brand-gold))] mt-0.5 shrink-0" />
-        <p className="text-[10px] text-muted-foreground leading-relaxed">
-          Los datos se actualizan cada 90 segundos desde API-Football. Haz clic en un partido para ver
-          goles, tarjetas, cambios y estadísticas en detalle.
-        </p>
-      </div>
+      {/* API usage note — admin only */}
+      {isAdmin && (
+        <div className="mt-8 flex items-start gap-2 p-3 rounded-xl bg-white/3 border border-white/8">
+          <Zap className="h-3.5 w-3.5 text-[hsl(var(--brand-gold))] mt-0.5 shrink-0" />
+          <p className="text-[10px] text-muted-foreground leading-relaxed">
+            Los datos se actualizan cada 90 segundos desde API-Football. Haz clic en un partido para ver
+            goles, tarjetas, cambios y estadísticas en detalle.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,14 +1,18 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import { notFound } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Trophy, Users, Star, AlertTriangle, Clock, LayoutGrid, List } from "lucide-react";
+import { ArrowLeft, Trophy, Users, Star, AlertTriangle, Clock, LayoutGrid, List, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { getTeamByCode, type WCPlayer, type WCTeam } from "@/data/wc2026-teams";
 import { ConfederationBadge } from "@/components/ui/confederation-badge";
 import { FlagImage } from "@/components/ui/flag-image";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
+import { TOURNAMENT_ID } from "@/constants";
+
+// ── Position helpers ──────────────────────────────────────────────────────────
 
 const positionColors = {
   GK:  "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
@@ -17,20 +21,82 @@ const positionColors = {
   FWD: "bg-red-500/20 text-red-400 border-red-500/30",
 };
 
-// ── Pitch view ───────────────────────────────────────────────────────────────
+const posLabel: Record<string, string> = {
+  GK: "Portero", DEF: "Defensa", MID: "Mediocampista", FWD: "Delantero",
+};
 
-function parseFormation(formation: string): number[] {
-  return formation.split("-").map(Number).filter(Boolean);
+function mapPosition(dbPos: string): "GK" | "DEF" | "MID" | "FWD" {
+  const m: Record<string, "GK" | "DEF" | "MID" | "FWD"> = {
+    GK: "GK", DF: "DEF", MF: "MID", FW: "FWD",
+  };
+  return m[dbPos] ?? "MID";
 }
 
-function PitchPlayer({
-  player,
-  selected,
-  onClick,
-}: {
-  player: WCPlayer | null;
-  selected?: boolean;
-  onClick?: () => void;
+// ── DB player type ────────────────────────────────────────────────────────────
+
+interface DbPlayer {
+  id: string;
+  name: string;
+  position: string;
+  shirt_number: number | null;
+  is_starter: boolean;
+  is_captain: boolean;
+  is_injured: boolean;
+  photo_url: string | null;
+  api_football_player_id: number | null;
+}
+
+// Enrich a DB player with static supplementary data (club, age, photo)
+function enrichPlayer(db: DbPlayer, statics: WCPlayer[]): WCPlayer {
+  const fullLower = db.name.toLowerCase();
+  const lastName  = fullLower.split(" ").pop() ?? "";
+
+  const match = statics.find((sp) => {
+    const spLower = sp.name.toLowerCase();
+    const spLast  = spLower.split(" ").pop() ?? "";
+    return (
+      spLower === fullLower ||
+      spLast === lastName ||
+      spLower.includes(lastName) ||
+      fullLower.includes(spLast)
+    );
+  });
+
+  return {
+    name:           db.name,
+    position:       mapPosition(db.position),
+    club:           match?.club ?? "",
+    age:            match?.age ?? 0,
+    dorsal:         db.shirt_number ?? match?.dorsal,
+    isCaptain:      db.is_captain || match?.isCaptain,
+    isKeyPlayer:    match?.isKeyPlayer,
+    photo:          db.photo_url ?? match?.photo,
+    apiFootballId:  db.api_football_player_id ?? match?.apiFootballId,
+  };
+}
+
+// Determine starters using the static xi array (last name matching)
+function isStarter(player: WCPlayer, xi: string[]): boolean {
+  const fullLower = player.name.toLowerCase();
+  return xi.some((xiName) => {
+    const n = xiName.toLowerCase();
+    return fullLower.includes(n) || n.includes(fullLower.split(" ").pop() ?? "");
+  });
+}
+
+// ── Photo helper ──────────────────────────────────────────────────────────────
+
+function photoUrl(player: WCPlayer): string {
+  if (player.photo) return player.photo;
+  if (player.apiFootballId)
+    return `https://media.api-sports.io/football/players/${player.apiFootballId}.png`;
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(player.name)}&background=1D4ED8&color=fff&size=64&bold=true&format=svg`;
+}
+
+// ── PitchPlayer ───────────────────────────────────────────────────────────────
+
+function PitchPlayer({ player, selected, onClick }: {
+  player: WCPlayer | null; selected?: boolean; onClick?: () => void;
 }) {
   if (!player) {
     return (
@@ -43,25 +109,17 @@ function PitchPlayer({
     );
   }
 
-  const photoSrc = player.photo ??
-    (player.apiFootballId ? `https://media.api-sports.io/football/players/${player.apiFootballId}.png` : null) ??
-    `https://ui-avatars.com/api/?name=${encodeURIComponent(player.name)}&background=1D4ED8&color=fff&size=64&bold=true&format=svg`;
-
   const posClasses: Record<string, string> = {
-    GK:  "border-yellow-400/70",
-    DEF: "border-blue-400/70",
-    MID: "border-green-400/70",
-    FWD: "border-red-400/70",
+    GK: "border-yellow-400/70", DEF: "border-blue-400/70",
+    MID: "border-green-400/70", FWD: "border-red-400/70",
   };
   const border = posClasses[player.position] ?? "border-white/40";
+  const src = photoUrl(player);
 
   return (
     <button
       onClick={onClick}
-      className={cn(
-        "flex flex-col items-center gap-1 w-14 group transition-all",
-        selected && "scale-110"
-      )}
+      className={cn("flex flex-col items-center gap-1 w-14 group transition-all", selected && "scale-110")}
     >
       <div className={cn(
         "relative h-10 w-10 rounded-full border-2 overflow-hidden transition-all",
@@ -69,11 +127,11 @@ function PitchPlayer({
         selected ? "ring-2 ring-white shadow-[0_0_12px_rgba(255,255,255,0.4)]" : "group-hover:ring-1 group-hover:ring-white/40"
       )}>
         <img
-          src={photoSrc}
-          alt={player.name}
+          src={src} alt={player.name}
           className="h-full w-full object-cover"
           onError={(e) => {
-            (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(player.name)}&background=1D4ED8&color=fff&size=64&bold=true&format=svg`;
+            (e.target as HTMLImageElement).src =
+              `https://ui-avatars.com/api/?name=${encodeURIComponent(player.name)}&background=1D4ED8&color=fff&size=64&bold=true&format=svg`;
           }}
         />
         {player.isCaptain && (
@@ -92,21 +150,19 @@ function PitchPlayer({
   );
 }
 
-function PitchView({
-  starters,
-  subs,
-  team,
-}: {
-  starters: WCPlayer[];
-  subs: WCPlayer[];
-  team: WCTeam;
+// ── PitchView ─────────────────────────────────────────────────────────────────
+
+function parseFormation(f: string): number[] {
+  return f.split("-").map(Number).filter(Boolean);
+}
+
+function PitchView({ starters, subs, team }: {
+  starters: WCPlayer[]; subs: WCPlayer[]; team: WCTeam;
 }) {
   const [selectedStarter, setSelectedStarter] = useState<WCPlayer | null>(null);
   const [lineup, setLineup] = useState<WCPlayer[]>(starters);
 
-  // Build formation rows: FWD (top) → MID groups → DEF → GK (bottom)
-  // Fix: accumulate the mid-slice offset correctly instead of multiplying by n
-  const formation = parseFormation(team.formation); // e.g. [4,2,3,1]
+  const formation = parseFormation(team.formation);
   const gk  = lineup.filter((p) => p.position === "GK").slice(0, 1);
   const def = lineup.filter((p) => p.position === "DEF");
   const mid = lineup.filter((p) => p.position === "MID");
@@ -114,8 +170,7 @@ function PitchView({
 
   const midGroups: WCPlayer[][] = [];
   let midOffset = 0;
-  const midNums = formation.slice(1, -1); // middle rows from formation string
-  for (const n of midNums) {
+  for (const n of formation.slice(1, -1)) {
     midGroups.push(mid.slice(midOffset, midOffset + n));
     midOffset += n;
   }
@@ -127,20 +182,17 @@ function PitchView({
     gk,
   ].filter((r) => r.length > 0);
 
-  function swapPlayer(starter: WCPlayer, sub: WCPlayer) {
-    setLineup((prev) => prev.map((p) => (p.name === starter.name ? sub : p)));
-    setSelectedStarter(null);
-  }
-
   const eligibleSubs = selectedStarter
     ? subs.filter((s) => s.position === selectedStarter.position && !lineup.some((p) => p.name === s.name))
     : [];
 
-  const posLabel: Record<string, string> = { GK: "Portero", DEF: "Defensa", MID: "Mediocampista", FWD: "Delantero" };
+  function swapPlayer(starter: WCPlayer, sub: WCPlayer) {
+    setLineup((prev) => prev.map((p) => p.name === starter.name ? sub : p));
+    setSelectedStarter(null);
+  }
 
   return (
     <div className="space-y-3">
-      {/* Pitch */}
       <div
         className="relative rounded-2xl overflow-hidden"
         style={{
@@ -153,11 +205,10 @@ function PitchView({
           {[0,1,2,3,4,5,6,7].map((i) => (
             <div key={i} className="absolute left-0 right-0" style={{
               top: `${i * 12.5}%`, height: "12.5%",
-              background: i % 2 === 0 ? "rgba(255,255,255,0.02)" : "transparent",
+              background: i % 2 === 0 ? "rgba(255,255,255,0.025)" : "transparent",
             }} />
           ))}
         </div>
-
         {/* Pitch markings */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-24 w-24 rounded-full border border-white/20" />
@@ -170,7 +221,7 @@ function PitchView({
           <div className="absolute inset-2 border border-white/15 rounded-lg" />
         </div>
 
-        {/* Players on pitch — display from top (FWD) to bottom (GK) */}
+        {/* Players */}
         <div className="relative py-5 px-2 flex flex-col gap-3">
           {rows.map((row, rowIdx) => (
             <div key={rowIdx} className="flex justify-center items-center gap-2 flex-wrap">
@@ -196,14 +247,12 @@ function PitchView({
         <span>DT: <span className="font-semibold text-white/80">{team.coach}</span></span>
       </div>
 
-      {/* Hint: tap to substitute */}
       {!selectedStarter && subs.length > 0 && (
         <p className="text-center text-[10px] text-muted-foreground/60">
-          Toca un jugador para realizar un cambio
+          Toca un jugador titular para realizar un cambio por posición
         </p>
       )}
 
-      {/* Substitution panel */}
       <AnimatePresence>
         {selectedStarter && (
           <motion.div
@@ -221,10 +270,11 @@ function PitchView({
                 </div>
                 <p className="text-xs font-bold text-white">
                   Cambio para <span className="text-[hsl(var(--primary))]">{selectedStarter.name.split(" ").pop()}</span>
+                  <span className="text-muted-foreground font-normal"> · {posLabel[selectedStarter.position]}</span>
                 </p>
               </div>
               {eligibleSubs.length === 0 ? (
-                <p className="text-xs text-muted-foreground">Sin suplentes de {posLabel[selectedStarter.position] ?? selectedStarter.position} disponibles.</p>
+                <p className="text-xs text-muted-foreground">Sin suplentes de {posLabel[selectedStarter.position]} disponibles.</p>
               ) : (
                 <div className="flex flex-wrap gap-2">
                   {eligibleSubs.map((sub) => (
@@ -250,6 +300,231 @@ function PitchView({
   );
 }
 
+// ── PlayerRow (sub list) ──────────────────────────────────────────────────────
+
+function PlayerRow({ player, isTitle }: { player: WCPlayer; isTitle: boolean }) {
+  const posColors = positionColors[player.position];
+  const src = photoUrl(player);
+  return (
+    <div className="flex items-center gap-3 px-4 py-2.5 hover:bg-white/3 transition-colors">
+      <div className="relative shrink-0">
+        <img
+          src={src} alt={player.name} width={36} height={36}
+          className="h-9 w-9 rounded-xl object-cover border border-white/10"
+          loading="lazy"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src =
+              `https://ui-avatars.com/api/?name=${encodeURIComponent(player.name)}&background=1D4ED8&color=fff&size=64&bold=true&format=svg`;
+          }}
+        />
+        {isTitle && (
+          <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-400 border border-black" />
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-sm font-semibold text-white truncate">{player.name}</span>
+          {player.isCaptain && (
+            <span className="text-[9px] font-bold px-1 rounded bg-[hsl(var(--brand-gold)/0.2)] text-[hsl(var(--brand-gold))] border border-[hsl(var(--brand-gold)/0.3)] shrink-0">C</span>
+          )}
+          {player.isKeyPlayer && <Star className="h-2.5 w-2.5 text-[hsl(var(--brand-gold))] shrink-0" />}
+        </div>
+        {player.club && (
+          <span className="text-[10px] text-muted-foreground truncate">{player.club}</span>
+        )}
+      </div>
+      <div className="flex items-center gap-2 shrink-0">
+        <span className={cn("text-[9px] font-bold px-1.5 py-0.5 rounded border", posColors)}>
+          {player.position}
+        </span>
+        {player.dorsal ? (
+          <span className="text-xs font-bold text-white/80 w-6 text-right">#{player.dorsal}</span>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+// ── PlayerRoster ──────────────────────────────────────────────────────────────
+
+function PlayerRoster({ team }: { team: WCTeam }) {
+  const [view, setView] = useState<"pitch" | "list">("pitch");
+  const [dbPlayers, setDbPlayers] = useState<WCPlayer[] | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const supabase = createClient() as any;
+    let cancelled = false;
+
+    async function fetchPlayers() {
+      // Step 1: resolve team UUID from fifa_code
+      const { data: teamRow } = await supabase
+        .from("teams")
+        .select("id")
+        .eq("fifa_code", team.code.toUpperCase())
+        .eq("tournament_id", TOURNAMENT_ID)
+        .maybeSingle();
+
+      if (cancelled) return;
+      if (!teamRow?.id) { setLoading(false); return; }
+
+      // Step 2: fetch players for this team only
+      const { data: players } = await supabase
+        .from("player_squads")
+        .select("id,name,position,shirt_number,is_starter,is_captain,is_injured,photo_url,api_football_player_id")
+        .eq("team_id", teamRow.id)
+        .eq("tournament_id", TOURNAMENT_ID)
+        .order("position", { ascending: true })
+        .order("name",     { ascending: true });
+
+      if (cancelled) return;
+      if (!players?.length) { setLoading(false); return; }
+
+      const enriched: WCPlayer[] = (players as DbPlayer[]).map((p) =>
+        enrichPlayer(p, team.players)
+      );
+      setDbPlayers(enriched);
+      setLoading(false);
+    }
+
+    fetchPlayers();
+    return () => { cancelled = true; };
+  }, [team]);
+
+  if (team.rosterPublished === false) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="mt-6 glass-card rounded-2xl border border-white/8 p-10 flex flex-col items-center text-center gap-3"
+      >
+        <div className="h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center">
+          <Clock className="h-6 w-6 text-muted-foreground/50" />
+        </div>
+        <div>
+          <p className="text-sm font-bold text-white mb-1">Convocatoria no publicada</p>
+          <p className="text-xs text-muted-foreground max-w-xs">La FIFA exige la presentación oficial de convocatorias 10 días antes del inicio del torneo.</p>
+        </div>
+        <div className="flex items-center gap-1.5 text-[10px] font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-3 py-1 rounded-full">
+          <AlertTriangle className="h-3 w-3" />
+          Pendiente de publicación
+        </div>
+      </motion.div>
+    );
+  }
+
+  // Use Supabase players if available; fallback to static
+  const allPlayers = dbPlayers ?? team.players;
+  const starters = allPlayers.filter((p) => isStarter(p, team.xi));
+  const subs = allPlayers.filter((p) => !isStarter(p, team.xi));
+
+  // Group subs by position
+  const GK_ORDER = ["GK", "DEF", "MID", "FWD"];
+  const subsByPos: Record<string, WCPlayer[]> = { GK: [], DEF: [], MID: [], FWD: [] };
+  subs.forEach((p) => { (subsByPos[p.position] ?? subsByPos["MID"]).push(p); });
+
+  const posGroupLabel: Record<string, string> = {
+    GK: "PORTEROS", DEF: "DEFENSAS", MID: "MEDIOCAMPISTAS", FWD: "DELANTEROS",
+  };
+  const posGroupColor: Record<string, string> = {
+    GK: "text-yellow-400", DEF: "text-blue-400", MID: "text-green-400", FWD: "text-red-400",
+  };
+
+  return (
+    <div className="mt-6 space-y-4">
+      {/* XI Titular */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="glass-card rounded-2xl border border-white/8 overflow-hidden"
+      >
+        <div className="p-4 border-b border-white/5 flex items-center gap-2">
+          <div className="h-7 w-7 rounded-lg bg-emerald-500/15 flex items-center justify-center">
+            <Trophy className="h-3.5 w-3.5 text-emerald-400" />
+          </div>
+          <h2 className="font-bold text-sm">XI Titular · {team.formation}</h2>
+          {loading && <Loader2 className="h-3.5 w-3.5 text-muted-foreground animate-spin ml-1" />}
+          <div className="ml-auto flex items-center gap-1">
+            <button
+              onClick={() => setView("pitch")}
+              className={cn("p-1.5 rounded-lg transition-colors", view === "pitch" ? "bg-white/10 text-white" : "text-muted-foreground hover:text-white")}
+              title="Vista cancha"
+            >
+              <LayoutGrid className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={() => setView("list")}
+              className={cn("p-1.5 rounded-lg transition-colors", view === "list" ? "bg-white/10 text-white" : "text-muted-foreground hover:text-white")}
+              title="Vista lista"
+            >
+              <List className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+
+        <div className="p-4">
+          <AnimatePresence mode="wait">
+            {view === "pitch" ? (
+              <motion.div key="pitch" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                {starters.length > 0 ? (
+                  <PitchView starters={starters} subs={subs} team={team} />
+                ) : (
+                  <div className="text-center py-8 text-sm text-muted-foreground">
+                    {loading ? "Cargando convocatoria…" : "No hay datos de alineación disponibles."}
+                  </div>
+                )}
+              </motion.div>
+            ) : (
+              <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <div className="divide-y divide-white/5 -mx-4">
+                  {starters.map((p) => <PlayerRow key={p.name} player={p} isTitle />)}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </motion.div>
+
+      {/* Suplentes — grouped by position */}
+      {subs.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="glass-card rounded-2xl border border-white/8 overflow-hidden"
+        >
+          <div className="p-4 border-b border-white/5 flex items-center gap-2">
+            <div className="h-7 w-7 rounded-lg bg-[rgba(139,92,246,0.15)] flex items-center justify-center">
+              <Users className="h-3.5 w-3.5 text-violet-400" />
+            </div>
+            <h2 className="font-bold text-sm">Suplentes</h2>
+            <span className="ml-auto text-xs text-muted-foreground">{subs.length} jugadores</span>
+          </div>
+
+          <div className="divide-y divide-white/5">
+            {GK_ORDER.map((pos) => {
+              const group = subsByPos[pos];
+              if (!group?.length) return null;
+              return (
+                <div key={pos}>
+                  <div className={cn("px-4 py-2 text-[10px] font-black tracking-widest uppercase bg-white/2", posGroupColor[pos])}>
+                    {posGroupLabel[pos]}
+                  </div>
+                  {group.map((p) => <PlayerRow key={p.name} player={p} isTitle={false} />)}
+                </div>
+              );
+            })}
+          </div>
+        </motion.div>
+      )}
+    </div>
+  );
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
+
 export default function TeamDetailPage({ params }: { params: Promise<{ code: string }> }) {
   const { code } = use(params);
   const team = getTeamByCode(code.toUpperCase());
@@ -258,13 +533,11 @@ export default function TeamDetailPage({ params }: { params: Promise<{ code: str
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      {/* Back */}
       <Link href="/selecciones" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-white mb-6 transition-colors">
         <ArrowLeft className="h-4 w-4" />
         Todas las selecciones
       </Link>
 
-      {/* Hero card */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -302,208 +575,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ code: str
         </div>
       </motion.div>
 
-      {/* Titulares + Suplentes */}
       <PlayerRoster team={team} />
-    </div>
-  );
-}
-
-// ── PlayerRoster: Titulares and Suplentes sections ─────────────────────────
-
-function playerPhotoUrl(player: import("@/data/wc2026-teams").WCPlayer): string {
-  if (player.photo) return player.photo;
-  if (player.apiFootballId)
-    return `https://media.api-sports.io/football/players/${player.apiFootballId}.png`;
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(player.name)}&background=1D4ED8&color=fff&size=64&bold=true&format=svg`;
-}
-
-function isStarter(player: import("@/data/wc2026-teams").WCPlayer, xi: string[]): boolean {
-  const fullLower = player.name.toLowerCase();
-  return xi.some((xiName) => {
-    const n = xiName.toLowerCase();
-    return fullLower.includes(n) || n.includes(fullLower.split(" ").pop() ?? "");
-  });
-}
-
-function PlayerRow({
-  player,
-  flagUrl,
-  isTitle,
-}: {
-  player: import("@/data/wc2026-teams").WCPlayer;
-  flagUrl?: string | null;
-  isTitle: boolean;
-}) {
-  const posColors = positionColors[player.position];
-  return (
-    <div className="flex items-center gap-3 px-4 py-2.5 hover:bg-white/3 transition-colors">
-      {/* Photo */}
-      <div className="relative shrink-0">
-        <img
-          src={playerPhotoUrl(player)}
-          alt={player.name}
-          width={36}
-          height={36}
-          className="h-9 w-9 rounded-xl object-cover border border-white/10"
-          loading="lazy"
-          onError={(e) => {
-            (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(player.name)}&background=1D4ED8&color=fff&size=64&bold=true&format=svg`;
-          }}
-        />
-        {isTitle && (
-          <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-400 border border-black" />
-        )}
-      </div>
-
-      {/* Info */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-sm font-semibold text-white truncate">{player.name}</span>
-          {player.isCaptain && (
-            <span className="text-[9px] font-bold px-1 rounded bg-[hsl(var(--brand-gold)/0.2)] text-[hsl(var(--brand-gold))] border border-[hsl(var(--brand-gold)/0.3)] shrink-0">C</span>
-          )}
-          {player.isKeyPlayer && (
-            <Star className="h-2.5 w-2.5 text-[hsl(var(--brand-gold))] shrink-0" />
-          )}
-        </div>
-        <div className="flex items-center gap-1.5 mt-0.5">
-          {/* Flag */}
-          {flagUrl ? (
-            <img src={flagUrl} alt="" width={14} height={10}
-              className="rounded-sm object-cover shrink-0 opacity-70" />
-          ) : null}
-          <span className="text-[10px] text-muted-foreground truncate">{player.club}</span>
-        </div>
-      </div>
-
-      {/* Position + age + dorsal */}
-      <div className="flex items-center gap-2 shrink-0">
-        <span className={cn("text-[9px] font-bold px-1.5 py-0.5 rounded border", posColors)}>
-          {player.position}
-        </span>
-        <span className="text-xs text-muted-foreground">{player.age}a</span>
-        {player.dorsal ? (
-          <span className="text-xs font-bold text-white/80 w-5 text-right">#{player.dorsal}</span>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-function PlayerRoster({ team }: { team: WCTeam }) {
-  const starters = team.players.filter((p) => isStarter(p, team.xi));
-  const subs = team.players.filter((p) => !isStarter(p, team.xi));
-  const [view, setView] = useState<"pitch" | "list">("pitch");
-
-  if (team.rosterPublished === false) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="mt-6 glass-card rounded-2xl border border-white/8 p-10 flex flex-col items-center text-center gap-3"
-      >
-        <div className="h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center">
-          <Clock className="h-6 w-6 text-muted-foreground/50" />
-        </div>
-        <div>
-          <p className="text-sm font-bold text-white mb-1">Convocatoria no publicada</p>
-          <p className="text-xs text-muted-foreground max-w-xs">La FIFA exige la presentación oficial de convocatorias 10 días antes del inicio del torneo.</p>
-        </div>
-        <div className="flex items-center gap-1.5 text-[10px] font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-3 py-1 rounded-full">
-          <AlertTriangle className="h-3 w-3" />
-          Pendiente de publicación
-        </div>
-      </motion.div>
-    );
-  }
-
-  return (
-    <div className="mt-6 space-y-4">
-      {/* XI Titular header + view toggle */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="glass-card rounded-2xl border border-white/8 overflow-hidden"
-      >
-        <div className="p-4 border-b border-white/5 flex items-center gap-2">
-          <div className="h-7 w-7 rounded-lg bg-emerald-500/15 flex items-center justify-center">
-            <Trophy className="h-3.5 w-3.5 text-emerald-400" />
-          </div>
-          <h2 className="font-bold text-sm">XI Titular · {team.formation}</h2>
-          <div className="ml-auto flex items-center gap-1">
-            <button
-              onClick={() => setView("pitch")}
-              className={cn(
-                "p-1.5 rounded-lg transition-colors",
-                view === "pitch" ? "bg-white/10 text-white" : "text-muted-foreground hover:text-white"
-              )}
-              title="Vista cancha"
-            >
-              <LayoutGrid className="h-3.5 w-3.5" />
-            </button>
-            <button
-              onClick={() => setView("list")}
-              className={cn(
-                "p-1.5 rounded-lg transition-colors",
-                view === "list" ? "bg-white/10 text-white" : "text-muted-foreground hover:text-white"
-              )}
-              title="Vista lista"
-            >
-              <List className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        </div>
-
-        <div className="p-4">
-          <AnimatePresence mode="wait">
-            {view === "pitch" ? (
-              <motion.div key="pitch" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                <PitchView starters={starters} subs={subs} team={team} />
-              </motion.div>
-            ) : (
-              <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                <div className="divide-y divide-white/5 -mx-4">
-                  {starters.length > 0
-                    ? starters.map((p) => <PlayerRow key={p.name} player={p} flagUrl={null} isTitle />)
-                    : team.xi.map((name, i) => (
-                        <div key={i} className="flex items-center gap-3 px-4 py-2.5">
-                          <div className="h-9 w-9 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
-                            <span className="text-xs font-bold text-muted-foreground">{i + 1}</span>
-                          </div>
-                          <span className="text-sm font-semibold text-white">{name}</span>
-                        </div>
-                      ))}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </motion.div>
-
-      {/* Suplentes */}
-      {subs.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="glass-card rounded-2xl border border-white/8 overflow-hidden"
-        >
-          <div className="p-4 border-b border-white/5 flex items-center gap-2">
-            <div className="h-7 w-7 rounded-lg bg-[rgba(139,92,246,0.15)] flex items-center justify-center">
-              <Users className="h-3.5 w-3.5 text-violet-400" />
-            </div>
-            <h2 className="font-bold text-sm">Suplentes</h2>
-            <span className="ml-auto text-xs text-muted-foreground">{subs.length} jugadores</span>
-          </div>
-          <div className="divide-y divide-white/5">
-            {subs.map((p) => (
-              <PlayerRow key={p.name} player={p} flagUrl={null} isTitle={false} />
-            ))}
-          </div>
-        </motion.div>
-      )}
     </div>
   );
 }

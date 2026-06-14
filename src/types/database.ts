@@ -89,6 +89,7 @@ export interface UserRow {
   username: string;
   display_name: string | null;
   avatar_url: string | null;
+  whatsapp_phone: string | null;
   is_admin: boolean;
   is_active: boolean;
   created_at: string;

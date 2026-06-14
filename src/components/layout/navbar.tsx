@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Trophy, LayoutGrid, Target, BarChart3, Settings, LogOut,
   Menu, X, ChevronDown, Globe2, TrendingUp, UserCircle, Radio,
-  Newspaper, Wifi, Clock, MapPin,
+  Newspaper, Wifi, Clock, Bell,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -16,6 +16,7 @@ import { useAuthStore } from "@/store/auth.store";
 import { useLogout } from "@/features/auth/hooks/use-auth";
 import { getInitials, cn } from "@/lib/utils";
 import { ProfileModal } from "@/features/auth/components/profile-modal";
+import { NotificationsModal } from "@/features/auth/components/notifications-modal";
 import { useTimezone, TIMEZONE_OPTIONS } from "@/providers/timezone-provider";
 import { Check } from "lucide-react";
 
@@ -107,6 +108,7 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [hasMounted, setHasMounted] = useState(false);
 
@@ -245,10 +247,11 @@ export function Navbar() {
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={{ opacity: 0, y: 8, scale: 0.96 }}
                           transition={{ duration: 0.15 }}
-                          className="absolute right-0 mt-2 w-72 glass-card rounded-2xl border border-white/12 overflow-hidden shadow-[0_24px_64px_rgba(0,0,0,0.6)]"
+                          className="absolute right-0 mt-2 w-72 rounded-2xl overflow-hidden shadow-[0_24px_64px_rgba(0,0,0,0.85)]"
+                          style={{ background: "hsl(222 28% 6% / 0.98)", border: "1px solid rgba(255,255,255,0.10)", backdropFilter: "blur(24px)" }}
                         >
                           {/* User header */}
-                          <div className="px-4 py-4 bg-gradient-to-br from-[hsl(var(--primary)/0.12)] to-transparent border-b border-white/8">
+                          <div className="px-4 py-4 bg-gradient-to-br from-[hsl(var(--primary)/0.18)] to-transparent border-b border-white/10">
                             <div className="flex items-center gap-3">
                               <div className="relative shrink-0">
                                 <Avatar className="h-12 w-12 ring-2 ring-[hsl(var(--primary)/0.5)]">
@@ -288,34 +291,44 @@ export function Navbar() {
                           <div className="p-1.5">
                             <button
                               onClick={() => { setProfileOpen(true); setUserMenuOpen(false); }}
-                              className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm hover:bg-white/5 transition-colors text-left"
+                              className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm hover:bg-white/8 transition-colors text-left"
                             >
-                              <div className="h-7 w-7 rounded-lg bg-white/5 flex items-center justify-center">
+                              <div className="h-7 w-7 rounded-lg bg-white/8 border border-white/8 flex items-center justify-center">
                                 <UserCircle className="h-3.5 w-3.5 text-muted-foreground" />
                               </div>
-                              <span className="font-medium text-white/80">Mis datos</span>
+                              <span className="font-medium text-white/90">Mis datos</span>
+                            </button>
+
+                            <button
+                              onClick={() => { setNotificationsOpen(true); setUserMenuOpen(false); }}
+                              className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm hover:bg-white/8 transition-colors text-left"
+                            >
+                              <div className="h-7 w-7 rounded-lg bg-[hsl(var(--primary)/0.15)] border border-[hsl(var(--primary)/0.2)] flex items-center justify-center">
+                                <Bell className="h-3.5 w-3.5 text-[hsl(var(--primary))]" />
+                              </div>
+                              <span className="font-medium text-white/90">Notificaciones</span>
                             </button>
 
                             {isAdmin && (
                               <Link
                                 href="/admin"
                                 onClick={() => setUserMenuOpen(false)}
-                                className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm hover:bg-white/5 transition-colors"
+                                className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm hover:bg-white/8 transition-colors"
                               >
-                                <div className="h-7 w-7 rounded-lg bg-[hsl(var(--brand-gold)/0.12)] flex items-center justify-center">
+                                <div className="h-7 w-7 rounded-lg bg-[hsl(var(--brand-gold)/0.15)] border border-[hsl(var(--brand-gold)/0.2)] flex items-center justify-center">
                                   <Settings className="h-3.5 w-3.5 text-[hsl(var(--brand-gold))]" />
                                 </div>
                                 <span className="font-medium text-[hsl(var(--brand-gold))]">Admin</span>
                               </Link>
                             )}
 
-                            <div className="my-1 mx-2 h-px bg-white/6" />
+                            <div className="my-1.5 mx-2 h-px bg-white/8" />
 
                             <button
                               onClick={() => { logout.mutate(); setUserMenuOpen(false); }}
                               className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm hover:bg-red-500/10 text-muted-foreground hover:text-red-400 transition-colors"
                             >
-                              <div className="h-7 w-7 rounded-lg bg-red-500/5 flex items-center justify-center">
+                              <div className="h-7 w-7 rounded-lg bg-red-500/8 border border-red-500/10 flex items-center justify-center">
                                 <LogOut className="h-3.5 w-3.5" />
                               </div>
                               <span className="font-medium">Cerrar sesión</span>
@@ -439,6 +452,7 @@ export function Navbar() {
       <div className="h-[calc(2px+3.5rem)]" />
 
       <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} />
+      <NotificationsModal open={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
     </>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, User, Mail, Lock, Save, Edit2, Eye, EyeOff, CheckCircle2 } from "lucide-react";
+import { X, User, Mail, Lock, Save, Edit2, Eye, EyeOff, CheckCircle2, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +25,7 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
 
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
+  const [whatsappPhone, setWhatsappPhone] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -34,6 +35,7 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
   const handleEdit = () => {
     setDisplayName(user.display_name ?? "");
     setUsername(user.username ?? "");
+    setWhatsappPhone((user as any).whatsapp_phone ?? "");
     setNewPassword("");
     setConfirmPassword("");
     setError(null);
@@ -72,7 +74,8 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
         .update({
           display_name: displayName.trim() || null,
           username: username.trim(),
-        })
+          whatsapp_phone: whatsappPhone.trim() || null,
+        } as any)
         .eq("id", user.id)
         .select()
         .single();
@@ -190,6 +193,27 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
                       disabled
                       className="bg-white/5 border-white/10 opacity-50 cursor-not-allowed"
                     />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
+                      <Phone className="h-3 w-3" />
+                      WhatsApp
+                      {!editing && !(user as any).whatsapp_phone && (
+                        <span className="text-amber-400 text-[9px] font-bold bg-amber-400/10 border border-amber-400/20 px-1.5 py-0.5 rounded-full ml-1">Pendiente</span>
+                      )}
+                    </Label>
+                    <Input
+                      value={editing ? whatsappPhone : ((user as any).whatsapp_phone ?? "")}
+                      onChange={(e) => setWhatsappPhone(e.target.value)}
+                      disabled={!editing}
+                      placeholder="+58 412 000 0000"
+                      type="tel"
+                      className="bg-white/5 border-white/10 disabled:opacity-55 disabled:cursor-not-allowed"
+                    />
+                    {editing && (
+                      <p className="text-[10px] text-muted-foreground">Incluye el código de país. Ej: +58 412 000 0000</p>
+                    )}
                   </div>
 
                   {editing && (

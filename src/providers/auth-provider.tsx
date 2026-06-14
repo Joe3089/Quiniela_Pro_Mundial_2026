@@ -83,11 +83,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const db = supabase as any;
     let signedOutTimer: ReturnType<typeof setTimeout> | null = null;
 
-    // 1. getSession() as primary bootstrap
+    // 1. getSession() as primary bootstrap.
+    //    If a session exists, immediately call refreshSession() to ensure the
+    //    auth cookie is (re-)written with path:"/" via our createBrowserClient
+    //    cookieOptions. This fixes existing sessions whose cookies were
+    //    originally set without a path (scoped to /auth/login only), which
+    //    caused the middleware to see no auth cookie on other routes.
     supabase.auth.getSession().then(async ({ data: { session } }: { data: { session: any } }) => {
-      setSession(session);
       if (session?.user) {
+        // Silently refresh — sets fresh cookies with path:"/".
+        // Ignore errors: if refresh token is expired the user stays logged in
+        // via the current access token until it expires naturally.
+        supabase.auth.refreshSession().catch(() => {});
         await resolveUser(db, session, setUser);
+        setSession(session);
+      } else {
+        setSession(null);
       }
       setLoading(false);
       setInitialized();
