@@ -1,11 +1,11 @@
 "use client";
 
-import { use } from "react";
+import { use, useState } from "react";
 import { notFound } from "next/navigation";
-import { motion } from "framer-motion";
-import { ArrowLeft, Trophy, Users, Star, AlertTriangle, Clock } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowLeft, Trophy, Users, Star, AlertTriangle, Clock, LayoutGrid, List } from "lucide-react";
 import Link from "next/link";
-import { getTeamByCode } from "@/data/wc2026-teams";
+import { getTeamByCode, type WCPlayer, type WCTeam } from "@/data/wc2026-teams";
 import { ConfederationBadge } from "@/components/ui/confederation-badge";
 import { FlagImage } from "@/components/ui/flag-image";
 import { cn } from "@/lib/utils";
@@ -16,6 +16,211 @@ const positionColors = {
   MID: "bg-green-500/20 text-green-400 border-green-500/30",
   FWD: "bg-red-500/20 text-red-400 border-red-500/30",
 };
+
+// ── Pitch view ───────────────────────────────────────────────────────────────
+
+function parseFormation(formation: string): number[] {
+  return formation.split("-").map(Number).filter(Boolean);
+}
+
+function PitchPlayer({
+  player,
+  selected,
+  onClick,
+}: {
+  player: WCPlayer | null;
+  selected?: boolean;
+  onClick?: () => void;
+}) {
+  if (!player) {
+    return (
+      <div className="flex flex-col items-center gap-1 w-14">
+        <div className="h-10 w-10 rounded-full bg-white/10 border-2 border-dashed border-white/20 flex items-center justify-center">
+          <span className="text-[9px] text-muted-foreground">?</span>
+        </div>
+        <span className="text-[9px] text-muted-foreground/50">—</span>
+      </div>
+    );
+  }
+
+  const photoSrc = player.photo ??
+    (player.apiFootballId ? `https://media.api-sports.io/football/players/${player.apiFootballId}.png` : null) ??
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(player.name)}&background=1D4ED8&color=fff&size=64&bold=true&format=svg`;
+
+  const posClasses: Record<string, string> = {
+    GK:  "border-yellow-400/70",
+    DEF: "border-blue-400/70",
+    MID: "border-green-400/70",
+    FWD: "border-red-400/70",
+  };
+  const border = posClasses[player.position] ?? "border-white/40";
+
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "flex flex-col items-center gap-1 w-14 group transition-all",
+        selected && "scale-110"
+      )}
+    >
+      <div className={cn(
+        "relative h-10 w-10 rounded-full border-2 overflow-hidden transition-all",
+        border,
+        selected ? "ring-2 ring-white shadow-[0_0_12px_rgba(255,255,255,0.4)]" : "group-hover:ring-1 group-hover:ring-white/40"
+      )}>
+        <img
+          src={photoSrc}
+          alt={player.name}
+          className="h-full w-full object-cover"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(player.name)}&background=1D4ED8&color=fff&size=64&bold=true&format=svg`;
+          }}
+        />
+        {player.isCaptain && (
+          <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-[hsl(var(--brand-gold))] border border-black flex items-center justify-center">
+            <span className="text-[6px] font-black text-black">C</span>
+          </span>
+        )}
+      </div>
+      {player.dorsal && (
+        <span className="text-[8px] font-black text-white/50 -mt-0.5">#{player.dorsal}</span>
+      )}
+      <span className="text-[9px] font-semibold text-white leading-none text-center line-clamp-1 px-0.5 max-w-[52px]">
+        {player.name.split(" ").pop()}
+      </span>
+    </button>
+  );
+}
+
+function PitchView({
+  starters,
+  subs,
+  team,
+}: {
+  starters: WCPlayer[];
+  subs: WCPlayer[];
+  team: WCTeam;
+}) {
+  const [selectedStarter, setSelectedStarter] = useState<WCPlayer | null>(null);
+  const [lineup, setLineup] = useState<WCPlayer[]>(starters);
+
+  const formation = parseFormation(team.formation); // e.g. [4,3,3]
+  const gk = lineup.filter((p) => p.position === "GK").slice(0, 1);
+  const def = lineup.filter((p) => p.position === "DEF");
+  const mid = lineup.filter((p) => p.position === "MID");
+  const fwd = lineup.filter((p) => p.position === "FWD");
+
+  const rows: WCPlayer[][] = [
+    fwd.slice(0, formation[formation.length - 1] ?? 3),
+    ...formation.slice(1, -1).map((n, i) => mid.slice(i * n, i * n + n)),
+    def.slice(0, formation[0] ?? 4),
+    gk,
+  ].filter((r) => r.length > 0);
+
+  function swapPlayer(starter: WCPlayer, sub: WCPlayer) {
+    setLineup((prev) => prev.map((p) => (p.name === starter.name ? sub : p)));
+    setSelectedStarter(null);
+  }
+
+  const eligibleSubs = selectedStarter
+    ? subs.filter((s) => s.position === selectedStarter.position)
+    : [];
+
+  return (
+    <div className="space-y-3">
+      {/* Pitch */}
+      <div
+        className="relative rounded-2xl overflow-hidden"
+        style={{ background: "linear-gradient(180deg, #1a5c2a 0%, #1d6b32 35%, #1a5c2a 100%)" }}
+      >
+        {/* Pitch markings */}
+        <div className="absolute inset-0 pointer-events-none">
+          {/* Center circle */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-20 w-20 rounded-full border border-white/15" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-1.5 w-1.5 rounded-full bg-white/30" />
+          {/* Center line */}
+          <div className="absolute top-1/2 left-0 right-0 h-px bg-white/15" />
+          {/* Penalty areas */}
+          <div className="absolute top-0 left-1/4 right-1/4 h-14 border-b border-x border-white/15" />
+          <div className="absolute bottom-0 left-1/4 right-1/4 h-14 border-t border-x border-white/15" />
+          {/* Goal areas */}
+          <div className="absolute top-0 left-[35%] right-[35%] h-5 border-b border-x border-white/10" />
+          <div className="absolute bottom-0 left-[35%] right-[35%] h-5 border-t border-x border-white/10" />
+        </div>
+
+        {/* Players on pitch */}
+        <div className="relative py-5 px-2 space-y-3">
+          {rows.map((row, rowIdx) => (
+            <div key={rowIdx} className="flex justify-center items-center gap-1 flex-wrap">
+              {row.map((player) => (
+                <PitchPlayer
+                  key={player.name}
+                  player={player}
+                  selected={selectedStarter?.name === player.name}
+                  onClick={() => setSelectedStarter(
+                    selectedStarter?.name === player.name ? null : player
+                  )}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Formation label */}
+      <div className="text-center">
+        <span className="text-xs font-bold text-muted-foreground">{team.formation}</span>
+      </div>
+
+      {/* Substitution panel */}
+      <AnimatePresence>
+        {selectedStarter && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="glass-card rounded-2xl border border-[hsl(var(--primary)/0.3)] p-4">
+              <p className="text-xs font-bold text-white mb-3">
+                Reemplazar a <span className="text-[hsl(var(--primary))]">{selectedStarter.name}</span>
+                {" "}— elige suplente ({selectedStarter.position}):
+              </p>
+              {eligibleSubs.length === 0 ? (
+                <p className="text-xs text-muted-foreground">Sin suplentes disponibles en esta posición.</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {eligibleSubs.map((sub) => {
+                    const already = lineup.some((p) => p.name === sub.name);
+                    if (already) return null;
+                    return (
+                      <button
+                        key={sub.name}
+                        onClick={() => swapPlayer(selectedStarter, sub)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-[hsl(var(--primary)/0.15)] border border-white/10 hover:border-[hsl(var(--primary)/0.3)] transition-all text-left"
+                      >
+                        <span className="text-xs font-semibold text-white">{sub.name}</span>
+                        {sub.dorsal && (
+                          <span className="text-[10px] text-muted-foreground">#{sub.dorsal}</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              <button
+                onClick={() => setSelectedStarter(null)}
+                className="mt-2 text-[10px] text-muted-foreground hover:text-white transition-colors"
+              >
+                Cancelar
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 export default function TeamDetailPage({ params }: { params: Promise<{ code: string }> }) {
   const { code } = use(params);
@@ -157,12 +362,10 @@ function PlayerRow({
   );
 }
 
-function PlayerRoster({ team }: { team: import("@/data/wc2026-teams").WCTeam }) {
+function PlayerRoster({ team }: { team: WCTeam }) {
   const starters = team.players.filter((p) => isStarter(p, team.xi));
   const subs = team.players.filter((p) => !isStarter(p, team.xi));
-
-  // Use first-available flag URL (team flag from teams table if available)
-  const flagUrl: string | null = null; // UI-avatars doesn't do flags; FlagImage component handles it
+  const [view, setView] = useState<"pitch" | "list">("pitch");
 
   if (team.rosterPublished === false) {
     return (
@@ -189,7 +392,7 @@ function PlayerRoster({ team }: { team: import("@/data/wc2026-teams").WCTeam }) 
 
   return (
     <div className="mt-6 space-y-4">
-      {/* 11 Titular */}
+      {/* XI Titular header + view toggle */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -201,21 +404,53 @@ function PlayerRoster({ team }: { team: import("@/data/wc2026-teams").WCTeam }) 
             <Trophy className="h-3.5 w-3.5 text-emerald-400" />
           </div>
           <h2 className="font-bold text-sm">XI Titular · {team.formation}</h2>
-          <span className="ml-auto text-xs text-muted-foreground">{starters.length} jugadores</span>
+          <div className="ml-auto flex items-center gap-1">
+            <button
+              onClick={() => setView("pitch")}
+              className={cn(
+                "p-1.5 rounded-lg transition-colors",
+                view === "pitch" ? "bg-white/10 text-white" : "text-muted-foreground hover:text-white"
+              )}
+              title="Vista cancha"
+            >
+              <LayoutGrid className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={() => setView("list")}
+              className={cn(
+                "p-1.5 rounded-lg transition-colors",
+                view === "list" ? "bg-white/10 text-white" : "text-muted-foreground hover:text-white"
+              )}
+              title="Vista lista"
+            >
+              <List className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
-        <div className="divide-y divide-white/5">
-          {starters.length > 0
-            ? starters.map((p) => (
-                <PlayerRow key={p.name} player={p} flagUrl={flagUrl} isTitle />
-              ))
-            : team.xi.map((name, i) => (
-                <div key={i} className="flex items-center gap-3 px-4 py-2.5">
-                  <div className="h-9 w-9 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
-                    <span className="text-xs font-bold text-muted-foreground">{i + 1}</span>
-                  </div>
-                  <span className="text-sm font-semibold text-white">{name}</span>
+
+        <div className="p-4">
+          <AnimatePresence mode="wait">
+            {view === "pitch" ? (
+              <motion.div key="pitch" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <PitchView starters={starters} subs={subs} team={team} />
+              </motion.div>
+            ) : (
+              <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <div className="divide-y divide-white/5 -mx-4">
+                  {starters.length > 0
+                    ? starters.map((p) => <PlayerRow key={p.name} player={p} flagUrl={null} isTitle />)
+                    : team.xi.map((name, i) => (
+                        <div key={i} className="flex items-center gap-3 px-4 py-2.5">
+                          <div className="h-9 w-9 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
+                            <span className="text-xs font-bold text-muted-foreground">{i + 1}</span>
+                          </div>
+                          <span className="text-sm font-semibold text-white">{name}</span>
+                        </div>
+                      ))}
                 </div>
-              ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </motion.div>
 
@@ -236,7 +471,7 @@ function PlayerRoster({ team }: { team: import("@/data/wc2026-teams").WCTeam }) 
           </div>
           <div className="divide-y divide-white/5">
             {subs.map((p) => (
-              <PlayerRow key={p.name} player={p} flagUrl={flagUrl} isTitle={false} />
+              <PlayerRow key={p.name} player={p} flagUrl={null} isTitle={false} />
             ))}
           </div>
         </motion.div>

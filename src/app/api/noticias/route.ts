@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
-export const revalidate = 900; // 15 minutes
+export const revalidate = 900;
 
 interface NewsItem {
   title: string;
@@ -10,23 +10,54 @@ interface NewsItem {
   pubDate: string;
   source: string;
   sourceColor: string;
+  category: string;
 }
 
 const RSS_SOURCES = [
+  // FIFA / Federaciones oficiales
+  {
+    name: "FIFA News",
+    url: "https://www.fifa.com/rss/news_en.xml",
+    color: "#044B96",
+    category: "fifa",
+  },
+  {
+    name: "UEFA",
+    url: "https://www.uefa.com/rssfeed/rss.xml",
+    color: "#003DA5",
+    category: "federaciones",
+  },
+  // General / Mundial 2026
   {
     name: "BBC Sport",
     url: "https://feeds.bbci.co.uk/sport/football/rss.xml",
     color: "#BB1919",
+    category: "mundial",
   },
   {
     name: "ESPN FC",
     url: "https://www.espn.com/espn/rss/soccer/news",
     color: "#FF6B00",
+    category: "mundial",
   },
   {
     name: "Goal.com",
     url: "https://www.goal.com/feeds/en/news",
     color: "#00B04B",
+    category: "mundial",
+  },
+  // Convocatorias
+  {
+    name: "Sky Sports",
+    url: "https://www.skysports.com/rss/12040",
+    color: "#00A0E2",
+    category: "convocatorias",
+  },
+  {
+    name: "Marca",
+    url: "https://www.marca.com/rss/futbol.xml",
+    color: "#E31E24",
+    category: "convocatorias",
   },
 ];
 
@@ -48,29 +79,36 @@ function stripHTML(html: string): string {
     .replace(/&nbsp;/g, " ")
     .replace(/\s+/g, " ")
     .trim()
-    .slice(0, 200);
+    .slice(0, 220);
 }
 
 function extractLink(itemXml: string): string {
-  // Try <link> tag (may have CDATA or self-closing)
   const linkTag = itemXml.match(/<link>([^<]+)<\/link>/i);
   if (linkTag) return linkTag[1].trim();
-  // Try <link href="...">
   const linkHref = itemXml.match(/<link[^>]+href="([^"]+)"/i);
   if (linkHref) return linkHref[1].trim();
-  // Try <guid>
   const guid = itemXml.match(/<guid[^>]*>([^<]+)<\/guid>/i);
   if (guid && guid[1].startsWith("http")) return guid[1].trim();
   return "#";
 }
 
+function extractImage(itemXml: string): string | null {
+  const media = itemXml.match(/<media:content[^>]+url="([^"]+)"/i);
+  if (media) return media[1];
+  const enclosure = itemXml.match(/<enclosure[^>]+url="([^"]+)"[^>]+type="image/i);
+  if (enclosure) return enclosure[1];
+  const imgTag = itemXml.match(/<img[^>]+src="([^"]+)"/i);
+  if (imgTag) return imgTag[1];
+  return null;
+}
+
 async function fetchSource(
-  source: { name: string; url: string; color: string },
-  count = 6
+  source: { name: string; url: string; color: string; category: string },
+  count = 8
 ): Promise<NewsItem[]> {
   try {
     const res = await fetch(source.url, {
-      headers: { "User-Agent": "QuinielaPro/1.0 RSS Reader" },
+      headers: { "User-Agent": "QuinielaPro/1.0 RSS Reader (+https://quiniela-pro-mundial-2026.vercel.app)" },
       signal: AbortSignal.timeout(6000),
     });
     if (!res.ok) return [];
@@ -85,20 +123,29 @@ async function fetchSource(
       pubDate: extractTag(item, "pubDate"),
       source: source.name,
       sourceColor: source.color,
-    }));
+      category: source.category,
+      image: extractImage(item) ?? null,
+    })) as NewsItem[];
   } catch {
     return [];
   }
 }
 
-export async function GET() {
-  const results = await Promise.allSettled(RSS_SOURCES.map((s) => fetchSource(s, 6)));
+export async function GET(request: NextRequest) {
+  const { searchParams } = request.nextUrl;
+  const category = searchParams.get("category") ?? "all";
+
+  const sources =
+    category === "all"
+      ? RSS_SOURCES
+      : RSS_SOURCES.filter((s) => s.category === category);
+
+  const results = await Promise.allSettled(sources.map((s) => fetchSource(s, 8)));
 
   const allItems: NewsItem[] = results.flatMap((r) =>
     r.status === "fulfilled" ? r.value : []
   );
 
-  // Sort by pubDate descending (most recent first), fallback to original order
   allItems.sort((a, b) => {
     const da = a.pubDate ? new Date(a.pubDate).getTime() : 0;
     const db = b.pubDate ? new Date(b.pubDate).getTime() : 0;

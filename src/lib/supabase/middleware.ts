@@ -23,28 +23,28 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // Use getSession() instead of getUser() — reads from cookies, no network call.
-  // getUser() validates with Supabase API on every request which can timeout on
-  // Vercel free tier and falsely return null, redirecting authenticated users to login.
-  // Race against a 4 s timeout so a slow token-refresh never blocks navigation.
-  const sessionResult = await Promise.race([
-    supabase.auth.getSession(),
-    new Promise<{ data: { session: null } }>((resolve) =>
-      setTimeout(() => resolve({ data: { session: null } }), 4000)
-    ),
-  ]);
-  const { data: { session } } = sessionResult;
-  const user = session?.user ?? null;
+  // Attempt to get session — must complete fully so token-refresh cookies are
+  // written back. A race timeout would prevent cookie updates and eventually
+  // cause the session to become unrecoverable (expired + no refresh).
+  let user = null;
+  try {
+    const { data } = await supabase.auth.getSession();
+    user = data.session?.user ?? null;
+  } catch {
+    // Network/timeout error — fall through to cookie check below
+  }
 
   const protectedRoutes = ["/dashboard", "/fixtures", "/predictions", "/rankings", "/selecciones", "/estadisticas", "/profile", "/admin", "/en-vivo", "/noticias"];
   const authRoutes = ["/auth/login", "/auth/register"];
   const pathname = request.nextUrl.pathname;
 
-  // Only redirect to login if BOTH the session is null AND no Supabase auth
-  // cookie exists. This avoids a false logout when getSession() times out but
-  // the user has valid cookies (e.g. token refresh temporarily slow on Vercel).
+  // Accept ANY sb- cookie as proof of prior authentication.
+  // Supabase SSR stores the auth token as sb-<project-ref>-auth-token
+  // (possibly chunked as .0, .1, …). Checking just the prefix covers all
+  // formats and avoids false logouts when getSession() encounters a transient
+  // network failure on Vercel cold starts.
   const hasAuthCookie = request.cookies.getAll().some(
-    (c) => c.name.startsWith("sb-") && (c.name.includes("-auth-token") || c.name.includes("-access-token"))
+    (c) => c.name.startsWith("sb-")
   );
 
   if (!user && !hasAuthCookie && protectedRoutes.some((r) => pathname.startsWith(r))) {

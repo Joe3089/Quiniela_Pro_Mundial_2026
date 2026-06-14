@@ -7,11 +7,14 @@ export const TOURNAMENT_SLUG = "mundial-2026";
 export const TOURNAMENT_ID = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
 
 export const SCORING = {
-  EXACT_SCORE: 5,
-  CORRECT_WINNER: 3,
-  EXACT_DRAW: 2,
-  PARTIAL_DRAW: 1,
+  EXACT_WIN: 5,      // Exact scoreline — winner is correct (non-draw)
+  EXACT_DRAW: 4,     // Exact scoreline — both teams draw with exact goals
+  CORRECT_WINNER: 3, // Right winner but wrong score
+  CORRECT_DRAW: 1,   // Predicted draw and result is draw (wrong exact score)
   WRONG: 0,
+  // Legacy aliases used by existing components
+  EXACT_SCORE: 5,
+  PARTIAL_DRAW: 1,
 } as const;
 
 export const PHASES = {

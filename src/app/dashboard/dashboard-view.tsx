@@ -20,8 +20,14 @@ export function DashboardView() {
   const { data: upcomingMatches, isLoading: matchesLoading } = useMatches();
   const { formatTime, formatDateShort } = useFormatDate();
 
+  // Live matches shown first, then upcoming scheduled
   const nextMatches = upcomingMatches
     ?.filter((m) => m.status === "scheduled" || m.status === "live")
+    .sort((a, b) => {
+      if (a.status === "live" && b.status !== "live") return -1;
+      if (b.status === "live" && a.status !== "live") return 1;
+      return new Date(a.match_date).getTime() - new Date(b.match_date).getTime();
+    })
     .slice(0, 3) ?? [];
 
   const pendingPredictions = nextMatches.filter(
@@ -187,14 +193,30 @@ export function DashboardView() {
                   };
                   const st = statusMap[match.status] ?? statusMap.scheduled;
 
+                  const isLive = match.status === "live";
+
                   return (
                     <Link key={match.id} href={`/predictions?match=${match.id}`}>
-                      <div className="px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors group">
+                      <div className={`px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors group ${isLive ? "bg-emerald-500/5 border border-emerald-500/20" : ""}`}>
+                        {/* Live header */}
+                        {isLive && (
+                          <div className="flex items-center justify-between mb-1.5">
+                            <div className="flex items-center gap-1.5">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                              <span className="text-[10px] font-black text-emerald-400 tracking-wide">EN VIVO</span>
+                            </div>
+                            {(match as any).elapsed != null && (
+                              <span className="text-[10px] font-bold text-emerald-400/80">
+                                {(match as any).elapsed}&apos;
+                              </span>
+                            )}
+                          </div>
+                        )}
                         {/* Teams row */}
                         <div className="flex items-center gap-2">
                           {/* Home */}
                           <div className="flex items-center gap-1.5 flex-1 justify-end">
-                            <span className="text-xs font-semibold text-white truncate max-w-[52px]">
+                            <span className={`text-xs font-semibold truncate max-w-[52px] ${isLive ? "text-white" : "text-white"}`}>
                               {match.home_team?.short_name ?? "TBD"}
                             </span>
                             {(match.home_team as any)?.flag_url && (
@@ -206,11 +228,19 @@ export function DashboardView() {
                               />
                             )}
                           </div>
-                          {/* VS + date */}
+                          {/* Score (live) or VS + date (scheduled) */}
                           <div className="flex flex-col items-center shrink-0 w-14">
-                            <span className="text-[10px] text-muted-foreground font-bold leading-none">VS</span>
-                            <span className="text-[9px] text-muted-foreground/70 mt-0.5 leading-none">{dateStr}</span>
-                            <span className="text-[9px] text-muted-foreground/50 leading-none">{timeStr}</span>
+                            {isLive ? (
+                              <span className="text-base font-black text-white tabular-nums leading-none">
+                                {match.home_score ?? 0} – {match.away_score ?? 0}
+                              </span>
+                            ) : (
+                              <>
+                                <span className="text-[10px] text-muted-foreground font-bold leading-none">VS</span>
+                                <span className="text-[9px] text-muted-foreground/70 mt-0.5 leading-none">{dateStr}</span>
+                                <span className="text-[9px] text-muted-foreground/50 leading-none">{timeStr}</span>
+                              </>
+                            )}
                           </div>
                           {/* Away */}
                           <div className="flex items-center gap-1.5 flex-1 justify-start">
@@ -227,15 +257,20 @@ export function DashboardView() {
                             </span>
                           </div>
                           {/* Status + arrow */}
-                          <div className="flex items-center gap-1 shrink-0">
-                            <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${st.cls}`}>
-                              {st.label}
-                            </span>
-                            <ArrowRight className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                          </div>
+                          {!isLive && (
+                            <div className="flex items-center gap-1 shrink-0">
+                              <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${st.cls}`}>
+                                {st.label}
+                              </span>
+                              <ArrowRight className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </div>
+                          )}
+                          {isLive && (
+                            <ArrowRight className="h-3 w-3 text-emerald-400/50 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                          )}
                         </div>
                         {/* Venue row */}
-                        {(match.venue || match.city) && (
+                        {!isLive && (match.venue || match.city) && (
                           <div className="flex items-center justify-center gap-1 mt-1">
                             <MapPin className="h-2.5 w-2.5 text-muted-foreground/50" />
                             <span className="text-[9px] text-muted-foreground/50 truncate">
@@ -283,11 +318,18 @@ export function DashboardView() {
           <div className="p-5 space-y-3">
             {[
               {
-                pts: SCORING.EXACT_SCORE,
-                label: "Marcador exacto",
+                pts: SCORING.EXACT_WIN,
+                label: "Victoria exacta",
                 color: "text-[hsl(var(--primary))]",
                 bar: "bg-[hsl(var(--primary))]",
                 w: "w-full",
+              },
+              {
+                pts: SCORING.EXACT_DRAW,
+                label: "Empate exacto",
+                color: "text-[hsl(var(--brand-gold))]",
+                bar: "bg-[hsl(var(--brand-gold))]",
+                w: "w-4/5",
               },
               {
                 pts: SCORING.CORRECT_WINNER,
@@ -297,15 +339,8 @@ export function DashboardView() {
                 w: "w-3/5",
               },
               {
-                pts: SCORING.EXACT_DRAW,
-                label: "Empate exacto",
-                color: "text-[hsl(var(--brand-gold))]",
-                bar: "bg-[hsl(var(--brand-gold))]",
-                w: "w-2/5",
-              },
-              {
-                pts: SCORING.PARTIAL_DRAW,
-                label: "Empate (resultado)",
+                pts: SCORING.CORRECT_DRAW,
+                label: "Empate correcto",
                 color: "text-[hsl(var(--accent))]",
                 bar: "bg-[hsl(var(--accent))]",
                 w: "w-1/5",
