@@ -104,15 +104,25 @@ function PitchView({
   const [selectedStarter, setSelectedStarter] = useState<WCPlayer | null>(null);
   const [lineup, setLineup] = useState<WCPlayer[]>(starters);
 
-  const formation = parseFormation(team.formation); // e.g. [4,3,3]
-  const gk = lineup.filter((p) => p.position === "GK").slice(0, 1);
+  // Build formation rows: FWD (top) → MID groups → DEF → GK (bottom)
+  // Fix: accumulate the mid-slice offset correctly instead of multiplying by n
+  const formation = parseFormation(team.formation); // e.g. [4,2,3,1]
+  const gk  = lineup.filter((p) => p.position === "GK").slice(0, 1);
   const def = lineup.filter((p) => p.position === "DEF");
   const mid = lineup.filter((p) => p.position === "MID");
   const fwd = lineup.filter((p) => p.position === "FWD");
 
+  const midGroups: WCPlayer[][] = [];
+  let midOffset = 0;
+  const midNums = formation.slice(1, -1); // middle rows from formation string
+  for (const n of midNums) {
+    midGroups.push(mid.slice(midOffset, midOffset + n));
+    midOffset += n;
+  }
+
   const rows: WCPlayer[][] = [
     fwd.slice(0, formation[formation.length - 1] ?? 3),
-    ...formation.slice(1, -1).map((n, i) => mid.slice(i * n, i * n + n)),
+    ...midGroups,
     def.slice(0, formation[0] ?? 4),
     gk,
   ].filter((r) => r.length > 0);
@@ -123,35 +133,47 @@ function PitchView({
   }
 
   const eligibleSubs = selectedStarter
-    ? subs.filter((s) => s.position === selectedStarter.position)
+    ? subs.filter((s) => s.position === selectedStarter.position && !lineup.some((p) => p.name === s.name))
     : [];
+
+  const posLabel: Record<string, string> = { GK: "Portero", DEF: "Defensa", MID: "Mediocampista", FWD: "Delantero" };
 
   return (
     <div className="space-y-3">
       {/* Pitch */}
       <div
         className="relative rounded-2xl overflow-hidden"
-        style={{ background: "linear-gradient(180deg, #1a5c2a 0%, #1d6b32 35%, #1a5c2a 100%)" }}
+        style={{
+          background: "linear-gradient(180deg, #155c24 0%, #1a6b2c 30%, #1d7a32 50%, #1a6b2c 70%, #155c24 100%)",
+          boxShadow: "inset 0 0 40px rgba(0,0,0,0.3)",
+        }}
       >
-        {/* Pitch markings */}
-        <div className="absolute inset-0 pointer-events-none">
-          {/* Center circle */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-20 w-20 rounded-full border border-white/15" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-1.5 w-1.5 rounded-full bg-white/30" />
-          {/* Center line */}
-          <div className="absolute top-1/2 left-0 right-0 h-px bg-white/15" />
-          {/* Penalty areas */}
-          <div className="absolute top-0 left-1/4 right-1/4 h-14 border-b border-x border-white/15" />
-          <div className="absolute bottom-0 left-1/4 right-1/4 h-14 border-t border-x border-white/15" />
-          {/* Goal areas */}
-          <div className="absolute top-0 left-[35%] right-[35%] h-5 border-b border-x border-white/10" />
-          <div className="absolute bottom-0 left-[35%] right-[35%] h-5 border-t border-x border-white/10" />
+        {/* Grass stripes */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {[0,1,2,3,4,5,6,7].map((i) => (
+            <div key={i} className="absolute left-0 right-0" style={{
+              top: `${i * 12.5}%`, height: "12.5%",
+              background: i % 2 === 0 ? "rgba(255,255,255,0.02)" : "transparent",
+            }} />
+          ))}
         </div>
 
-        {/* Players on pitch */}
-        <div className="relative py-5 px-2 space-y-3">
+        {/* Pitch markings */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-24 w-24 rounded-full border border-white/20" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-white/40" />
+          <div className="absolute top-1/2 left-4 right-4 h-px bg-white/20" />
+          <div className="absolute top-2 left-[20%] right-[20%] h-14 border-b-2 border-x-2 border-white/20 rounded-b-lg" />
+          <div className="absolute bottom-2 left-[20%] right-[20%] h-14 border-t-2 border-x-2 border-white/20 rounded-t-lg" />
+          <div className="absolute top-2 left-[36%] right-[36%] h-5 border-b border-x border-white/15" />
+          <div className="absolute bottom-2 left-[36%] right-[36%] h-5 border-t border-x border-white/15" />
+          <div className="absolute inset-2 border border-white/15 rounded-lg" />
+        </div>
+
+        {/* Players on pitch — display from top (FWD) to bottom (GK) */}
+        <div className="relative py-5 px-2 flex flex-col gap-3">
           {rows.map((row, rowIdx) => (
-            <div key={rowIdx} className="flex justify-center items-center gap-1 flex-wrap">
+            <div key={rowIdx} className="flex justify-center items-center gap-2 flex-wrap">
               {row.map((player) => (
                 <PitchPlayer
                   key={player.name}
@@ -167,10 +189,19 @@ function PitchView({
         </div>
       </div>
 
-      {/* Formation label */}
-      <div className="text-center">
-        <span className="text-xs font-bold text-muted-foreground">{team.formation}</span>
+      {/* Formation + coach */}
+      <div className="flex items-center justify-center gap-3 text-xs text-muted-foreground">
+        <span className="font-black text-white/70">{team.formation}</span>
+        <span>·</span>
+        <span>DT: <span className="font-semibold text-white/80">{team.coach}</span></span>
       </div>
+
+      {/* Hint: tap to substitute */}
+      {!selectedStarter && subs.length > 0 && (
+        <p className="text-center text-[10px] text-muted-foreground/60">
+          Toca un jugador para realizar un cambio
+        </p>
+      )}
 
       {/* Substitution panel */}
       <AnimatePresence>
@@ -181,37 +212,34 @@ function PitchView({
             exit={{ opacity: 0, height: 0 }}
             className="overflow-hidden"
           >
-            <div className="glass-card rounded-2xl border border-[hsl(var(--primary)/0.3)] p-4">
-              <p className="text-xs font-bold text-white mb-3">
-                Reemplazar a <span className="text-[hsl(var(--primary))]">{selectedStarter.name}</span>
-                {" "}— elige suplente ({selectedStarter.position}):
-              </p>
+            <div className="glass-card rounded-2xl border border-[hsl(var(--primary)/0.35)] p-4 bg-[hsl(var(--primary)/0.05)]">
+              <div className="flex items-center gap-2 mb-3">
+                <div className={cn("h-6 w-6 rounded-lg flex items-center justify-center text-[9px] font-black border",
+                  positionColors[selectedStarter.position] ?? "bg-white/5 border-white/10"
+                )}>
+                  {selectedStarter.position}
+                </div>
+                <p className="text-xs font-bold text-white">
+                  Cambio para <span className="text-[hsl(var(--primary))]">{selectedStarter.name.split(" ").pop()}</span>
+                </p>
+              </div>
               {eligibleSubs.length === 0 ? (
-                <p className="text-xs text-muted-foreground">Sin suplentes disponibles en esta posición.</p>
+                <p className="text-xs text-muted-foreground">Sin suplentes de {posLabel[selectedStarter.position] ?? selectedStarter.position} disponibles.</p>
               ) : (
                 <div className="flex flex-wrap gap-2">
-                  {eligibleSubs.map((sub) => {
-                    const already = lineup.some((p) => p.name === sub.name);
-                    if (already) return null;
-                    return (
-                      <button
-                        key={sub.name}
-                        onClick={() => swapPlayer(selectedStarter, sub)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-[hsl(var(--primary)/0.15)] border border-white/10 hover:border-[hsl(var(--primary)/0.3)] transition-all text-left"
-                      >
-                        <span className="text-xs font-semibold text-white">{sub.name}</span>
-                        {sub.dorsal && (
-                          <span className="text-[10px] text-muted-foreground">#{sub.dorsal}</span>
-                        )}
-                      </button>
-                    );
-                  })}
+                  {eligibleSubs.map((sub) => (
+                    <button
+                      key={sub.name}
+                      onClick={() => swapPlayer(selectedStarter, sub)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-[hsl(var(--primary)/0.15)] border border-white/10 hover:border-[hsl(var(--primary)/0.4)] transition-all text-left"
+                    >
+                      <span className="text-xs font-semibold text-white">{sub.name}</span>
+                      {sub.dorsal && <span className="text-[10px] text-muted-foreground">#{sub.dorsal}</span>}
+                    </button>
+                  ))}
                 </div>
               )}
-              <button
-                onClick={() => setSelectedStarter(null)}
-                className="mt-2 text-[10px] text-muted-foreground hover:text-white transition-colors"
-              >
+              <button onClick={() => setSelectedStarter(null)} className="mt-2.5 text-[10px] text-muted-foreground hover:text-white transition-colors">
                 Cancelar
               </button>
             </div>

@@ -81,31 +81,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const supabase = createClient();
     const db = supabase as any;
+    let signedOutTimer: ReturnType<typeof setTimeout> | null = null;
 
-    // 1. getSession() as primary bootstrap — waits for supabase to finish
-    //    reading cookies, so it reliably returns the session even right after
-    //    an OAuth redirect. We only set user when a session exists; we let
-    //    onAuthStateChange handle the signed-out case so there is no race where
-    //    a slow getSession() resolves null and wipes a user already set by the
-    //    auth-state listener.
+    // 1. getSession() as primary bootstrap
     supabase.auth.getSession().then(async ({ data: { session } }: { data: { session: any } }) => {
       setSession(session);
       if (session?.user) {
         await resolveUser(db, session, setUser);
       }
       setLoading(false);
-      setInitialized(); // mark session as confirmed even if null
+      setInitialized();
     });
 
-    // 2. onAuthStateChange keeps the store in sync for subsequent events
-    //    (SIGNED_IN after OAuth redirect, SIGNED_OUT, TOKEN_REFRESHED, etc.)
+    // 2. onAuthStateChange keeps the store in sync.
+    //    SIGNED_OUT is debounced by 600ms to avoid flashing the login state
+    //    during token-refresh cycles where Supabase briefly fires SIGNED_OUT
+    //    before the new SIGNED_IN / TOKEN_REFRESHED event. Without this debounce,
+    //    the navbar briefly shows login buttons mid-navigation, and if the user
+    //    clicks a protected link at that exact moment they're sent to /auth/login.
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event: string, session: any) => {
       setInitialized();
       setSession(session);
+
       if (session?.user) {
-        // Set minimal user immediately so the UI updates without waiting for the DB.
+        // Cancel any pending sign-out clear
+        if (signedOutTimer) { clearTimeout(signedOutTimer); signedOutTimer = null; }
         setUser({
           id: session.user.id,
           email: session.user.email ?? "",
@@ -119,15 +121,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           auth: session.user,
         } as any);
         setLoading(false);
-        // Enrich with full DB profile in the background (non-blocking).
         resolveUser(db, session, setUser);
+      } else if (event === "SIGNED_OUT") {
+        // Delay clearing user so TOKEN_REFRESHED can follow without a flash.
+        signedOutTimer = setTimeout(() => {
+          setUser(null);
+          setLoading(false);
+          signedOutTimer = null;
+        }, 600);
       } else {
         setUser(null);
         setLoading(false);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      if (signedOutTimer) clearTimeout(signedOutTimer);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

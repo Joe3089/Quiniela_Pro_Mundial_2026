@@ -12,6 +12,17 @@ import { TOURNAMENT_ID } from "@/constants";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+function serializeError(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === "object" && err !== null) {
+    const e = err as Record<string, unknown>;
+    // PostgrestError has message + code + details + hint
+    if (e.message) return `${e.message}${e.details ? ` — ${e.details}` : ""}${e.hint ? ` (hint: ${e.hint})` : ""}`;
+    return JSON.stringify(e);
+  }
+  return String(err);
+}
+
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 type SyncAction = "teams" | "fixtures" | "players" | "scores" | "all";
 
@@ -73,7 +84,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ ok: true, action, source: isVercelCron ? "vercel-cron" : "manual-get", results });
     } catch (err) {
       console.error("[api-football sync:get]", err);
-      return NextResponse.json({ error: String(err) }, { status: 500 });
+      return NextResponse.json({ error: serializeError(err) }, { status: 500 });
     }
   }
 
@@ -115,7 +126,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, action, results });
   } catch (err) {
     console.error("[api-football sync]", err);
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    return NextResponse.json({ error: serializeError(err) }, { status: 500 });
   }
 }
 
@@ -146,7 +157,7 @@ async function syncTeams(supabase: SupabaseClient) {
       })
       .eq("id", existing.id);
 
-    if (error) throw error;
+    if (error) throw new Error(serializeError(error));
     updated++;
   }
 
@@ -189,11 +200,11 @@ async function syncFixtures(
 
     if (existing?.id) {
       const { error } = await supabase.from("matches").update(matchData).eq("id", existing.id);
-      if (error) throw error;
+      if (error) throw new Error(serializeError(error));
       updated++;
     } else {
       const { error } = await supabase.from("matches").insert(matchData);
-      if (error) throw error;
+      if (error) throw new Error(serializeError(error));
       inserted++;
     }
   }

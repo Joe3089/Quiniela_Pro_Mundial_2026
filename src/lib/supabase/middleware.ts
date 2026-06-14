@@ -27,9 +27,11 @@ export async function updateSession(request: NextRequest) {
   // written back. A race timeout would prevent cookie updates and eventually
   // cause the session to become unrecoverable (expired + no refresh).
   let user = null;
+  let sessionAttempted = false;
   try {
     const { data } = await supabase.auth.getSession();
     user = data.session?.user ?? null;
+    sessionAttempted = true;
   } catch {
     // Network/timeout error — fall through to cookie check below
   }
@@ -38,15 +40,20 @@ export async function updateSession(request: NextRequest) {
   const authRoutes = ["/auth/login", "/auth/register"];
   const pathname = request.nextUrl.pathname;
 
-  // Accept ANY sb- cookie as proof of prior authentication.
-  // Supabase SSR stores the auth token as sb-<project-ref>-auth-token
-  // (possibly chunked as .0, .1, …). Checking just the prefix covers all
-  // formats and avoids false logouts when getSession() encounters a transient
-  // network failure on Vercel cold starts.
-  const hasAuthCookie = request.cookies.getAll().some(
-    (c) => c.name.startsWith("sb-")
+  // Accept ANY sb-*-auth-token cookie (chunked or not) as proof of a prior
+  // authenticated session. Supabase stores the JWT as:
+  //   sb-<project-ref>-auth-token       (small sessions)
+  //   sb-<project-ref>-auth-token.0     (chunked, part 0)
+  //   sb-<project-ref>-auth-token.1     (chunked, part 1)  …
+  // Checking the prefix covers every format and prevents false logouts when
+  // getSession() encounters a transient error on cold starts.
+  const allCookies = request.cookies.getAll();
+  const hasAuthCookie = allCookies.some(
+    (c) => c.name.startsWith("sb-") && c.name.includes("auth-token")
   );
 
+  // Only redirect to login if we definitively have NO session AND NO auth cookie.
+  // If getSession() failed (sessionAttempted=false) we trust the cookie alone.
   if (!user && !hasAuthCookie && protectedRoutes.some((r) => pathname.startsWith(r))) {
     const url = request.nextUrl.clone();
     url.pathname = "/auth/login";
@@ -54,6 +61,8 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Only redirect authenticated users away from auth routes when session is
+  // confirmed (not just cookie presence) to avoid redirect loops.
   if (user && authRoutes.some((r) => pathname.startsWith(r))) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
