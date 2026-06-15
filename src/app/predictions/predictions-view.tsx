@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Target, Lock, CheckCircle2, Clock, Users, X, Star, RotateCcw, ChevronDown } from "lucide-react";
+import { Target, Lock, CheckCircle2, Clock, Users, X, Star, RotateCcw, ChevronDown, User } from "lucide-react";
 import { PlayerAvatar } from "@/components/ui/player-avatar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -234,28 +234,13 @@ function LineupModal({
                           )}
                         >
                           <div className={cn(
-                            "relative transition-all duration-150",
-                            isActive && "ring-2 ring-[hsl(var(--brand-gold))] ring-offset-1 ring-offset-black rounded-full"
+                            "relative h-9 w-9 rounded-full border-2 bg-white/10 flex items-center justify-center",
+                            pos === "GK"  ? "border-yellow-400"  :
+                            pos === "DEF" ? "border-blue-400"    :
+                            pos === "MID" ? "border-emerald-400" : "border-red-400",
+                            isActive && "ring-2 ring-[hsl(var(--brand-gold))] ring-offset-1 ring-offset-black"
                           )}>
-                            {/* Jersey behind photo */}
-                            <div className="relative">
-                              <JerseyIcon code={code} size={30} />
-                              {/* Player photo overlaid */}
-                              {playerName ? (
-                                <div className="absolute -top-2 left-1/2 -translate-x-1/2">
-                                  <PlayerAvatar
-                                    player={{ name: playerName, ...(team.players.find(p => p.name === playerName) ?? {}) }}
-                                    kitColor={KIT[code]?.p ?? "#1D4ED8"}
-                                    size="xs"
-                                    className="ring-1 ring-white/30 shadow-lg"
-                                  />
-                                </div>
-                              ) : (
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                  <span className="text-[7px] font-bold text-white/50 mt-2">{pos}</span>
-                                </div>
-                              )}
-                            </div>
+                            <User className="h-5 w-5 text-white/80" />
                             {isActive && (
                               <div className="absolute -top-1 -right-1 w-3 h-3 bg-[hsl(var(--brand-gold))] rounded-full flex items-center justify-center z-10">
                                 <ChevronDown className="w-2 h-2 text-black" />
@@ -662,9 +647,10 @@ export function PredictionsView() {
     ])
   );
 
-  const open = allMatches?.filter((m) => m.status === "scheduled") ?? [];
+  const now = Date.now();
+  const open = allMatches?.filter((m) => m.status === "scheduled" && new Date(m.match_date).getTime() > now) ?? [];
   const withPrediction = allMatches?.filter((m) => predictionMap.has(m.id)) ?? [];
-  const finished = allMatches?.filter((m) => m.status === "finished") ?? [];
+  const finished = allMatches?.filter((m) => m.status === "finished" || (m.status === "scheduled" && new Date(m.match_date).getTime() <= now)) ?? [];
   const isLoading = matchesLoading || predsLoading;
 
   return (
