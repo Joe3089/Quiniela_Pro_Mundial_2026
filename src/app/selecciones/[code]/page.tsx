@@ -89,7 +89,7 @@ function PitchPlayer({
     <button
       onClick={onClick}
       className={cn(
-        "flex flex-col items-center gap-0.5 w-[52px] group transition-transform",
+        "flex flex-col items-center gap-0.5 w-[64px] group transition-transform",
         selected && "scale-110"
       )}
     >
@@ -190,9 +190,9 @@ function Pitch({ starters, subs, team }: { starters: WCPlayer[]; subs: WCPlayer[
         </div>
 
         {/* Players */}
-        <div className="relative py-5 px-3 flex flex-col gap-4">
+        <div className="relative py-6 px-2 flex flex-col gap-5 min-h-[340px] justify-around">
           {rows.map((row, ri) => (
-            <div key={ri} className="flex justify-center items-center gap-1 flex-wrap">
+            <div key={ri} className="flex justify-center items-center gap-3">
               {row.map((p) => (
                 <PitchPlayer
                   key={p.name}
@@ -376,9 +376,43 @@ function PlayerRoster({ team }: { team: WCTeam }) {
     );
   }
 
-  const allPlayers = dbPlayers ?? team.players;
-  const starters   = allPlayers.filter((p) => isStarter(p, team.xi));
-  const subs        = allPlayers.filter((p) => !isStarter(p, team.xi));
+  let starters: WCPlayer[];
+  let subs: WCPlayer[];
+
+  if (dbPlayers) {
+    // Formation-based selection: always pick exactly 11 starters from DB
+    const formation = parseFormation(team.formation);
+    const nDef = formation[0] ?? 4;
+    const nFwd = formation[formation.length - 1] ?? 3;
+    const nMid = formation.slice(1, -1).reduce((a, b) => a + b, 0) || (10 - nDef - nFwd);
+
+    const gks  = dbPlayers.filter((p) => p.position === "GK");
+    const defs = dbPlayers.filter((p) => p.position === "DEF");
+    const mids = dbPlayers.filter((p) => p.position === "MID");
+    const fwds = dbPlayers.filter((p) => p.position === "FWD");
+
+    const picked: WCPlayer[] = [
+      ...gks.slice(0, 1),
+      ...defs.slice(0, nDef),
+      ...mids.slice(0, nMid),
+      ...fwds.slice(0, nFwd),
+    ];
+
+    // Fill any gap (edge case: fewer players per position than formation requires)
+    if (picked.length < 11) {
+      const pickedNames = new Set(picked.map((p) => p.name));
+      const remaining = dbPlayers.filter((p) => !pickedNames.has(p.name));
+      picked.push(...remaining.slice(0, 11 - picked.length));
+    }
+
+    starters = picked;
+    const starterSet = new Set(starters.map((p) => p.name));
+    subs = dbPlayers.filter((p) => !starterSet.has(p.name));
+  } else {
+    const allPlayers = team.players;
+    starters = allPlayers.filter((p) => isStarter(p, team.xi));
+    subs     = allPlayers.filter((p) => !isStarter(p, team.xi));
+  }
 
   return (
     <div className="space-y-4">

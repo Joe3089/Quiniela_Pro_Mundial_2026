@@ -76,6 +76,8 @@ interface UpcomingMatch {
   id: string;
   match_date: string;
   status: string;
+  home_score: number | null;
+  away_score: number | null;
   home_team: { name: string; short_name: string; flag_url: string | null } | null;
   away_team: { name: string; short_name: string; flag_url: string | null } | null;
   venue: string | null;
@@ -84,13 +86,15 @@ interface UpcomingMatch {
 
 async function fetchUpcoming(): Promise<UpcomingMatch[]> {
   const supabase = createClient() as any;
+  const now = new Date().toISOString();
   const { data } = await supabase
     .from("matches")
-    .select("id, match_date, status, venue, city, home_team_id, away_team_id")
+    .select("id, match_date, status, home_score, away_score, venue, city, home_team_id, away_team_id")
     .eq("tournament_id", TOURNAMENT_ID)
     .eq("status", "scheduled")
+    .gte("match_date", now)
     .order("match_date", { ascending: true })
-    .limit(6);
+    .limit(8);
 
   if (!data?.length) return [];
 
@@ -473,8 +477,8 @@ export default function EnVivoPage() {
   const { data: upcomingMatches = [] } = useQuery({
     queryKey: ["upcoming-matches"],
     queryFn: fetchUpcoming,
-    staleTime: 300_000,
-    enabled: liveFixtures.length === 0,
+    staleTime: 60_000,
+    refetchInterval: 120_000,
   });
 
   // Supabase Realtime — invalidate when DB is updated by the cron
@@ -634,7 +638,7 @@ export default function EnVivoPage() {
         </motion.div>
       )}
 
-      {/* Upcoming matches */}
+      {/* Upcoming matches — future scheduled + live from Supabase when API has no live */}
       {!isLoading && upcomingMatches.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-3">

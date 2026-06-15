@@ -24,6 +24,8 @@ export function DashboardView() {
   const now = Date.now();
   const nextMatches = upcomingMatches
     ?.filter((m) => {
+      if (m.status === "finished") return false;
+      if (m.status === "live") return true;
       if (m.status !== "scheduled") return false;
       const matchTime = new Date(m.match_date).getTime();
       return matchTime > now;
