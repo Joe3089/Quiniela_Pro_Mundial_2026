@@ -85,11 +85,6 @@ function PitchPlayer({
     ? `https://media.api-sports.io/football/players/${player.apiFootballId}.png`
     : null;
 
-  const posRing: Record<string, string> = {
-    GK: "border-yellow-400", DEF: "border-blue-400",
-    MID: "border-green-400", FWD: "border-red-400",
-  };
-
   return (
     <button
       onClick={onClick}
@@ -99,11 +94,10 @@ function PitchPlayer({
       )}
     >
       <div className={cn(
-        "relative h-11 w-11 rounded-full border-2 bg-white/10 flex items-center justify-center overflow-hidden transition-all",
-        posRing[player.position] ?? "border-white/50",
+        "relative h-11 w-11 rounded-full border border-white/20 bg-black/70 flex items-center justify-center overflow-hidden transition-all shadow-md",
         selected
           ? "ring-2 ring-white shadow-[0_0_14px_rgba(255,255,255,0.5)]"
-          : "group-hover:ring-1 group-hover:ring-white/50"
+          : "group-hover:ring-1 group-hover:ring-white/40"
       )}>
         {src && !imgError ? (
           <img
@@ -112,7 +106,7 @@ function PitchPlayer({
             onError={() => setImgError(true)}
           />
         ) : (
-          <User className="h-6 w-6 text-white/80" />
+          <User className="h-6 w-6 text-white/60" />
         )}
         {player.isCaptain && (
           <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-[hsl(var(--brand-gold))] border border-black flex items-center justify-center">
@@ -269,11 +263,11 @@ function SubPlayer({ player }: { player: WCPlayer }) {
 
   return (
     <div className="flex items-center gap-2 py-2 px-1 border-b border-white/5 last:border-0">
-      <div className="h-8 w-8 rounded-full bg-white/10 border border-white/15 flex items-center justify-center overflow-hidden shrink-0">
+      <div className="h-8 w-8 rounded-full bg-black/65 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
         {src && !imgError ? (
           <img src={src} alt={player.name} className="h-full w-full object-cover" onError={() => setImgError(true)} />
         ) : (
-          <User className="h-4 w-4 text-white/70" />
+          <User className="h-4 w-4 text-white/50" />
         )}
       </div>
       <div className="flex-1 min-w-0">

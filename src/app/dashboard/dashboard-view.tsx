@@ -24,11 +24,9 @@ export function DashboardView() {
   const now = Date.now();
   const nextMatches = upcomingMatches
     ?.filter((m) => {
-      if (m.status === "live") return true;
-      if (m.status === "finished") return false;
-      // Exclude scheduled matches whose kickoff was more than 3 hours ago (likely finished but not yet synced)
+      if (m.status !== "scheduled") return false;
       const matchTime = new Date(m.match_date).getTime();
-      return matchTime > now - 3 * 60 * 60 * 1000;
+      return matchTime > now;
     })
     .sort((a, b) => {
       if (a.status === "live" && b.status !== "live") return -1;
