@@ -21,14 +21,21 @@ export function DashboardView() {
   const { formatTime, formatDateShort } = useFormatDate();
 
   // Live matches shown first, then upcoming scheduled
+  const now = Date.now();
   const nextMatches = upcomingMatches
-    ?.filter((m) => m.status === "scheduled" || m.status === "live")
+    ?.filter((m) => {
+      if (m.status === "live") return true;
+      if (m.status === "finished") return false;
+      // Exclude scheduled matches whose kickoff was more than 3 hours ago (likely finished but not yet synced)
+      const matchTime = new Date(m.match_date).getTime();
+      return matchTime > now - 3 * 60 * 60 * 1000;
+    })
     .sort((a, b) => {
       if (a.status === "live" && b.status !== "live") return -1;
       if (b.status === "live" && a.status !== "live") return 1;
       return new Date(a.match_date).getTime() - new Date(b.match_date).getTime();
     })
-    .slice(0, 3) ?? [];
+    .slice(0, 5) ?? [];
 
   const pendingPredictions = nextMatches.filter(
     (m) => !predictions?.find((p) => p.match_id === m.id)

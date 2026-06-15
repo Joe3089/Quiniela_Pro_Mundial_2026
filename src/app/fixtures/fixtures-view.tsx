@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Trophy, Users, GitBranch, Database } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { MatchCard } from "@/features/fixtures/components/match-card";
-import { GroupStandings } from "@/features/fixtures/components/group-standings";
+import { GroupStandings, computeStandings } from "@/features/fixtures/components/group-standings";
 import { TournamentBracket } from "@/features/fixtures/components/tournament-bracket";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMatches, useGroups } from "@/features/fixtures/hooks/use-fixtures";
@@ -92,6 +92,27 @@ export function FixturesView() {
   const groupMatches = matches?.filter((m) => m.phase === "group") ?? [];
   const bracketRounds = buildBracketRounds(matches);
 
+  // Compute best-thirds qualification map: groupId → boolean
+  const thirdQualifiesMap = useMemo<Record<string, boolean>>(() => {
+    if (!groups?.length) return {};
+    // Get 3rd-place team stats for each group
+    const thirds = groups.map((g) => {
+      const standings = computeStandings(g.teams, g.matches);
+      const third = standings[2];
+      return { groupId: g.id, ...(third ?? { pts: -1, diff: -99, gf: -99, gc: 99 }) };
+    });
+    // Sort thirds by FIFA tiebreakers (pts → diff → gf → gc asc)
+    const sorted = [...thirds].sort((a, b) =>
+      (b.pts ?? 0) - (a.pts ?? 0) ||
+      (b.diff ?? 0) - (a.diff ?? 0) ||
+      (b.gf ?? 0) - (a.gf ?? 0) ||
+      (a.gc ?? 0) - (b.gc ?? 0)
+    );
+    // Top 8 qualify
+    const qualifying = new Set(sorted.slice(0, 8).map((t) => t.groupId));
+    return Object.fromEntries(thirds.map((t) => [t.groupId, qualifying.has(t.groupId)]));
+  }, [groups]);
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
@@ -130,7 +151,11 @@ export function FixturesView() {
           ) : groups && groups.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {groups.map((group) => (
-                <GroupStandings key={group.id} group={group} />
+                <GroupStandings
+                  key={group.id}
+                  group={group}
+                  thirdQualifies={group.teams.length >= 3 ? thirdQualifiesMap[group.id] : undefined}
+                />
               ))}
             </div>
           ) : (

@@ -19,7 +19,7 @@ interface ComputedStanding {
   pts: number;
 }
 
-function computeStandings(teams: TeamRow[], matches: Match[]): ComputedStanding[] {
+export function computeStandings(teams: TeamRow[], matches: Match[]): ComputedStanding[] {
   const map = new Map<string, ComputedStanding>();
 
   for (const team of teams) {
@@ -71,7 +71,7 @@ function TeamFlag({ team }: { team: TeamRow }) {
 
 const QUALIFY_LABEL: Record<number, string> = { 1: "🥇", 2: "🥈" };
 
-export function GroupStandings({ group }: { group: Group }) {
+export function GroupStandings({ group, thirdQualifies }: { group: Group; thirdQualifies?: boolean }) {
   const { formatDateShort, formatTime } = useFormatDate();
   const standings = computeStandings(group.teams, group.matches);
   const letter = group.letter ?? group.name?.replace("Group ", "") ?? "?";
@@ -138,7 +138,9 @@ export function GroupStandings({ group }: { group: Group }) {
                   className={cn(
                     "border-b border-border/15 transition-colors hover:bg-white/3",
                     idx === 0 && "border-l-2 border-l-[hsl(var(--brand-gold))]",
-                    idx === 1 && "border-l-2 border-l-[hsl(var(--primary))]"
+                    idx === 1 && "border-l-2 border-l-[hsl(var(--primary))]",
+                    idx === 2 && thirdQualifies === true  && "border-l-2 border-l-emerald-500 bg-emerald-500/5",
+                    idx === 2 && thirdQualifies === false && "border-l-2 border-l-red-500 bg-red-500/5"
                   )}
                 >
                   <td className="text-center px-2 py-2">
@@ -175,10 +177,20 @@ export function GroupStandings({ group }: { group: Group }) {
             </tbody>
           </table>
         </div>
-        <div className="flex items-center gap-3 px-3 py-2 border-t border-border/15">
+        <div className="flex items-center gap-3 px-3 py-2 border-t border-border/15 flex-wrap gap-y-1">
           <span className="flex items-center gap-1 text-[9px] text-muted-foreground">
-            <span className="w-2 h-2 rounded-sm bg-[hsl(var(--brand-gold))] inline-block" /> Clasifican al siguiente round
+            <span className="w-2 h-2 rounded-sm bg-[hsl(var(--brand-gold))] inline-block" /> 1° y 2° clasifican
           </span>
+          {thirdQualifies === true && (
+            <span className="flex items-center gap-1 text-[9px] text-emerald-400 font-bold">
+              <span className="w-2 h-2 rounded-sm bg-emerald-500 inline-block" /> 3° clasifica (mejor tercero)
+            </span>
+          )}
+          {thirdQualifies === false && (
+            <span className="flex items-center gap-1 text-[9px] text-red-400 font-bold">
+              <span className="w-2 h-2 rounded-sm bg-red-500 inline-block" /> 3° fuera por ahora
+            </span>
+          )}
         </div>
       </div>
 

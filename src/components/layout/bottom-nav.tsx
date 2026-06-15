@@ -21,7 +21,8 @@ export function BottomNav() {
   if (!isAuthenticated) return null;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden glass border-t border-border/50 pb-safe">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden border-t border-white/10 pb-safe"
+      style={{ background: "hsl(220 28% 5% / 0.97)", backdropFilter: "blur(24px)" }}>
       <div className="flex items-center justify-around h-16">
         {navItems.map((item) => {
           const isActive = pathname.startsWith(item.href);
