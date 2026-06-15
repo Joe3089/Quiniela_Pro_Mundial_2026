@@ -141,10 +141,9 @@ export function Navbar() {
         <div
           className={cn(
             "transition-all duration-300",
-            scrolled
-              ? "bg-black/85 backdrop-blur-2xl border-b border-white/10 shadow-[0_4px_24px_rgba(0,0,0,0.5)]"
-              : "glass border-b border-white/5",
-            mobileOpen ? "border-b-white/10" : ""
+            scrolled || mobileOpen
+              ? "bg-[hsl(220_28%_5%/0.97)] backdrop-blur-2xl border-b border-white/10 shadow-[0_4px_24px_rgba(0,0,0,0.5)]"
+              : "glass border-b border-white/5"
           )}
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6">

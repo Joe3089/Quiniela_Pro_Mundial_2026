@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { RefreshCw, Trophy, Users, Calendar, Activity, Shield, Zap, CheckCircle2, AlertCircle, Loader2, Bell, Mail, MessageCircle } from "lucide-react";
+import { RefreshCw, Trophy, Users, Calendar, Activity, Shield, Zap, CheckCircle2, AlertCircle, Loader2, Bell, Mail, MessageCircle, Edit2 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -78,15 +79,14 @@ function NotificationsPanel() {
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
           <div className="bg-white/3 rounded-lg p-3 text-[11px] space-y-1.5">
-            <p className="font-bold text-white">Servicio: <span className="text-emerald-400">Twilio</span> (sandbox gratis, producción de pago)</p>
-            <p className="text-muted-foreground">1. Regístrate en <strong className="text-white">twilio.com</strong> → activa WhatsApp Sandbox</p>
-            <p className="text-muted-foreground">2. Desde tu WhatsApp, envía el código de activación al número de Twilio</p>
-            <p className="text-muted-foreground">3. Agrega en <code className="bg-white/10 px-1 rounded">.env.local</code>:</p>
+            <p className="font-bold text-white">Servicio: <span className="text-emerald-400">Meta WhatsApp Cloud API</span> (gratis hasta 1,000 conversaciones/mes)</p>
+            <p className="text-muted-foreground">1. Crea una app en <strong className="text-white">developers.facebook.com</strong> → tipo Business</p>
+            <p className="text-muted-foreground">2. Agrega el producto <strong className="text-white">WhatsApp</strong> → obtén Phone Number ID y Token</p>
+            <p className="text-muted-foreground">3. Agrega en <code className="bg-white/10 px-1 rounded">.env.local</code> y Vercel:</p>
             <code className="block bg-black/30 rounded p-2 text-emerald-400">
-              TWILIO_ACCOUNT_SID=ACxxxxxxxxx{"\n"}
-              TWILIO_AUTH_TOKEN=xxxxxxxxx{"\n"}
-              TWILIO_WHATSAPP_FROM=whatsapp:+14155238886{"\n"}
-              NOTIFICATION_WHATSAPPS=whatsapp:+584121234567
+              META_WHATSAPP_TOKEN=EAAxxxxxxxxx{"\n"}
+              META_WHATSAPP_PHONE_ID=1234567890{"\n"}
+              NOTIFICATION_WHATSAPPS=+584121234567,+584161234567
             </code>
           </div>
         </CardContent>
@@ -121,6 +121,139 @@ function NotificationsPanel() {
         </p>
       </div>
     </div>
+  );
+}
+
+// ── MatchesPanel — manual score entry for past unfinished matches ─────────────
+
+interface PastMatch {
+  id: string;
+  home_code: string;
+  away_code: string;
+  match_date: string;
+  status: string;
+  home_score: number | null;
+  away_score: number | null;
+}
+
+function MatchesPanel() {
+  const [matches, setMatches] = useState<PastMatch[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [scores, setScores] = useState<Record<string, { h: string; a: string }>>({});
+  const [saving, setSaving] = useState<Record<string, boolean>>({});
+  const [done, setDone] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const supabase = createClient();
+    const now = new Date().toISOString();
+    supabase
+      .from("matches")
+      .select(`id, status, match_date, home_score, away_score,
+        home_team:teams!matches_home_team_id_fkey(fifa_code),
+        away_team:teams!matches_away_team_id_fkey(fifa_code)`)
+      .lt("match_date", now)
+      .neq("status", "finished")
+      .order("match_date", { ascending: false })
+      .limit(20)
+      .then(({ data }) => {
+        const rows = (data ?? []).map((m: any) => ({
+          id: m.id,
+          home_code: m.home_team?.fifa_code ?? "?",
+          away_code: m.away_team?.fifa_code ?? "?",
+          match_date: m.match_date,
+          status: m.status,
+          home_score: m.home_score,
+          away_score: m.away_score,
+        }));
+        setMatches(rows);
+        const init: Record<string, { h: string; a: string }> = {};
+        rows.forEach((r) => { init[r.id] = { h: String(r.home_score ?? ""), a: String(r.away_score ?? "") }; });
+        setScores(init);
+        setLoading(false);
+      });
+  }, []);
+
+  const finalize = async (matchId: string) => {
+    const sc = scores[matchId];
+    const h = parseInt(sc?.h ?? "", 10);
+    const a = parseInt(sc?.a ?? "", 10);
+    if (isNaN(h) || isNaN(a)) return;
+    setSaving((s) => ({ ...s, [matchId]: true }));
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("matches")
+      .update({ status: "finished", home_score: h, away_score: a })
+      .eq("id", matchId);
+    setSaving((s) => ({ ...s, [matchId]: false }));
+    if (!error) {
+      setDone((d) => ({ ...d, [matchId]: true }));
+      setMatches((prev) => prev.filter((m) => m.id !== matchId));
+    }
+  };
+
+  return (
+    <Card className="glass border-border/40">
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2">
+          <Edit2 className="h-4 w-4 text-yellow-400" />
+          Partidos sin finalizar
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+        ) : matches.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <CheckCircle2 className="h-12 w-12 mx-auto mb-3 text-emerald-400 opacity-60" />
+            <p className="text-sm font-semibold">Todos los partidos pasados están finalizados</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {matches.map((m) => (
+              <div key={m.id} className="glass rounded-xl border border-border/30 p-3 flex items-center gap-3 flex-wrap">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-white">{m.home_code} vs {m.away_code}</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {new Date(m.match_date).toLocaleString("es-VE", { timeZone: "America/Caracas" })}
+                    {" · "}<span className="text-yellow-400 capitalize">{m.status}</span>
+                  </p>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <input
+                    type="number" min={0} max={99}
+                    value={scores[m.id]?.h ?? ""}
+                    onChange={(e) => setScores((s) => ({ ...s, [m.id]: { ...s[m.id], h: e.target.value } }))}
+                    className="w-12 text-center rounded-lg bg-white/10 border border-white/15 text-white text-sm font-bold py-1 focus:outline-none focus:border-[hsl(var(--primary))]"
+                    placeholder="0"
+                  />
+                  <span className="text-muted-foreground font-bold">–</span>
+                  <input
+                    type="number" min={0} max={99}
+                    value={scores[m.id]?.a ?? ""}
+                    onChange={(e) => setScores((s) => ({ ...s, [m.id]: { ...s[m.id], a: e.target.value } }))}
+                    className="w-12 text-center rounded-lg bg-white/10 border border-white/15 text-white text-sm font-bold py-1 focus:outline-none focus:border-[hsl(var(--primary))]"
+                    placeholder="0"
+                  />
+                </div>
+                <Button
+                  size="sm"
+                  variant="gradient"
+                  disabled={saving[m.id] || done[m.id]}
+                  onClick={() => finalize(m.id)}
+                  className="shrink-0"
+                >
+                  {saving[m.id] ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+                  <span className="ml-1.5">{done[m.id] ? "¡Guardado!" : "Finalizar"}</span>
+                </Button>
+              </div>
+            ))}
+            <p className="text-[10px] text-muted-foreground text-center pt-1">
+              Al finalizar un partido se recalculan automáticamente los pronósticos y el ranking.
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -389,21 +522,7 @@ export function AdminView() {
         </TabsContent>
 
         <TabsContent value="matches">
-          <Card className="glass border-border/40">
-            <CardHeader>
-              <CardTitle className="text-base flex items-center justify-between">
-                <span>Gestión de Partidos</span>
-                <Button variant="gradient" size="sm">+ Nuevo partido</Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <Calendar className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                <p className="text-sm">Los partidos se administran desde el dashboard de Supabase</p>
-                <p className="text-xs mt-1">Conecta tu proyecto Supabase para gestionar fixtures</p>
-              </div>
-            </CardContent>
-          </Card>
+          <MatchesPanel />
         </TabsContent>
 
         <TabsContent value="users">
