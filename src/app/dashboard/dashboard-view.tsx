@@ -3,8 +3,8 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Trophy, Target, BarChart3, Calendar, TrendingUp, Zap, ArrowRight, Star, MapPin } from "lucide-react";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { FlagImage } from "@/components/ui/flag-image";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuthStore } from "@/store/auth.store";
 import { useUserRank } from "@/features/rankings/hooks/use-rankings";
@@ -223,16 +223,11 @@ export function DashboardView() {
                         <div className="flex items-center gap-2">
                           {/* Home */}
                           <div className="flex items-center gap-1.5 flex-1 justify-end">
-                            <span className={`text-xs font-semibold truncate max-w-[52px] ${isLive ? "text-white" : "text-white"}`}>
+                            <span className="text-xs font-semibold truncate max-w-[52px] text-white">
                               {match.home_team?.short_name ?? "TBD"}
                             </span>
-                            {(match.home_team as any)?.flag_url && (
-                              <Image
-                                src={(match.home_team as any).flag_url}
-                                alt={match.home_team?.short_name ?? ""}
-                                width={24} height={16}
-                                className="rounded-sm object-cover shadow-sm shrink-0"
-                              />
+                            {match.home_team?.fifa_code && (
+                              <FlagImage fifaCode={match.home_team.fifa_code} fallbackEmoji="🏳️" size="sm" className="rounded-sm shrink-0" />
                             )}
                           </div>
                           {/* Score (live) or VS + date (scheduled) */}
@@ -251,13 +246,8 @@ export function DashboardView() {
                           </div>
                           {/* Away */}
                           <div className="flex items-center gap-1.5 flex-1 justify-start">
-                            {(match.away_team as any)?.flag_url && (
-                              <Image
-                                src={(match.away_team as any).flag_url}
-                                alt={match.away_team?.short_name ?? ""}
-                                width={24} height={16}
-                                className="rounded-sm object-cover shadow-sm shrink-0"
-                              />
+                            {match.away_team?.fifa_code && (
+                              <FlagImage fifaCode={match.away_team.fifa_code} fallbackEmoji="🏳️" size="sm" className="rounded-sm shrink-0" />
                             )}
                             <span className="text-xs font-semibold text-white truncate max-w-[52px]">
                               {match.away_team?.short_name ?? "TBD"}

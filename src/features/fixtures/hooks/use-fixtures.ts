@@ -46,6 +46,15 @@ export function useMatch(matchId: string | null) {
   });
 }
 
+export function useMatchEvents(matchId: string | null) {
+  return useQuery({
+    queryKey: ["match-events", matchId],
+    queryFn: () => fixturesService.getMatchEvents(matchId!),
+    enabled: !!matchId,
+    staleTime: 60_000,
+  });
+}
+
 export function useGroups() {
   const { activeTournament } = useTournamentStore();
 

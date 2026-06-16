@@ -3,7 +3,7 @@
 import { use, useState, useEffect, useCallback } from "react";
 import { notFound } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, User, AlertTriangle, Clock, Loader2 } from "lucide-react";
+import { ArrowLeft, User, AlertTriangle, Clock, Loader2, Save, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { getTeamByCode, type WCPlayer, type WCTeam } from "@/data/wc2026-teams";
 import { ConfederationBadge } from "@/components/ui/confederation-badge";
@@ -126,9 +126,11 @@ function PitchPlayer({
 
 // ── Pitch ─────────────────────────────────────────────────────────────────────
 
-function Pitch({ starters, subs, team }: { starters: WCPlayer[]; subs: WCPlayer[]; team: WCTeam }) {
+function Pitch({ starters, subs, team, teamDbId }: { starters: WCPlayer[]; subs: WCPlayer[]; team: WCTeam; teamDbId?: string }) {
   const [selected, setSelected] = useState<WCPlayer | null>(null);
   const [lineup, setLineup] = useState<WCPlayer[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => { setLineup(starters); }, [starters]);
 
@@ -159,6 +161,24 @@ function Pitch({ starters, subs, team }: { starters: WCPlayer[]; subs: WCPlayer[
   function swap(starter: WCPlayer, sub: WCPlayer) {
     setLineup((prev) => prev.map((p) => (p.name === starter.name ? sub : p)));
     setSelected(null);
+    setSaved(false);
+  }
+
+  async function saveLineup() {
+    if (!teamDbId) return;
+    setSaving(true);
+    const supabase = createClient() as any;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setSaving(false); return; }
+    await supabase.from("user_lineups").upsert({
+      user_id: user.id,
+      team_id: teamDbId,
+      tournament_id: TOURNAMENT_ID,
+      lineup: lineup.map((p) => p.name),
+    }, { onConflict: "user_id,team_id,tournament_id" });
+    setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 3000);
   }
 
   return (
@@ -190,9 +210,9 @@ function Pitch({ starters, subs, team }: { starters: WCPlayer[]; subs: WCPlayer[
         </div>
 
         {/* Players */}
-        <div className="relative py-6 px-2 flex flex-col gap-5 min-h-[340px] justify-around">
+        <div className="relative py-8 px-2 flex flex-col min-h-[460px] justify-around">
           {rows.map((row, ri) => (
-            <div key={ri} className="flex justify-center items-center gap-3">
+            <div key={ri} className="flex justify-center items-center gap-4 sm:gap-6">
               {row.map((p) => (
                 <PitchPlayer
                   key={p.name}
@@ -206,12 +226,34 @@ function Pitch({ starters, subs, team }: { starters: WCPlayer[]; subs: WCPlayer[
         </div>
       </div>
 
-      {/* Formation line */}
-      <p className="text-center text-xs text-muted-foreground">
-        <span className="font-black text-white/80">{team.formation}</span>
-        {" · DT: "}
-        <span className="font-semibold text-white/70">{team.coach}</span>
-      </p>
+      {/* Formation line + save */}
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
+          <span className="font-black text-white/80">{team.formation}</span>
+          {" · DT: "}
+          <span className="font-semibold text-white/70">{team.coach}</span>
+        </p>
+        {teamDbId && (
+          <button
+            onClick={saveLineup}
+            disabled={saving}
+            className="flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1.5 rounded-lg border transition-all shrink-0 disabled:opacity-50"
+            style={saved
+              ? { background: "rgba(16,185,129,0.15)", borderColor: "rgba(16,185,129,0.3)", color: "#34d399" }
+              : { background: "rgba(255,255,255,0.05)", borderColor: "rgba(255,255,255,0.1)", color: "#a1a1aa" }
+            }
+          >
+            {saving ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : saved ? (
+              <CheckCircle2 className="h-3 w-3" />
+            ) : (
+              <Save className="h-3 w-3" />
+            )}
+            {saved ? "Guardado" : "Guardar"}
+          </button>
+        )}
+      </div>
       {!selected && <p className="text-center text-[10px] text-muted-foreground/50">Toca un titular para realizar un cambio</p>}
 
       {/* Swap panel */}
@@ -331,6 +373,7 @@ function SubsGrid({ subs }: { subs: WCPlayer[] }) {
 
 function PlayerRoster({ team }: { team: WCTeam }) {
   const [dbPlayers, setDbPlayers] = useState<WCPlayer[] | null>(null);
+  const [teamDbId, setTeamDbId] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
 
   const fetchPlayers = useCallback(async () => {
@@ -343,6 +386,7 @@ function PlayerRoster({ team }: { team: WCTeam }) {
       .maybeSingle();
 
     if (!teamRow?.id) { setLoading(false); return; }
+    setTeamDbId(teamRow.id);
 
     const { data: players } = await supabase
       .from("player_squads")
@@ -363,7 +407,16 @@ function PlayerRoster({ team }: { team: WCTeam }) {
     return () => { cancelled = true; };
   }, [fetchPlayers]);
 
-  if (team.rosterPublished === false) {
+  if (loading) {
+    return (
+      <div className="mt-6 flex items-center justify-center py-16 text-sm text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin mr-2" />
+        Cargando convocatoria…
+      </div>
+    );
+  }
+
+  if (!dbPlayers && team.rosterPublished === false) {
     return (
       <div className="mt-6 glass-card rounded-2xl border border-white/8 p-10 flex flex-col items-center text-center gap-3">
         <Clock className="h-8 w-8 text-muted-foreground/40" />
@@ -430,12 +483,7 @@ function PlayerRoster({ team }: { team: WCTeam }) {
         </div>
         <div className="p-4">
           {starters.length > 0 ? (
-            <Pitch starters={starters} subs={subs} team={team} />
-          ) : loading ? (
-            <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin mr-2" />
-              Cargando convocatoria…
-            </div>
+            <Pitch starters={starters} subs={subs} team={team} teamDbId={teamDbId} />
           ) : (
             <p className="text-center py-8 text-sm text-muted-foreground">No hay datos de alineación disponibles.</p>
           )}

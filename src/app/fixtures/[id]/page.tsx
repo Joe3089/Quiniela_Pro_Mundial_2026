@@ -2,9 +2,9 @@
 
 import { use } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Clock, MapPin, Users, Trophy, Loader2 } from "lucide-react";
+import { ArrowLeft, Clock, MapPin, Users, Loader2, Goal } from "lucide-react";
 import Link from "next/link";
-import { useMatch } from "@/features/fixtures/hooks/use-fixtures";
+import { useMatch, useMatchEvents } from "@/features/fixtures/hooks/use-fixtures";
 import { getTeamByCode } from "@/data/wc2026-teams";
 import { FlagImage } from "@/components/ui/flag-image";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +33,110 @@ function isStarter(p: WCPlayer, xi: string[]): boolean {
     const nl = n.toLowerCase();
     return full.includes(nl) || nl.includes(full.split(" ").pop() ?? "");
   });
+}
+
+type MatchEvent = {
+  id: string; type: string; player_name: string; minute: number; minute_extra: number;
+  assist_name: string | null; team_id: string | null;
+};
+
+function eventIcon(type: string) {
+  if (type === "goal") return "⚽";
+  if (type === "own_goal") return "🔴";
+  if (type === "penalty") return "⚽";
+  if (type === "yellow_card") return "🟨";
+  if (type === "red_card") return "🟥";
+  if (type === "substitution") return "🔄";
+  return "•";
+}
+
+function minuteLabel(ev: MatchEvent) {
+  return ev.minute_extra > 0 ? `${ev.minute}+${ev.minute_extra}'` : `${ev.minute}'`;
+}
+
+function GoalsSection({
+  events,
+  homeTeamId,
+  awayTeamId,
+}: {
+  events: MatchEvent[];
+  homeTeamId: string | null;
+  awayTeamId: string | null;
+}) {
+  const scoringTypes = ["goal", "own_goal", "penalty"];
+  const goals = events.filter((e) => scoringTypes.includes(e.type));
+  if (!goals.length) return null;
+
+  const homeGoals = goals.filter((e) => e.team_id === homeTeamId);
+  const awayGoals = goals.filter((e) => e.team_id === awayTeamId);
+  const unassigned = goals.filter((e) => !e.team_id || (e.team_id !== homeTeamId && e.team_id !== awayTeamId));
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.08 }}
+      className="glass-card rounded-2xl border border-white/8 overflow-hidden mb-5"
+    >
+      <div className="p-4 border-b border-white/5 flex items-center gap-2">
+        <div className="h-7 w-7 rounded-lg bg-yellow-500/15 flex items-center justify-center">
+          <Goal className="h-3.5 w-3.5 text-yellow-400" />
+        </div>
+        <h2 className="font-bold text-sm">Goles</h2>
+      </div>
+      <div className="p-4">
+        <div className="flex gap-4">
+          {/* Home goals */}
+          <div className="flex-1 space-y-1">
+            {homeGoals.map((ev) => (
+              <div key={ev.id} className="flex items-center gap-1.5 text-xs">
+                <span className="text-base leading-none">{eventIcon(ev.type)}</span>
+                <span className="text-white/90 font-medium truncate">{ev.player_name}</span>
+                {ev.type === "penalty" && (
+                  <span className="text-[9px] font-bold px-1 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 shrink-0">P</span>
+                )}
+                {ev.type === "own_goal" && (
+                  <span className="text-[9px] font-bold px-1 rounded bg-red-500/20 text-red-300 border border-red-500/30 shrink-0">OG</span>
+                )}
+                <span className="text-muted-foreground shrink-0 ml-auto">{minuteLabel(ev)}</span>
+              </div>
+            ))}
+            {homeGoals.length === 0 && <p className="text-xs text-muted-foreground/50 italic">—</p>}
+          </div>
+          {/* Divider */}
+          <div className="w-px bg-white/8 self-stretch shrink-0" />
+          {/* Away goals */}
+          <div className="flex-1 space-y-1">
+            {awayGoals.map((ev) => (
+              <div key={ev.id} className="flex items-center gap-1.5 text-xs flex-row-reverse">
+                <span className="text-base leading-none">{eventIcon(ev.type)}</span>
+                <span className="text-white/90 font-medium truncate text-right">{ev.player_name}</span>
+                {ev.type === "penalty" && (
+                  <span className="text-[9px] font-bold px-1 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 shrink-0">P</span>
+                )}
+                {ev.type === "own_goal" && (
+                  <span className="text-[9px] font-bold px-1 rounded bg-red-500/20 text-red-300 border border-red-500/30 shrink-0">OG</span>
+                )}
+                <span className="text-muted-foreground shrink-0 mr-auto">{minuteLabel(ev)}</span>
+              </div>
+            ))}
+            {awayGoals.length === 0 && <p className="text-xs text-muted-foreground/50 italic text-right">—</p>}
+          </div>
+        </div>
+        {unassigned.length > 0 && (
+          <div className="mt-3 pt-3 border-t border-white/5 space-y-1">
+            {unassigned.map((ev) => (
+              <div key={ev.id} className="flex items-center gap-1.5 text-xs">
+                <span>{eventIcon(ev.type)}</span>
+                <span className="text-white/90">{ev.player_name}</span>
+                <span className="text-muted-foreground ml-auto">{minuteLabel(ev)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
 }
 
 function LineupColumn({
@@ -159,6 +263,7 @@ function PlayerMini({
 export default function MatchDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { data: match, isLoading } = useMatch(id);
+  const { data: events = [] } = useMatchEvents(id);
   const { formatDateShort, formatTime } = useFormatDate();
 
   if (isLoading) {
@@ -295,6 +400,15 @@ export default function MatchDetailPage({ params }: { params: Promise<{ id: stri
           </div>
         )}
       </motion.div>
+
+      {/* Goals */}
+      {(isFinished || isLive) && events.length > 0 && (
+        <GoalsSection
+          events={events}
+          homeTeamId={match.home_team_id}
+          awayTeamId={match.away_team_id}
+        />
+      )}
 
       {/* Lineups */}
       <motion.div

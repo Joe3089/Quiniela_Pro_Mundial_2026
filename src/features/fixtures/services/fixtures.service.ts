@@ -177,6 +177,26 @@ export const fixturesService = {
     }
   },
 
+  // ── Match Events (goalscorers, cards, etc.) ────────────────────────────────
+  async getMatchEvents(matchId: string): Promise<{
+    id: string; type: string; player_name: string; minute: number; minute_extra: number;
+    assist_name: string | null; team_id: string | null;
+  }[]> {
+    const supabase = db();
+    try {
+      const data = await queryWithTimeout(
+        supabase.from("match_events")
+          .select("id, type, player_name, minute, minute_extra, assist_name, team_id")
+          .eq("match_id", matchId)
+          .order("minute", { ascending: true })
+          .order("minute_extra", { ascending: true })
+      );
+      return (data as any[]) ?? [];
+    } catch {
+      return [];
+    }
+  },
+
   // ── Groups ─────────────────────────────────────────────────────────────────
   // Derives groups directly from partidos data — no dependency on groups table
   async getGroups(tournamentId: string): Promise<Group[]> {
