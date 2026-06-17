@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { cn, formatDateShort } from "@/lib/utils";
+import { FlagImage } from "@/components/ui/flag-image";
 import type { BracketRound, BracketMatch } from "@/types/fixtures";
 
 const ROUND_WIDTHS: Record<string, number> = {
@@ -42,13 +43,16 @@ function BracketMatchCard({ match, isWinner }: BracketMatchCardProps) {
           !team && "opacity-40"
         )}
       >
-        {team?.flag_url ? (
+        {team?.fifa_code ? (
+          <FlagImage fifaCode={team.fifa_code} size="sm" className="shrink-0" />
+        ) : team?.flag_url ? (
           <Image
             src={team.flag_url}
-            alt={team.name}
+            alt={team.name ?? ""}
             width={20}
             height={14}
             className="rounded-sm object-cover shrink-0"
+            unoptimized
           />
         ) : (
           <div className="w-5 h-3.5 rounded-sm bg-muted/40 shrink-0" />

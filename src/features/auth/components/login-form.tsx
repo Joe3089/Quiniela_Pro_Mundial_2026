@@ -1,10 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Mail, Lock } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { loginSchema, type LoginInput } from "@/validations/auth";
 import { useLogin, useGoogleLogin } from "../hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ function GoogleIcon() {
 export function LoginForm() {
   const login = useLogin();
   const googleLogin = useGoogleLogin();
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
@@ -93,12 +95,21 @@ export function LoginForm() {
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               id="password"
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="••••••••"
-              className="pl-10"
+              className="pl-10 pr-10"
               error={errors.password?.message}
               {...register("password")}
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white transition-colors"
+              tabIndex={-1}
+              aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
           </div>
           {errors.password && (
             <p className="text-xs text-destructive">{errors.password.message}</p>
