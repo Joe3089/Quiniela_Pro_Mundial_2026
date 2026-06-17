@@ -69,7 +69,7 @@ function mapPartido(m: any, teamsById: Record<string, any>, groupsById: Record<s
   return {
     id:                   String(m.id),
     tournament_id:        m.tournament_id         ?? "",
-    phase:                (PHASE_MAP[m.phase]      ?? "group") as never,
+    phase:                (PHASE_MAP[m.phase]      ?? m.phase ?? "group") as never,
     round_number:         m.round_number ?? m.jornada ?? m.ronda ?? null,
     group_id:             m.group_id              ?? groupObj?.id ?? null,
     home_team_id:         m.home_team_id          ?? m.equipo_1_id ?? null,

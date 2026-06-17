@@ -10,8 +10,21 @@ import { useAuthStore } from "@/store/auth.store";
 import { useUserRank } from "@/features/rankings/hooks/use-rankings";
 import { useUserPredictions } from "@/features/predictions/hooks/use-predictions";
 import { useMatches } from "@/features/fixtures/hooks/use-fixtures";
+import { useQuery } from "@tanstack/react-query";
 import { SCORING } from "@/constants";
 import { useFormatDate } from "@/hooks/use-format-date";
+import type { AFFixture } from "@/services/api-football";
+
+async function fetchLiveMatches(): Promise<AFFixture[]> {
+  try {
+    const res = await fetch("/api/football/live", { cache: "no-store" });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
 
 export function DashboardView() {
   const { user, isLoading: authLoading } = useAuthStore();
@@ -19,6 +32,14 @@ export function DashboardView() {
   const { data: predictions, isLoading: predsLoading } = useUserPredictions();
   const { data: upcomingMatches, isLoading: matchesLoading } = useMatches();
   const { formatTime, formatDateShort } = useFormatDate();
+
+  // Live data from the same source as En Vivo section (API-Football)
+  const { data: liveFixtures = [] } = useQuery<AFFixture[]>({
+    queryKey: ["dashboard-live"],
+    queryFn: fetchLiveMatches,
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+  });
 
   // Live matches shown first, then upcoming scheduled
   const now = Date.now();
@@ -177,13 +198,51 @@ export function DashboardView() {
         >
           <div className="p-5 border-b border-white/5">
             <h2 className="text-sm font-bold flex items-center gap-2">
-              <div className="h-7 w-7 rounded-lg bg-[hsl(var(--primary)/0.15)] flex items-center justify-center">
-                <Calendar className="h-3.5 w-3.5 text-[hsl(var(--primary))]" />
+              <div className={`h-7 w-7 rounded-lg flex items-center justify-center ${liveFixtures.length > 0 ? "bg-cyan-400/15" : "bg-[hsl(var(--primary)/0.15)]"}`}>
+                {liveFixtures.length > 0
+                  ? <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
+                  : <Calendar className="h-3.5 w-3.5 text-[hsl(var(--primary))]" />}
               </div>
-              Próximos partidos
+              {liveFixtures.length > 0 ? <span className="text-cyan-400">En Vivo · Próximos</span> : "Próximos partidos"}
             </h2>
           </div>
           <div className="p-3 space-y-1">
+            {/* Live cards from API-Football — same source as En Vivo section */}
+            {liveFixtures.map((f) => {
+              const elapsed = f.fixture.status.elapsed;
+              const homeGoals = f.goals.home ?? 0;
+              const awayGoals = f.goals.away ?? 0;
+              return (
+                <Link key={f.fixture.id} href="/en-vivo">
+                  <div className="rounded-xl border-2 border-cyan-400/70 bg-cyan-400/5 px-3 py-2.5 mb-1 group transition-colors hover:bg-cyan-400/10">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
+                        <span className="text-[11px] font-black text-cyan-400 tracking-widest uppercase">EN VIVO</span>
+                      </div>
+                      {elapsed != null && (
+                        <span className="text-[11px] font-bold text-cyan-400">{elapsed}&apos;</span>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 flex-1 justify-end">
+                        <span className="text-sm font-bold text-white truncate max-w-[64px]">{f.teams.home.name}</span>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={f.teams.home.logo} alt={f.teams.home.name} width={20} height={20} className="h-5 w-5 object-contain shrink-0" />
+                      </div>
+                      <span className="text-xl font-black text-white tabular-nums px-2 shrink-0">
+                        {homeGoals} – {awayGoals}
+                      </span>
+                      <div className="flex items-center gap-1.5 flex-1 justify-start">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={f.teams.away.logo} alt={f.teams.away.name} width={20} height={20} className="h-5 w-5 object-contain shrink-0" />
+                        <span className="text-sm font-bold text-white truncate max-w-[64px]">{f.teams.away.name}</span>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
             {matchesLoading
               ? Array.from({ length: 3 }).map((_, i) => (
                   <Skeleton key={i} className="h-16 w-full rounded-xl" />

@@ -54,7 +54,7 @@ export function RegisterForm() {
               />
             </div>
             {errors.display_name && (
-              <p className="text-xs text-destructive">{errors.display_name.message}</p>
+              <p className="text-xs text-red-500 font-medium">{errors.display_name.message}</p>
             )}
           </div>
           <div className="space-y-1">
@@ -68,9 +68,9 @@ export function RegisterForm() {
                 {...formRegister("username")}
               />
             </div>
-            {errors.username && (
-              <p className="text-xs text-destructive">{errors.username.message}</p>
-            )}
+            <p className={`text-xs ${errors.username ? "text-red-500 font-medium" : "text-muted-foreground"}`}>
+              {errors.username?.message ?? "Solo letras minúsculas, números y guiones bajos"}
+            </p>
           </div>
         </div>
 
@@ -87,7 +87,7 @@ export function RegisterForm() {
             />
           </div>
           {errors.email && (
-            <p className="text-xs text-destructive">{errors.email.message}</p>
+            <p className="text-xs text-red-500 font-medium">{errors.email.message}</p>
           )}
         </div>
 
@@ -113,7 +113,7 @@ export function RegisterForm() {
             </button>
           </div>
           {errors.password && (
-            <p className="text-xs text-destructive">{errors.password.message}</p>
+            <p className="text-xs text-red-500 font-medium">{errors.password.message}</p>
           )}
         </div>
 
@@ -139,7 +139,7 @@ export function RegisterForm() {
             </button>
           </div>
           {errors.confirmPassword && (
-            <p className="text-xs text-destructive">{errors.confirmPassword.message}</p>
+            <p className="text-xs text-red-500 font-medium">{errors.confirmPassword.message}</p>
           )}
         </div>
 
