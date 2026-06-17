@@ -203,7 +203,7 @@ export function DashboardView() {
                   const isLive = match.status === "live";
 
                   return (
-                    <Link key={match.id} href={`/predictions?match=${match.id}`}>
+                    <Link key={match.id} href={isLive ? "/en-vivo" : `/predictions?match=${match.id}`}>
                       <div className={`px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors group ${isLive ? "bg-emerald-500/5 border border-emerald-500/20" : ""}`}>
                         {/* Live header */}
                         {isLive && (

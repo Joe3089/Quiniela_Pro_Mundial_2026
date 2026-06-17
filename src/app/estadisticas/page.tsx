@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { TrendingUp, Trophy, Clock, Star, AlertTriangle, Globe2, Users, Zap, Loader2 } from "lucide-react";
@@ -307,11 +308,48 @@ function HistorialTab() {
 
 /* ── GOLEADORES TAB ─────────────────────────────────────────── */
 function GoladoresTab() {
+  const { data: scorers2026 = [] } = useQuery({
+    queryKey: ["top-scorers"],
+    queryFn: () => fetchTopScorers("scorers"),
+    staleTime: 3_600_000,
+    refetchInterval: 300_000,
+  });
+
+  // API-Football player ID → WC 2026 goals
+  const goals2026ByApiId = useMemo(() => {
+    const m: Record<number, number> = {};
+    for (const entry of scorers2026) {
+      const g = entry.statistics[0]?.goals?.total ?? 0;
+      if (g > 0) m[entry.player.id] = g;
+    }
+    return m;
+  }, [scorers2026]);
+
+  // Historical totals + WC 2026 additions merged and re-ranked
+  const mergedScorers = useMemo(() => {
+    return [...ALL_TIME_SCORERS]
+      .map((s) => {
+        const apiId = PLAYER_API_IDS[s.name];
+        const extra2026 = apiId ? (goals2026ByApiId[apiId] ?? 0) : 0;
+        return { ...s, goals: s.goals + extra2026, extra2026 };
+      })
+      .sort((a, b) => b.goals - a.goals || a.name.localeCompare(b.name))
+      .map((s, i) => ({ ...s, rank: i + 1 }));
+  }, [goals2026ByApiId]);
+
+  const maxGoals = mergedScorers[0]?.goals ?? 16;
+
   return (
     <div className="space-y-6">
-      <SectionTitle icon={Star} title="Máximos goleadores históricos" color="#F5A500" />
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <SectionTitle icon={Star} title="Máximos goleadores históricos" color="#F5A500" />
+        <div className="flex items-center gap-1.5 text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full shrink-0">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          Actualizado con WC 2026
+        </div>
+      </div>
       <div className="space-y-2">
-        {[...ALL_TIME_SCORERS].sort((a, b) => b.goals - a.goals || a.name.localeCompare(b.name)).map((s, i) => (
+        {mergedScorers.map((s, i) => (
           <motion.div
             key={s.name + s.country}
             initial={{ opacity: 0, x: -12 }}
@@ -335,17 +373,26 @@ function GoladoresTab() {
               </div>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-white">{s.name}</p>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <p className="text-sm font-bold text-white">{s.name}</p>
+                {s.extra2026 > 0 && (
+                  <span className="text-[9px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/25 px-1.5 py-0.5 rounded-full">
+                    +{s.extra2026} WC26
+                  </span>
+                )}
+              </div>
               <div className="flex items-center gap-1.5 mt-0.5">
                 {s.confederation && <ConfederationBadge confederation={s.confederation} size="sm" />}
-                <p className="text-[11px] text-muted-foreground">{s.years}</p>
+                <p className="text-[11px] text-muted-foreground">
+                  {s.extra2026 > 0 ? `${s.years} · 2026` : s.years}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-3 shrink-0">
               <div className="w-20 h-2 bg-white/5 rounded-full overflow-hidden hidden sm:block">
                 <div
                   className="h-full rounded-full"
-                  style={{ width: `${(s.goals / 16) * 100}%`, background: "#F5A500" }}
+                  style={{ width: `${(s.goals / maxGoals) * 100}%`, background: "#F5A500" }}
                 />
               </div>
               <span className="text-2xl font-black text-[hsl(var(--brand-gold))] w-8 text-right">

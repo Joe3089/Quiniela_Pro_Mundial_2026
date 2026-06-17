@@ -21,7 +21,7 @@ const FIFA_TO_ISO: Record<string, string> = {
   JOR: "jo", IRQ: "iq", CHN: "cn", THA: "th", QAT: "qa", UAE: "ae",
   // CAF
   MAR: "ma", SEN: "sn", NGA: "ng", EGY: "eg", CMR: "cm", GHA: "gh",
-  CIV: "ci", RSA: "za", TUN: "tn", ALG: "dz", MLI: "ml", COD: "cd", CPV: "cv",
+  CIV: "ci", RSA: "za", TUN: "tn", ALG: "dz", MLI: "ml", COD: "cd", RDC: "cd", CPV: "cv",
   // OFC
   NZL: "nz",
   // Other
