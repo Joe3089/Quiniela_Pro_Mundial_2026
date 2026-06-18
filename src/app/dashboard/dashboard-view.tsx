@@ -14,6 +14,12 @@ import { useQuery } from "@tanstack/react-query";
 import { SCORING } from "@/constants";
 import { useFormatDate } from "@/hooks/use-format-date";
 import type { AFFixture } from "@/services/api-football";
+import dynamic from "next/dynamic";
+
+const WCTrophy = dynamic(() => import("@/components/ui/wc-trophy"), {
+  ssr: false,
+  loading: () => <div style={{ width: 96, height: 96 }} />,
+});
 
 async function fetchLiveMatches(): Promise<AFFixture[]> {
   try {
@@ -112,23 +118,28 @@ export function DashboardView() {
         initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="mb-8"
+        className="mb-8 flex items-center justify-between"
       >
-        <div className="inline-flex items-center gap-2 glass rounded-full px-3 py-1 text-xs font-semibold border border-[hsl(var(--primary)/0.2)] text-[hsl(var(--primary))] mb-3">
-          <Star className="h-2.5 w-2.5 fill-current" />
-          FIFA World Cup 2026
+        <div>
+          <div className="inline-flex items-center gap-2 glass rounded-full px-3 py-1 text-xs font-semibold border border-[hsl(var(--primary)/0.2)] text-[hsl(var(--primary))] mb-3">
+            <Star className="h-2.5 w-2.5 fill-current" />
+            FIFA World Cup 2026
+          </div>
+          <h1 className="text-3xl font-black tracking-tight mb-1 flex items-center gap-2 flex-wrap">
+            Hola,{" "}
+            {authLoading ? (
+              <span className="inline-block h-9 w-36 rounded-xl bg-white/10 animate-pulse align-middle" />
+            ) : (
+              <span className="text-gradient-vivid">
+                {user?.display_name ?? user?.username ?? ""}
+              </span>
+            )}
+          </h1>
+          <p className="text-muted-foreground text-sm">Bienvenido a tu panel de predicciones</p>
         </div>
-        <h1 className="text-3xl font-black tracking-tight mb-1 flex items-center gap-2 flex-wrap">
-          Hola,{" "}
-          {authLoading ? (
-            <span className="inline-block h-9 w-36 rounded-xl bg-white/10 animate-pulse align-middle" />
-          ) : (
-            <span className="text-gradient-vivid">
-              {user?.display_name ?? user?.username ?? ""}
-            </span>
-          )}
-        </h1>
-        <p className="text-muted-foreground text-sm">Bienvenido a tu panel de predicciones</p>
+        <div className="hidden sm:block shrink-0">
+          <WCTrophy size={96} />
+        </div>
       </motion.div>
 
       {/* Stats cards */}

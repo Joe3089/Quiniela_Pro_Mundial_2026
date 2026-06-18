@@ -123,7 +123,7 @@ function SectionTitle({ icon: Icon, title, color }: { icon: React.ElementType; t
   return (
     <div className="flex items-center gap-2 mb-4">
       <div className="h-7 w-7 rounded-lg flex items-center justify-center" style={{ background: `${color}20` }}>
-        <Icon className="h-3.5 w-3.5" style={{ color }} />
+        {(() => { const I = Icon as React.FC<{className?: string; style?: React.CSSProperties}>; return <I className="h-3.5 w-3.5" style={{ color }} />; })()}
       </div>
       <h2 className="font-bold text-sm tracking-wide uppercase text-muted-foreground">{title}</h2>
     </div>
