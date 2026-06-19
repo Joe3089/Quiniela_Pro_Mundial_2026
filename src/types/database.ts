@@ -159,6 +159,8 @@ export interface PredictionRow {
   tournament_id: string;
   home_score_prediction: number;
   away_score_prediction: number;
+  outcome_prediction: "90min" | "extra_time" | "penalties" | null;
+  qualifier_team_id: string | null;
   points_earned: number | null;
   status: PredictionStatus;
   created_at: string;

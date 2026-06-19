@@ -17,6 +17,26 @@ export const SCORING = {
   PARTIAL_DRAW: 1,
 } as const;
 
+// Playoff scoring (knockout rounds)
+// From PDF scoring table:
+// 5 pts: Exact score + right winner/qualifier
+// 5 pts: Exact draw score + right qualifier team
+// 4 pts: Correct penalties route + right qualifier
+// 4 pts: Exact draw + wrong qualifier
+// 3 pts: Correct winner (90min) but wrong score
+// 3 pts: Correct AET prediction + right outcome
+// 2 pts: Drew (90min) + right qualifier but wrong score
+// 1 pt:  Correct draw (90min) but wrong qualifier + wrong score
+// 0 pts: Wrong everything
+export const PLAYOFF_SCORING = {
+  PERFECT: 5,             // exact score + correct classifier
+  PENALTIES_CORRECT: 4,   // predicted penalties + right qualifier
+  CORRECT_WINNER: 3,      // right winner in 90min, wrong score
+  CORRECT_QUALIFIER: 2,   // correct qualifier after draw, wrong score/outcome
+  CORRECT_DRAW: 1,        // predicted draw and it drew, wrong qualifier
+  WRONG: 0,
+} as const;
+
 export const PHASES = {
   group: { label: "Fase de Grupos", order: 1 },
   round_of_32: { label: "Ronda de 32", order: 2 },

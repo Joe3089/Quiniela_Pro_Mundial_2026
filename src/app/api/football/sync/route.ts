@@ -7,6 +7,7 @@ import {
   type AFFixture,
   type AFTeam,
 } from "@/services/api-football";
+import { notifyMatchFinished } from "@/services/notifications";
 import { TOURNAMENT_ID } from "@/constants";
 
 export const dynamic = "force-dynamic";
@@ -79,6 +80,7 @@ export async function GET(request: NextRequest) {
 
       if (action === "scores" || action === "all") {
         results.scores = await syncFixtures(supabase, { onlyPlayedOrLive: true });
+        results.scoring = await scoreFinishedMatches(supabase);
       }
 
       return NextResponse.json({ ok: true, action, source: isVercelCron ? "vercel-cron" : "manual-get", results });
@@ -117,6 +119,7 @@ export async function POST(request: NextRequest) {
 
     if (action === "scores" || action === "all") {
       results.scores = await syncFixtures(supabase, { onlyPlayedOrLive: true });
+      results.scoring = await scoreFinishedMatches(supabase);
     }
 
     if (action === "players") {
@@ -423,4 +426,91 @@ function mapPhase(round: string): string {
   if (r.includes("3rd") || r.includes("third") || r.includes("place")) return "third_place";
   if (r.includes("final")) return "final";
   return "group";
+}
+
+// ── Auto-scoring: runs after each score sync ──────────────────────────────────
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function scoreFinishedMatches(supabase: any) {
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+  const { data: matches, error: mErr } = await supabase
+    .from("matches")
+    .select("id, home_team_id, away_team_id, home_score, away_score, match_date, venue")
+    .eq("tournament_id", TOURNAMENT_ID)
+    .eq("status", "finished")
+    .not("home_score", "is", null)
+    .gte("match_date", since);
+
+  if (mErr || !matches?.length) return { scored: 0, notified: 0 };
+
+  let scored = 0;
+  let notified = 0;
+
+  for (const match of matches) {
+    const { data: predictions } = await supabase
+      .from("predictions")
+      .select("id, user_id")
+      .eq("match_id", match.id)
+      .eq("tournament_id", TOURNAMENT_ID)
+      .is("points_earned", null);
+
+    if (!predictions?.length) continue;
+
+    const affectedUsers = new Set<string>();
+    for (const pred of predictions) {
+      try {
+        const { data: pts } = await supabase
+          .rpc("calculate_prediction_points", { prediction_id: pred.id });
+        if (pts !== null && pts !== undefined) {
+          await supabase
+            .from("predictions")
+            .update({ points_earned: pts, status: pts > 0 ? "correct" : "incorrect" })
+            .eq("id", pred.id);
+          affectedUsers.add(pred.user_id);
+          scored++;
+        }
+      } catch { /* non-fatal */ }
+    }
+
+    for (const userId of affectedUsers) {
+      try {
+        await supabase.rpc("update_user_ranking", {
+          p_user_id: userId,
+          p_tournament_id: TOURNAMENT_ID,
+        });
+      } catch { /* non-fatal */ }
+    }
+
+    if (affectedUsers.size > 0) {
+      try {
+        const [{ data: homeTeam }, { data: awayTeam }, { data: ranking }] = await Promise.all([
+          supabase.from("teams").select("name").eq("id", match.home_team_id).single(),
+          supabase.from("teams").select("name").eq("id", match.away_team_id).single(),
+          supabase.from("rankings")
+            .select("total_points, rank_position, users(display_name, username)")
+            .eq("tournament_id", TOURNAMENT_ID)
+            .order("total_points", { ascending: false })
+            .limit(5),
+        ]);
+
+        await notifyMatchFinished({
+          homeTeam: homeTeam?.name ?? "Home",
+          awayTeam: awayTeam?.name ?? "Away",
+          homeScore: match.home_score ?? 0,
+          awayScore: match.away_score ?? 0,
+          matchDate: match.match_date,
+          venue: match.venue,
+          rankingUpdated: true,
+          topRanking: ranking?.map((r: { rank_position: number | null; total_points: number; users: { display_name: string | null; username: string } }, i: number) => ({
+            position: r.rank_position ?? i + 1,
+            displayName: r.users?.display_name ?? r.users?.username ?? "?",
+            points: r.total_points,
+          })),
+        });
+        notified++;
+      } catch { /* notification failure is non-fatal */ }
+    }
+  }
+
+  return { scored, notified };
 }

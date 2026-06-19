@@ -24,18 +24,36 @@ export const predictionsService = {
     data: PredictionFormData
   ): Promise<void> {
     const supabase = createClient();
+    const base = {
+      user_id: userId,
+      match_id: matchId,
+      tournament_id: tournamentId,
+      home_score_prediction: data.home_score_prediction,
+      away_score_prediction: data.away_score_prediction,
+    };
+    const playoffExtra = {
+      ...(data.outcome_prediction != null && { outcome_prediction: data.outcome_prediction }),
+      ...(data.qualifier_team_id != null && { qualifier_team_id: data.qualifier_team_id }),
+    };
+    const hasPlayoff = Object.keys(playoffExtra).length > 0;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).from("predictions").upsert(
-      {
-        user_id: userId,
-        match_id: matchId,
-        tournament_id: tournamentId,
-        home_score_prediction: data.home_score_prediction,
-        away_score_prediction: data.away_score_prediction,
-      },
-      { onConflict: "user_id,match_id" }
-    );
-    if (error) throw error;
+    const sb = supabase as any;
+
+    // Try with playoff fields first; fall back to base if columns don't exist yet
+    if (hasPlayoff) {
+      const { error } = await sb.from("predictions").upsert(
+        { ...base, ...playoffExtra },
+        { onConflict: "user_id,match_id" }
+      );
+      if (!error) return;
+      // Column doesn't exist yet — fall through to base upsert
+      if (!String(error.message).includes("does not exist")) throw error;
+    }
+
+    const { error: baseError } = await sb.from("predictions").upsert(base, {
+      onConflict: "user_id,match_id",
+    });
+    if (baseError) throw baseError;
   },
 
   async getPredictionForMatch(

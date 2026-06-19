@@ -11,6 +11,8 @@ export const predictionSchema = z.object({
     .min(0, { message: "Mínimo 0" })
     .max(20, { message: "Máximo 20" })
     .int({ message: "Número entero" }),
+  outcome_prediction: z.enum(["90min", "extra_time", "penalties"]).nullable().optional(),
+  qualifier_team_id: z.string().nullable().optional(),
 });
 
 export type PredictionInput = z.infer<typeof predictionSchema>;
