@@ -429,10 +429,12 @@ function mapPhase(round: string): string {
 }
 
 // ── Auto-scoring: runs after each score sync ──────────────────────────────────
+// Uses score_predictions_for_match + refresh_rank_positions RPCs (pre-existing DB functions)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function scoreFinishedMatches(supabase: any) {
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
+  // Get recently finished matches that still have unscored predictions
   const { data: matches, error: mErr } = await supabase
     .from("matches")
     .select("id, home_team_id, away_team_id, home_score, away_score, match_date, venue")
@@ -447,69 +449,52 @@ async function scoreFinishedMatches(supabase: any) {
   let notified = 0;
 
   for (const match of matches) {
-    const { data: predictions } = await supabase
+    // Check if there are unscored predictions for this match
+    const { count } = await supabase
       .from("predictions")
-      .select("id, user_id")
+      .select("id", { count: "exact", head: true })
       .eq("match_id", match.id)
-      .eq("tournament_id", TOURNAMENT_ID)
       .is("points_earned", null);
 
-    if (!predictions?.length) continue;
+    if (!count) continue;
 
-    const affectedUsers = new Set<string>();
-    for (const pred of predictions) {
-      try {
-        const { data: pts } = await supabase
-          .rpc("calculate_prediction_points", { prediction_id: pred.id });
-        if (pts !== null && pts !== undefined) {
-          await supabase
-            .from("predictions")
-            .update({ points_earned: pts, status: pts > 0 ? "correct" : "incorrect" })
-            .eq("id", pred.id);
-          affectedUsers.add(pred.user_id);
-          scored++;
-        }
-      } catch { /* non-fatal */ }
-    }
+    try {
+      // Use the existing DB function to score all predictions for this match at once
+      await supabase.rpc("score_predictions_for_match", { p_match_id: match.id });
+      scored += count as number;
 
-    for (const userId of affectedUsers) {
-      try {
-        await supabase.rpc("update_user_ranking", {
-          p_user_id: userId,
-          p_tournament_id: TOURNAMENT_ID,
-        });
-      } catch { /* non-fatal */ }
-    }
+      // Refresh all user rankings for this tournament
+      await supabase.rpc("refresh_rank_positions", { p_tournament_id: TOURNAMENT_ID });
+    } catch { /* non-fatal */ }
 
-    if (affectedUsers.size > 0) {
-      try {
-        const [{ data: homeTeam }, { data: awayTeam }, { data: ranking }] = await Promise.all([
-          supabase.from("teams").select("name").eq("id", match.home_team_id).single(),
-          supabase.from("teams").select("name").eq("id", match.away_team_id).single(),
-          supabase.from("rankings")
-            .select("total_points, rank_position, users(display_name, username)")
-            .eq("tournament_id", TOURNAMENT_ID)
-            .order("total_points", { ascending: false })
-            .limit(5),
-        ]);
+    // Send notification
+    try {
+      const [{ data: homeTeam }, { data: awayTeam }, { data: ranking }] = await Promise.all([
+        supabase.from("teams").select("name").eq("id", match.home_team_id).single(),
+        supabase.from("teams").select("name").eq("id", match.away_team_id).single(),
+        supabase.from("rankings")
+          .select("total_points, rank_position, users(display_name, username)")
+          .eq("tournament_id", TOURNAMENT_ID)
+          .order("total_points", { ascending: false })
+          .limit(5),
+      ]);
 
-        await notifyMatchFinished({
-          homeTeam: homeTeam?.name ?? "Home",
-          awayTeam: awayTeam?.name ?? "Away",
-          homeScore: match.home_score ?? 0,
-          awayScore: match.away_score ?? 0,
-          matchDate: match.match_date,
-          venue: match.venue,
-          rankingUpdated: true,
-          topRanking: ranking?.map((r: { rank_position: number | null; total_points: number; users: { display_name: string | null; username: string } }, i: number) => ({
-            position: r.rank_position ?? i + 1,
-            displayName: r.users?.display_name ?? r.users?.username ?? "?",
-            points: r.total_points,
-          })),
-        });
-        notified++;
-      } catch { /* notification failure is non-fatal */ }
-    }
+      await notifyMatchFinished({
+        homeTeam: homeTeam?.name ?? "Home",
+        awayTeam: awayTeam?.name ?? "Away",
+        homeScore: match.home_score ?? 0,
+        awayScore: match.away_score ?? 0,
+        matchDate: match.match_date,
+        venue: match.venue,
+        rankingUpdated: true,
+        topRanking: ranking?.map((r: { rank_position: number | null; total_points: number; users: { display_name: string | null; username: string } }, i: number) => ({
+          position: r.rank_position ?? i + 1,
+          displayName: r.users?.display_name ?? r.users?.username ?? "?",
+          points: r.total_points,
+        })),
+      });
+      notified++;
+    } catch { /* notification failure is non-fatal */ }
   }
 
   return { scored, notified };
