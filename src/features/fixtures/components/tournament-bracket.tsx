@@ -217,9 +217,11 @@ export function TournamentBracket({ rounds, champion }: TournamentBracketProps) 
 
   void sfConnW; void sfW;
 
-  // Total width calculation for centering the 3rd place below
-  const totalBracketW = 4 * roundW + 2 * CARD_W + centerW; // 4*(148+22) + 2*148 + 224 = 1588
-  const thirdOffset   = 4 * roundW + CARD_W + EXT_W; // left edge of Final card
+  // Left side = 3*(CARD_W+CONN_W) + CARD_W(SF) = 658px
+  // Final card left edge = left side + EXT_W = 658 + 38 = 696
+  const leftSideW   = 3 * roundW + CARD_W;  // 510 + 148 = 658
+  const totalBracketW = 2 * leftSideW + centerW; // 1316 + 224 = 1540
+  const thirdOffset   = leftSideW + EXT_W;   // 658 + 38 = 696
 
   return (
     <div className="overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10 pb-6">
