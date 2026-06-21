@@ -50,24 +50,13 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
     setAvatarUploading(true);
     setError(null);
     try {
-      const supabase = createClient();
-      const ext = file.name.split(".").pop() ?? "jpg";
-      const path = `${user.id}.${ext}`;
-
-      const { error: upErr } = await supabase.storage
-        .from("avatars")
-        .upload(path, file, { upsert: true, contentType: file.type });
-      if (upErr) throw upErr;
-
-      const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
-      const urlWithCache = `${publicUrl}?t=${Date.now()}`;
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: dbErr } = await (supabase as any).from("users").update({ avatar_url: urlWithCache }).eq("id", user.id);
-      if (dbErr) throw dbErr;
-
-      setUser({ ...user, avatar_url: urlWithCache });
-      setAvatarPreview(urlWithCache);
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/profile/avatar", { method: "POST", body: fd });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Error al subir");
+      setUser({ ...user, avatar_url: json.url });
+      setAvatarPreview(json.url);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al subir la imagen");
       setAvatarPreview(null);

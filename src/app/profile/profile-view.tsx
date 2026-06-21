@@ -13,7 +13,6 @@ import { useLogout } from "@/features/auth/hooks/use-auth";
 import { useUserRank } from "@/features/rankings/hooks/use-rankings";
 import { useUserPredictions } from "@/features/predictions/hooks/use-predictions";
 import { getInitials } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/client";
 
 export function ProfileView() {
   const { user, setUser } = useAuthStore();
@@ -35,17 +34,13 @@ export function ProfileView() {
     setAvatarUploading(true);
     setAvatarError(null);
     try {
-      const supabase = createClient();
-      const ext = file.name.split(".").pop() ?? "jpg";
-      const path = `${user.id}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true, contentType: file.type });
-      if (upErr) throw upErr;
-      const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
-      const urlWithCache = `${publicUrl}?t=${Date.now()}`;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase as any).from("users").update({ avatar_url: urlWithCache }).eq("id", user.id);
-      setUser({ ...user, avatar_url: urlWithCache });
-      setAvatarPreview(urlWithCache);
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/profile/avatar", { method: "POST", body: fd });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Error al subir");
+      setUser({ ...user, avatar_url: json.url });
+      setAvatarPreview(json.url);
     } catch (err) {
       setAvatarError(err instanceof Error ? err.message : "Error al subir");
       setAvatarPreview(null);
