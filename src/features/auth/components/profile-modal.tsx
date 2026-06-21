@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, User, Mail, Lock, Save, Edit2, Eye, EyeOff, CheckCircle2, Phone } from "lucide-react";
+import { X, User, Mail, Lock, Save, Edit2, Eye, EyeOff, CheckCircle2, Phone, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +22,9 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
@@ -31,6 +34,48 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
   const [showPassword, setShowPassword] = useState(false);
 
   if (!user) return null;
+
+  const handleAvatarClick = () => fileInputRef.current?.click();
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { setError("La imagen no puede superar 2 MB"); return; }
+
+    // Local preview
+    const reader = new FileReader();
+    reader.onload = (ev) => setAvatarPreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+
+    setAvatarUploading(true);
+    setError(null);
+    try {
+      const supabase = createClient();
+      const ext = file.name.split(".").pop() ?? "jpg";
+      const path = `${user.id}.${ext}`;
+
+      const { error: upErr } = await supabase.storage
+        .from("avatars")
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (upErr) throw upErr;
+
+      const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
+      const urlWithCache = `${publicUrl}?t=${Date.now()}`;
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: dbErr } = await (supabase as any).from("users").update({ avatar_url: urlWithCache }).eq("id", user.id);
+      if (dbErr) throw dbErr;
+
+      setUser({ ...user, avatar_url: urlWithCache });
+      setAvatarPreview(urlWithCache);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al subir la imagen");
+      setAvatarPreview(null);
+    } finally {
+      setAvatarUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   const handleEdit = () => {
     setDisplayName(user.display_name ?? "");
@@ -139,17 +184,28 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
               <div className="px-6 py-5 space-y-5">
                 {/* Avatar row */}
                 <div className="flex items-center gap-4">
-                  <Avatar className="h-14 w-14 ring-2 ring-[hsl(var(--primary)/0.4)]">
-                    <AvatarImage src={user.avatar_url ?? ""} />
-                    <AvatarFallback className="bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--brand-blue-dark))] text-white text-lg font-black">
-                      {getInitials(user.display_name ?? user.username)}
-                    </AvatarFallback>
-                  </Avatar>
+                  <div className="relative group cursor-pointer" onClick={handleAvatarClick}>
+                    <Avatar className="h-14 w-14 ring-2 ring-[hsl(var(--primary)/0.4)]">
+                      <AvatarImage src={avatarPreview ?? user.avatar_url ?? ""} />
+                      <AvatarFallback className="bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--brand-blue-dark))] text-white text-lg font-black">
+                        {getInitials(user.display_name ?? user.username)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      {avatarUploading ? (
+                        <span className="h-4 w-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                      ) : (
+                        <Camera className="h-4 w-4 text-white" />
+                      )}
+                    </div>
+                  </div>
+                  <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={handleAvatarChange} />
                   <div>
                     <p className="font-semibold text-white leading-tight">
                       {user.display_name ?? user.username}
                     </p>
                     <p className="text-xs text-muted-foreground mt-0.5">{user.email}</p>
+                    <p className="text-[10px] text-muted-foreground/60 mt-0.5">Toca la foto para cambiarla</p>
                   </div>
                 </div>
 

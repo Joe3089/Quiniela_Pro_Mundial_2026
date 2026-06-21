@@ -7,7 +7,7 @@ import {
   type AFFixture,
   type AFTeam,
 } from "@/services/api-football";
-import { notifyMatchFinished } from "@/services/notifications";
+import { notifyMatchFinished, sendInternalNotification } from "@/services/notifications";
 import { TOURNAMENT_ID } from "@/constants";
 
 export const dynamic = "force-dynamic";
@@ -479,6 +479,8 @@ async function scoreFinishedMatches(supabase: any) {
           .limit(5),
       ]);
 
+      const matchTitle = `${homeTeam?.name ?? "Home"} ${match.home_score ?? 0}–${match.away_score ?? 0} ${awayTeam?.name ?? "Away"}`;
+
       await notifyMatchFinished({
         homeTeam: homeTeam?.name ?? "Home",
         awayTeam: awayTeam?.name ?? "Away",
@@ -493,6 +495,21 @@ async function scoreFinishedMatches(supabase: any) {
           points: r.total_points,
         })),
       });
+
+      // Internal app notifications for users with predictions for this match
+      const { data: predUsers } = await supabase
+        .from("predictions")
+        .select("user_id")
+        .eq("match_id", match.id);
+      if (predUsers?.length) {
+        await sendInternalNotification(supabase, {
+          tournamentId: TOURNAMENT_ID,
+          type: "match_finished",
+          title: `⚽ Partido finalizado`,
+          body: matchTitle,
+          userIds: predUsers.map((p: { user_id: string }) => p.user_id),
+        });
+      }
       notified++;
     } catch { /* notification failure is non-fatal */ }
   }

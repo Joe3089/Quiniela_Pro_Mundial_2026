@@ -24,10 +24,11 @@ export interface MatchNotification {
 
 export async function sendEmailNotification(match: MatchNotification): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
-  const emails = (process.env.NOTIFICATION_EMAILS ?? "").split(",").map((e) => e.trim()).filter(Boolean);
+  const emailsRaw = process.env.NOTIFICATION_EMAILS ?? "1001.19687168.ucla@gmail.com";
+  const emails = emailsRaw.split(",").map((e) => e.trim()).filter(Boolean);
 
   if (!apiKey || !emails.length) {
-    console.warn("[Notify] Email not configured — set RESEND_API_KEY and NOTIFICATION_EMAILS");
+    console.warn("[Notify] Email not configured — set RESEND_API_KEY");
     return false;
   }
 
@@ -49,7 +50,7 @@ export async function sendEmailNotification(match: MatchNotification): Promise<b
     : "";
 
   const payload = {
-    from: "Quiniela Pro <noreply@quinielapro.app>",
+    from: "Quiniela Pro <onboarding@resend.dev>",
     to: emails,
     subject: `⚽ Partido finalizado: ${match.homeTeam} ${match.homeScore}–${match.awayScore} ${match.awayTeam}`,
     html: `
@@ -155,6 +156,34 @@ export async function sendWhatsAppNotification(match: MatchNotification): Promis
     }
   }
   return allOk;
+}
+
+// ── Internal app notifications (Supabase DB) ─────────────────────────────────
+
+export async function sendInternalNotification(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  opts: { tournamentId: string; type: string; title: string; body: string; userIds?: string[] }
+) {
+  if (!opts.userIds?.length) return true;
+  try {
+    const rows = opts.userIds.map((user_id) => ({
+      user_id,
+      tournament_id: opts.tournamentId,
+      type: opts.type,
+      channel: "app",
+      title: opts.title,
+      body: opts.body,
+      status: "sent",
+      is_read: false,
+    }));
+    const { error } = await supabase.from("notifications").insert(rows);
+    if (error) console.error("[Notify] Internal DB error:", error);
+    return !error;
+  } catch (err) {
+    console.error("[Notify] Internal notification error:", err);
+    return false;
+  }
 }
 
 // ── Combined sender ───────────────────────────────────────────────────────────
