@@ -173,28 +173,39 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
               <div className="px-6 py-5 space-y-5">
                 {/* Avatar row */}
                 <div className="flex items-center gap-4">
-                  <div className="relative group cursor-pointer" onClick={handleAvatarClick}>
-                    <Avatar className="h-14 w-14 ring-2 ring-[hsl(var(--primary)/0.4)]">
+                  <div className="relative group cursor-pointer shrink-0" onClick={handleAvatarClick}>
+                    <Avatar className="h-16 w-16 ring-2 ring-[hsl(var(--primary)/0.4)]">
                       <AvatarImage src={avatarPreview ?? user.avatar_url ?? ""} />
-                      <AvatarFallback className="bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--brand-blue-dark))] text-white text-lg font-black">
+                      <AvatarFallback className="bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--brand-blue-dark))] text-white text-xl font-black">
                         {getInitials(user.display_name ?? user.username)}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <div className="absolute inset-0 rounded-full bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       {avatarUploading ? (
-                        <span className="h-4 w-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                        <span className="h-5 w-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                       ) : (
-                        <Camera className="h-4 w-4 text-white" />
+                        <Camera className="h-5 w-5 text-white" />
                       )}
                     </div>
                   </div>
                   <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={handleAvatarChange} />
-                  <div>
-                    <p className="font-semibold text-white leading-tight">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-white leading-tight truncate">
                       {user.display_name ?? user.username}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{user.email}</p>
-                    <p className="text-[10px] text-muted-foreground/60 mt-0.5">Toca la foto para cambiarla</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 truncate">{user.email}</p>
+                    <button
+                      type="button"
+                      onClick={handleAvatarClick}
+                      disabled={avatarUploading}
+                      className="mt-1.5 flex items-center gap-1 text-[10px] text-primary/80 hover:text-primary transition-colors disabled:opacity-50"
+                    >
+                      {avatarUploading ? (
+                        <><span className="h-2.5 w-2.5 border border-primary/40 border-t-primary rounded-full animate-spin" /> Subiendo...</>
+                      ) : (
+                        <><Camera className="h-2.5 w-2.5" /> Cambiar foto</>
+                      )}
+                    </button>
                   </div>
                 </div>
 
