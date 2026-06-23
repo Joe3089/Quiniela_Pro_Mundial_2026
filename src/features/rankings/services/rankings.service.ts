@@ -8,7 +8,7 @@ export const rankingsService = {
   async getLeaderboard(tournamentId: string, limit = 50, offset = 0): Promise<LeaderboardEntry[]> {
     const { data, error } = await db()
       .from("rankings")
-      .select(`*, user:users(id, username, display_name, avatar_url)`)
+      .select(`*, user:users(id, username, display_name, avatar_url, email, whatsapp_phone)`)
       .eq("tournament_id", tournamentId)
       .order("total_points", { ascending: false })
       .order("exact_scores", { ascending: false })
@@ -21,7 +21,7 @@ export const rankingsService = {
   async getUserRank(userId: string, tournamentId: string): Promise<LeaderboardEntry | null> {
     const { data, error } = await db()
       .from("rankings")
-      .select(`*, user:users(id, username, display_name, avatar_url)`)
+      .select(`*, user:users(id, username, display_name, avatar_url, email, whatsapp_phone)`)
       .eq("user_id", userId)
       .eq("tournament_id", tournamentId)
       .single();

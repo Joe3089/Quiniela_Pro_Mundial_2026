@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Trophy, LayoutGrid, Target, BarChart3, Settings, LogOut,
   Menu, X, ChevronDown, Globe2, TrendingUp, UserCircle, Radio,
-  Newspaper, Wifi, Clock, Bell,
+  Newspaper, Wifi, Clock, Bell, MessageCircle,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -17,7 +17,9 @@ import { useLogout } from "@/features/auth/hooks/use-auth";
 import { getInitials, cn } from "@/lib/utils";
 import { ProfileModal } from "@/features/auth/components/profile-modal";
 import { NotificationsModal } from "@/features/auth/components/notifications-modal";
+import { InboxModal } from "@/features/messages/components/inbox-modal";
 import { useTimezone, TIMEZONE_OPTIONS } from "@/providers/timezone-provider";
+import { useQuery } from "@tanstack/react-query";
 import { Check } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -109,7 +111,35 @@ export function Navbar() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [inboxOpen, setInboxOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+
+  const { data: inboxData } = useQuery({
+    queryKey: ["messages", "inbox"],
+    queryFn: async () => {
+      const res = await fetch("/api/messages?inbox=1");
+      if (!res.ok) return [];
+      return res.json() as Promise<Array<{ is_read: boolean; receiver_id: string }>>;
+    },
+    enabled: !!user,
+    refetchInterval: 30_000,
+    staleTime: 20_000,
+  });
+  const unreadMessages = (inboxData ?? []).filter((m) => !m.is_read && m.receiver_id === user?.id).length;
+
+  const { data: unreadNotifCount = 0 } = useQuery<number>({
+    queryKey: ["notifications", "unread-count", user?.id],
+    queryFn: async () => {
+      const res = await fetch("/api/notifications/unread-count");
+      if (!res.ok) return 0;
+      const d = await res.json();
+      return d.count ?? 0;
+    },
+    enabled: !!user,
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+  });
+
   const [hasMounted, setHasMounted] = useState(false);
 
   const isAdmin = (user as { is_admin?: boolean } | null)?.is_admin;
@@ -299,13 +329,35 @@ export function Navbar() {
                             </button>
 
                             <button
+                              onClick={() => { setInboxOpen(true); setUserMenuOpen(false); }}
+                              className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm hover:bg-white/8 transition-colors text-left"
+                            >
+                              <div className="relative h-7 w-7 rounded-lg bg-[hsl(var(--primary)/0.15)] border border-[hsl(var(--primary)/0.2)] flex items-center justify-center">
+                                <MessageCircle className="h-3.5 w-3.5 text-[hsl(var(--primary))]" />
+                                {unreadMessages > 0 && (
+                                  <span className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-red-500 text-[8px] font-bold text-white flex items-center justify-center">
+                                    {unreadMessages > 9 ? "9+" : unreadMessages}
+                                  </span>
+                                )}
+                              </div>
+                              <span className="font-medium text-white/90">Mensajes</span>
+                              {unreadMessages > 0 && <span className="ml-auto text-[10px] font-bold text-red-400">{unreadMessages} nuevos</span>}
+                            </button>
+
+                            <button
                               onClick={() => { setNotificationsOpen(true); setUserMenuOpen(false); }}
                               className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm hover:bg-white/8 transition-colors text-left"
                             >
-                              <div className="h-7 w-7 rounded-lg bg-[hsl(var(--primary)/0.15)] border border-[hsl(var(--primary)/0.2)] flex items-center justify-center">
+                              <div className="relative h-7 w-7 rounded-lg bg-[hsl(var(--primary)/0.15)] border border-[hsl(var(--primary)/0.2)] flex items-center justify-center">
                                 <Bell className="h-3.5 w-3.5 text-[hsl(var(--primary))]" />
+                                {unreadNotifCount > 0 && (
+                                  <span className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-red-500 text-[9px] font-bold text-white flex items-center justify-center leading-none">
+                                    {unreadNotifCount > 9 ? "9+" : unreadNotifCount}
+                                  </span>
+                                )}
                               </div>
                               <span className="font-medium text-white/90">Notificaciones</span>
+                              {unreadNotifCount > 0 && <span className="ml-auto text-[10px] font-bold text-primary">{unreadNotifCount} nuevas</span>}
                             </button>
 
                             {isAdmin && (
@@ -452,6 +504,7 @@ export function Navbar() {
 
       <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} />
       <NotificationsModal open={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
+      <AnimatePresence>{inboxOpen && <InboxModal onClose={() => setInboxOpen(false)} />}</AnimatePresence>
     </>
   );
 }

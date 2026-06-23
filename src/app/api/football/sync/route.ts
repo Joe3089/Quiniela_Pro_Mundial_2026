@@ -496,18 +496,26 @@ async function scoreFinishedMatches(supabase: any) {
         })),
       });
 
-      // Internal app notifications for users with predictions for this match
-      const { data: predUsers } = await supabase
-        .from("predictions")
-        .select("user_id")
-        .eq("match_id", match.id);
-      if (predUsers?.length) {
+      // Internal notifications — broadcast to ALL tournament users
+      const { data: allUsers } = await supabase
+        .from("users")
+        .select("id");
+      const allUserIds = (allUsers ?? []).map((u: { id: string }) => u.id);
+
+      if (allUserIds.length) {
         await sendInternalNotification(supabase, {
           tournamentId: TOURNAMENT_ID,
           type: "match_finished",
           title: `⚽ Partido finalizado`,
           body: matchTitle,
-          userIds: predUsers.map((p: { user_id: string }) => p.user_id),
+          userIds: allUserIds,
+        });
+        await sendInternalNotification(supabase, {
+          tournamentId: TOURNAMENT_ID,
+          type: "ranking_update",
+          title: `📊 Ranking actualizado`,
+          body: `Clasificación actualizada tras ${matchTitle}`,
+          userIds: allUserIds,
         });
       }
       notified++;

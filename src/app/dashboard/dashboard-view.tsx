@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Trophy, Target, BarChart3, Calendar, TrendingUp, Zap, ArrowRight, Star, MapPin } from "lucide-react";
+import { Trophy, Target, BarChart3, Calendar, TrendingUp, Zap, ArrowRight, Star, MapPin, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FlagImage } from "@/components/ui/flag-image";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -48,11 +48,19 @@ export function DashboardView() {
   });
 
   // Live matches shown first, then upcoming scheduled
+  // Exclude DB-live matches already rendered via liveFixtures (API-Football) to prevent duplicates
+  const liveApiFixtureIds = new Set(liveFixtures.map((f) => f.fixture.id));
   const now = Date.now();
   const nextMatches = upcomingMatches
     ?.filter((m) => {
       if (m.status === "finished") return false;
-      if (m.status === "live") return true;
+      if (m.status === "live") {
+        // If API-Football has live data, don't show DB live matches (prevents duplicate)
+        if (liveFixtures.length > 0) return false;
+        // If a specific fixture ID matches one already shown, skip it
+        if (m.api_football_fixture_id && liveApiFixtureIds.has(m.api_football_fixture_id)) return false;
+        return true;
+      }
       if (m.status !== "scheduled") return false;
       const matchTime = new Date(m.match_date).getTime();
       return matchTime > now;
@@ -63,6 +71,15 @@ export function DashboardView() {
       return new Date(a.match_date).getTime() - new Date(b.match_date).getTime();
     })
     .slice(0, 5) ?? [];
+
+  const todayStr = new Date().toDateString();
+  const todayResults = upcomingMatches
+    ?.filter((m) => {
+      const isToday = new Date(m.match_date).toDateString() === todayStr;
+      return isToday && (m.status === "finished" || m.status === "live");
+    })
+    .sort((a, b) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime())
+    ?? [];
 
   const pendingPredictions = nextMatches.filter(
     (m) => !predictions?.find((p) => p.match_id === m.id)
@@ -200,6 +217,81 @@ export function DashboardView() {
       )}
 
       <div className="grid md:grid-cols-2 gap-5">
+        {/* Today's results */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.18 }}
+          className="glass-card rounded-2xl border border-white/8 overflow-hidden"
+        >
+          <div className="p-5 border-b border-white/5">
+            <h2 className="text-sm font-bold flex items-center gap-2">
+              <div className="h-7 w-7 rounded-lg bg-emerald-500/15 flex items-center justify-center">
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+              </div>
+              Resultados del día
+            </h2>
+          </div>
+          <div className="p-3 space-y-1">
+            {matchesLoading
+              ? Array.from({ length: 3 }).map((_, i) => (
+                  <Skeleton key={i} className="h-14 w-full rounded-xl" />
+                ))
+              : todayResults.length === 0 ? (
+                <div className="text-center py-8 px-4">
+                  <CheckCircle2 className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+                  <p className="text-sm font-semibold text-white/60">Sin resultados hoy</p>
+                  <p className="text-xs text-muted-foreground mt-1">Los resultados aparecen aquí al finalizar</p>
+                </div>
+              )
+              : todayResults.map((match) => {
+                const isLive = match.status === "live";
+                const homeScore = match.home_score ?? 0;
+                const awayScore = match.away_score ?? 0;
+                const timeStr = formatTime(match.match_date);
+                return (
+                  <Link key={match.id} href="/fixtures">
+                    <div className={`rounded-xl px-3 py-2.5 mb-1 transition-colors ${isLive ? "border-2 border-cyan-400/70 bg-cyan-400/5 hover:bg-cyan-400/10" : "border border-white/8 bg-white/3 hover:bg-white/6"}`}>
+                      <div className="flex items-center justify-between mb-1.5">
+                        {isLive ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
+                            <span className="text-[11px] font-black text-cyan-400 tracking-widest uppercase">EN VIVO</span>
+                          </div>
+                        ) : (
+                          <span className="text-[11px] text-muted-foreground">{timeStr}</span>
+                        )}
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isLive ? "bg-cyan-400/20 text-cyan-400" : "bg-emerald-500/15 text-emerald-400"}`}>
+                          {isLive ? "En vivo" : "FT"}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 flex-1 justify-end">
+                          <span className="text-sm font-bold text-white truncate max-w-[64px]">{match.home_team?.name ?? "Local"}</span>
+                          {match.home_team?.fifa_code && <FlagImage fifaCode={match.home_team.fifa_code} fallbackEmoji="🏳️" size="sm" className="rounded-sm shrink-0" />}
+                        </div>
+                        <span className={`text-xl font-black tabular-nums px-2 shrink-0 ${isLive ? "text-cyan-400" : "text-white"}`}>
+                          {homeScore} – {awayScore}
+                        </span>
+                        <div className="flex items-center gap-1.5 flex-1 justify-start">
+                          {match.away_team?.fifa_code && <FlagImage fifaCode={match.away_team.fifa_code} fallbackEmoji="🏳️" size="sm" className="rounded-sm shrink-0" />}
+                          <span className="text-sm font-bold text-white truncate max-w-[64px]">{match.away_team?.name ?? "Visitante"}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+          </div>
+          {todayResults.length > 0 && (
+            <div className="px-5 pb-4">
+              <Button variant="glass" size="sm" asChild className="w-full text-xs">
+                <Link href="/fixtures">Ver todos los partidos</Link>
+              </Button>
+            </div>
+          )}
+        </motion.div>
+
         {/* Next matches */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -370,7 +462,10 @@ export function DashboardView() {
             </div>
           )}
         </motion.div>
+      </div>
 
+      {/* Scoring guide — below */}
+      <div className="mt-5">
         {/* Scoring guide */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
