@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Bell, CheckCheck, Trophy, Star, Info, Loader2 } from "lucide-react";
+import { X, Bell, CheckCheck, Trophy, Star, Info, Loader2, Smartphone } from "lucide-react";
+import { usePWA } from "@/hooks/use-pwa";
 import { createClient } from "@/lib/supabase/client";
 import { useAuthStore } from "@/store/auth.store";
 import { cn } from "@/lib/utils";
@@ -53,6 +54,7 @@ export function NotificationsModal({ open, onClose }: NotificationsModalProps) {
   const { user } = useAuthStore();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
+  const { isInstallable, install } = usePWA();
 
   useEffect(() => {
     if (!open || !user) return;
@@ -154,6 +156,26 @@ export function NotificationsModal({ open, onClose }: NotificationsModalProps) {
 
               {/* Content */}
               <div className="max-h-[420px] overflow-y-auto">
+                {/* PWA install prompt as top notification */}
+                {isInstallable && (
+                  <div className="px-5 py-3.5 border-b border-white/5 bg-[hsl(var(--primary)/0.06)]">
+                    <div className="flex items-start gap-3">
+                      <div className="h-7 w-7 rounded-lg bg-[hsl(var(--primary)/0.2)] border border-[hsl(var(--primary)/0.3)] flex items-center justify-center shrink-0">
+                        <Smartphone className="h-3.5 w-3.5 text-[hsl(var(--primary))]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-white">📲 Instala la app</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">Acceso rápido desde tu pantalla de inicio</p>
+                        <button
+                          onClick={() => { install(); onClose(); }}
+                          className="mt-2 text-[11px] font-bold px-3 py-1 rounded-lg bg-[hsl(var(--primary))] text-white hover:opacity-90 transition-opacity"
+                        >
+                          Instalar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 {loading ? (
                   <div className="flex items-center justify-center py-12">
                     <Loader2 className="h-6 w-6 text-muted-foreground animate-spin" />

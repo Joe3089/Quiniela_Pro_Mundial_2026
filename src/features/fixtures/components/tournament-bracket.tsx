@@ -122,18 +122,23 @@ function RoundCol({ matches }: { matches: (BracketMatch | null)[] }) {
   );
 }
 
-// ── Center section: Trophy + Final card + SF→Final connectors ────────────────
+// ── Center section: Trophy + Final card + SF→Final connectors + 3rd place ────
 function CenterSection({
   finalMatch,
+  thirdMatch,
   champion,
 }: {
   finalMatch: BracketMatch | null;
+  thirdMatch: BracketMatch | null;
   champion?: { name: string; flag_url?: string | null } | null;
 }) {
   const centerW = EXT_W + CARD_W + EXT_W;
   const ym = TOTAL_H / 2;
   const trophyTop = ym - FINAL_CARD_H / 2 - TROPHY_SIZE - 14;
   const cardTop = ym - FINAL_CARD_H / 2;
+  // 3rd place: positioned in lower quarter of bracket
+  const thirdLabelTop = cardTop + FINAL_CARD_H + 28;
+  const thirdCardTop = thirdLabelTop + 16;
 
   return (
     <div className="relative shrink-0" style={{ width: centerW, height: TOTAL_H }}>
@@ -141,6 +146,14 @@ function CenterSection({
       <svg className="absolute inset-0 pointer-events-none" width={centerW} height={TOTAL_H} fill="none">
         <line x1={0} y1={ym} x2={EXT_W} y2={ym} stroke={STROKE} strokeWidth="1.5" />
         <line x1={EXT_W + CARD_W} y1={ym} x2={centerW} y2={ym} stroke={STROKE} strokeWidth="1.5" />
+        {/* dashed connector from Final to 3rd place */}
+        {thirdMatch && (
+          <line
+            x1={centerW / 2} y1={cardTop + FINAL_CARD_H}
+            x2={centerW / 2} y2={thirdLabelTop}
+            stroke={STROKE} strokeWidth="1.2" strokeDasharray="3 2"
+          />
+        )}
       </svg>
 
       {/* Trophy */}
@@ -155,11 +168,25 @@ function CenterSection({
 
       {/* Champion label */}
       {champion && (
-        <div className="absolute flex items-center justify-center" style={{ left: EXT_W, top: cardTop + FINAL_CARD_H + 8, width: CARD_W }}>
+        <div className="absolute flex items-center justify-center" style={{ left: EXT_W, top: cardTop + FINAL_CARD_H + 6, width: CARD_W }}>
           <div className="glass rounded-lg px-3 py-1 border border-yellow-500/30">
             <span className="text-[10px] font-bold text-yellow-400">🏆 {champion.name}</span>
           </div>
         </div>
+      )}
+
+      {/* 3rd place label + card */}
+      {thirdMatch && (
+        <>
+          <div className="absolute flex items-center justify-center" style={{ left: EXT_W, top: thirdLabelTop, width: CARD_W }}>
+            <span className="text-[8px] font-black text-muted-foreground/70 uppercase tracking-widest">
+              3er Lugar
+            </span>
+          </div>
+          <div className="absolute" style={{ left: EXT_W, top: thirdCardTop, width: CARD_W }}>
+            <MatchCard match={thirdMatch} />
+          </div>
+        </>
       )}
     </div>
   );
@@ -218,10 +245,8 @@ export function TournamentBracket({ rounds, champion }: TournamentBracketProps) 
   void sfConnW; void sfW;
 
   // Left side = 3*(CARD_W+CONN_W) + CARD_W(SF) = 658px
-  // Final card left edge = left side + EXT_W = 658 + 38 = 696
-  const leftSideW   = 3 * roundW + CARD_W;  // 510 + 148 = 658
-  const totalBracketW = 2 * leftSideW + centerW; // 1316 + 224 = 1540
-  const thirdOffset   = leftSideW + EXT_W;   // 658 + 38 = 696
+  const leftSideW = 3 * roundW + CARD_W;  // 510 + 148 = 658
+  void leftSideW;
 
   return (
     <div className="overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10 pb-6">
@@ -249,7 +274,7 @@ export function TournamentBracket({ rounds, champion }: TournamentBracketProps) 
           <RoundCol matches={qfL} />
           <ConnSVG n={2} dir="r" />
           <RoundCol matches={sfL} />
-          <CenterSection finalMatch={finalMatch} champion={champion} />
+          <CenterSection finalMatch={finalMatch} thirdMatch={thirdAll[0] ?? null} champion={champion} />
           <RoundCol matches={sfR} />
           <ConnSVG n={2} dir="l" />
           <RoundCol matches={qfR} />
@@ -259,21 +284,6 @@ export function TournamentBracket({ rounds, champion }: TournamentBracketProps) 
           <RoundCol matches={r32R} />
         </div>
 
-        {/* ── 3rd Place — below the bracket, centered under the Final card ── */}
-        {thirdAll[0] && (
-          <div style={{ width: totalBracketW, paddingLeft: thirdOffset }}>
-            <div className="flex flex-col items-center" style={{ width: CARD_W }}>
-              {/* vertical dashed connector from Final */}
-              <svg width={2} height={16} fill="none">
-                <line x1={1} y1={0} x2={1} y2={16} stroke={STROKE} strokeWidth="1.5" strokeDasharray="3 2" />
-              </svg>
-              <span className="text-[8px] font-black text-muted-foreground/70 uppercase tracking-widest mb-1">
-                3er Lugar
-              </span>
-              <MatchCard match={thirdAll[0]} />
-            </div>
-          </div>
-        )}
 
       </div>
     </div>

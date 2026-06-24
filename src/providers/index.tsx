@@ -6,7 +6,6 @@ import { QueryProvider } from "./query-provider";
 import { ThemeProvider } from "./theme-provider";
 import { AuthProvider } from "./auth-provider";
 import { TimezoneProvider } from "./timezone-provider";
-import { InstallPrompt } from "@/components/shared/install-prompt";
 import { TournamentProvider } from "./tournament-provider";
 import { Toaster } from "sonner";
 
@@ -29,7 +28,6 @@ export function Providers({ children }: { children: ReactNode }) {
             <ServiceWorkerRegistrar />
             {children}
           </TournamentProvider>
-          <InstallPrompt />
           <Toaster
             position="top-right"
             richColors

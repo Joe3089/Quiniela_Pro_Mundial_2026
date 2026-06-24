@@ -8,6 +8,7 @@ import {
   type AFTeam,
 } from "@/services/api-football";
 import { notifyMatchFinished, sendInternalNotification } from "@/services/notifications";
+import { runBracketSync } from "@/app/api/football/bracket/sync/route";
 import { TOURNAMENT_ID } from "@/constants";
 
 export const dynamic = "force-dynamic";
@@ -81,6 +82,7 @@ export async function GET(request: NextRequest) {
       if (action === "scores" || action === "all") {
         results.scores = await syncFixtures(supabase, { onlyPlayedOrLive: true });
         results.scoring = await scoreFinishedMatches(supabase);
+        results.bracket = await runBracketSync().catch(() => ({ status: "error" }));
       }
 
       return NextResponse.json({ ok: true, action, source: isVercelCron ? "vercel-cron" : "manual-get", results });
@@ -120,6 +122,7 @@ export async function POST(request: NextRequest) {
     if (action === "scores" || action === "all") {
       results.scores = await syncFixtures(supabase, { onlyPlayedOrLive: true });
       results.scoring = await scoreFinishedMatches(supabase);
+      results.bracket = await runBracketSync().catch(() => ({ status: "error" }));
     }
 
     if (action === "players") {

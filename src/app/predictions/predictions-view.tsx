@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Target, Lock, CheckCircle2, Clock, Users, Star } from "lucide-react";
+import { Target, Lock, CheckCircle2, Clock, Users, Star, ChevronDown, Goal, AlertTriangle, ArrowLeftRight } from "lucide-react";
 import Link from "next/link";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -250,6 +250,163 @@ function TodayMatchesBanner({ matches, predictionMap }: {
   );
 }
 
+/* ── Finished Prediction with match events ────────────────── */
+interface MatchEvent {
+  id: string; type: string; player_name: string; minute: number;
+  minute_extra: number; assist_name: string | null; team_id: string | null;
+}
+
+function eventIcon(type: string) {
+  if (type === "goal" || type === "penalty") return <Goal className="h-3 w-3 text-emerald-400 shrink-0" />;
+  if (type === "yellow_card") return <AlertTriangle className="h-3 w-3 text-yellow-400 shrink-0" />;
+  if (type === "red_card") return <AlertTriangle className="h-3 w-3 text-red-400 shrink-0" />;
+  if (type === "substitution") return <ArrowLeftRight className="h-3 w-3 text-blue-400 shrink-0" />;
+  return <ChevronDown className="h-3 w-3 text-muted-foreground shrink-0" />;
+}
+
+function FinishedPredictionCard({
+  match,
+  prediction,
+}: {
+  match: Match;
+  prediction?: { home: number; away: number } | null;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const [events, setEvents] = useState<MatchEvent[] | null>(null);
+  const [loadingEvents, setLoadingEvents] = useState(false);
+
+  const pointsEarned = (() => {
+    if (!prediction) return null;
+    const { home: ph, away: pa } = prediction;
+    const rh = match.home_score ?? 0;
+    const ra = match.away_score ?? 0;
+    if (ph === rh && pa === ra) return { pts: 5, label: "Exacto", cls: "text-[hsl(var(--primary))]" };
+    const pRes = ph > pa ? "H" : ph < pa ? "A" : "D";
+    const rRes = rh > ra ? "H" : rh < ra ? "A" : "D";
+    if (pRes === rRes) {
+      if (pRes === "D") return { pts: 1, label: "Empate correcto", cls: "text-[hsl(var(--accent))]" };
+      return { pts: 3, label: "Ganador correcto", cls: "text-[hsl(var(--brand-violet))]" };
+    }
+    return { pts: 0, label: "Incorrecto", cls: "text-muted-foreground" };
+  })();
+
+  const toggleExpand = async () => {
+    if (!expanded && events === null) {
+      setLoadingEvents(true);
+      try {
+        const res = await fetch(`/api/matches/${match.id}/events`);
+        if (res.ok) setEvents(await res.json());
+        else setEvents([]);
+      } catch { setEvents([]); }
+      setLoadingEvents(false);
+    }
+    setExpanded(!expanded);
+  };
+
+  const homeCode = match.home_team?.fifa_code;
+  const awayCode = match.away_team?.fifa_code;
+
+  return (
+    <div className="glass rounded-xl border border-border/40 overflow-hidden">
+      <button
+        className="w-full text-left hover:bg-white/3 transition-colors"
+        onClick={toggleExpand}
+      >
+        <MatchCard match={match} showPrediction={!!prediction} prediction={prediction} compact />
+        {/* Points earned row */}
+        <div className="px-4 pb-3 flex items-center justify-between gap-2">
+          {prediction && pointsEarned !== null && (
+            <span className={cn("text-xs font-bold", pointsEarned.cls)}>
+              {pointsEarned.pts > 0 ? `+${pointsEarned.pts} pts` : "0 pts"} · {pointsEarned.label}
+            </span>
+          )}
+          {!prediction && <span className="text-xs text-muted-foreground">Sin predicción</span>}
+          <div className="flex items-center gap-2">
+            {(homeCode || awayCode) && (
+              <div className="flex items-center gap-1">
+                {homeCode && (
+                  <Link href={`/selecciones/${homeCode}`} onClick={(e) => e.stopPropagation()} className="flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 hover:bg-emerald-500/20">
+                    <Users className="h-3 w-3" /> XI {homeCode}
+                  </Link>
+                )}
+                {awayCode && (
+                  <Link href={`/selecciones/${awayCode}`} onClick={(e) => e.stopPropagation()} className="flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-lg bg-blue-500/10 border border-blue-500/25 text-blue-400 hover:bg-blue-500/20">
+                    <Users className="h-3 w-3" /> XI {awayCode}
+                  </Link>
+                )}
+              </div>
+            )}
+            <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", expanded && "rotate-180")} />
+          </div>
+        </div>
+      </button>
+
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="border-t border-border/20 overflow-hidden"
+          >
+            <div className="p-4 space-y-3">
+              {/* Prediction detail */}
+              {prediction && (
+                <div className="rounded-lg bg-white/4 border border-white/8 p-3">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Tu predicción</p>
+                  <div className="flex items-center gap-2 text-sm font-bold">
+                    <span className="text-white">{match.home_team?.short_name ?? match.home_team?.name}</span>
+                    <span className={cn("tabular-nums px-2 py-0.5 rounded font-black", pointsEarned?.pts === 5 ? "bg-primary/20 text-primary" : "text-white/70")}>
+                      {prediction.home} – {prediction.away}
+                    </span>
+                    <span className="text-white">{match.away_team?.short_name ?? match.away_team?.name}</span>
+                    {pointsEarned && (
+                      <span className={cn("ml-auto text-xs font-bold", pointsEarned.cls)}>
+                        {pointsEarned.pts > 0 ? `+${pointsEarned.pts}` : "✗"}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Match events */}
+              {loadingEvents && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
+                  <div className="h-3 w-3 border border-muted-foreground/40 border-t-transparent rounded-full animate-spin" />
+                  Cargando eventos del partido...
+                </div>
+              )}
+              {!loadingEvents && events && events.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Eventos del partido</p>
+                  <div className="space-y-1.5">
+                    {events.map((e) => (
+                      <div key={e.id} className="flex items-center gap-2 text-xs">
+                        <span className="w-8 text-right text-muted-foreground tabular-nums font-mono shrink-0">
+                          {e.minute}{e.minute_extra > 0 ? `+${e.minute_extra}` : ""}&apos;
+                        </span>
+                        {eventIcon(e.type)}
+                        <span className="text-white/90 font-medium truncate">{e.player_name}</span>
+                        {e.assist_name && (
+                          <span className="text-muted-foreground truncate">(A: {e.assist_name})</span>
+                        )}
+                        {e.type === "penalty" && <span className="text-[9px] px-1 py-0.5 rounded bg-yellow-500/15 text-yellow-400 font-bold shrink-0">PEN</span>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {!loadingEvents && events !== null && events.length === 0 && (
+                <p className="text-xs text-muted-foreground">No hay eventos registrados para este partido.</p>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 /* ── Main View ────────────────────────────────────────────── */
 export function PredictionsView() {
   const { data: allMatches, isLoading: matchesLoading } = useMatches();
@@ -263,8 +420,13 @@ export function PredictionsView() {
   );
 
   const now = Date.now();
+  const todayStr = new Date().toDateString();
   const open = allMatches?.filter((m) => m.status === "scheduled" && new Date(m.match_date).getTime() > now) ?? [];
-  const withPrediction = allMatches?.filter((m) => predictionMap.has(m.id)) ?? [];
+  // Guardadas: today's matches that already have a prediction saved
+  const savedToday = allMatches?.filter((m) => {
+    const isToday = new Date(m.match_date).toDateString() === todayStr;
+    return isToday && predictionMap.has(m.id);
+  }) ?? [];
   const finished = allMatches?.filter((m) => m.status === "finished" || (m.status === "scheduled" && new Date(m.match_date).getTime() <= now)) ?? [];
   const isLoading = matchesLoading || predsLoading;
 
@@ -282,7 +444,7 @@ export function PredictionsView() {
           Mis <span className="text-gradient-vivid ml-1">Predicciones</span>
         </h1>
         <div className="flex items-center gap-2">
-          <Badge variant="secondary">{predictions?.length ?? 0} guardadas</Badge>
+          <Badge variant="secondary">{savedToday.length} guardadas hoy</Badge>
           {open.length > 0 && (
             <Badge variant="warning">{open.filter((m) => !predictionMap.has(m.id)).length} pendientes</Badge>
           )}
@@ -297,7 +459,7 @@ export function PredictionsView() {
           </TabsTrigger>
           <TabsTrigger value="saved" className="gap-1.5">
             <CheckCircle2 className="h-3.5 w-3.5" />
-            Guardadas ({withPrediction.length})
+            Guardadas ({savedToday.length})
           </TabsTrigger>
           <TabsTrigger value="finished" className="gap-1.5">
             <Lock className="h-3.5 w-3.5" />
@@ -335,18 +497,22 @@ export function PredictionsView() {
 
         <TabsContent value="saved">
           <div className="space-y-2">
-            {withPrediction.map((match) => (
-              <MatchCard
-                key={match.id}
-                match={match}
-                showPrediction
-                prediction={predictionMap.get(match.id)}
-              />
-            ))}
-            {withPrediction.length === 0 && (
+            {isLoading ? (
+              Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-xl" />)
+            ) : savedToday.length > 0 ? (
+              savedToday.map((match) => (
+                <MatchCard
+                  key={match.id}
+                  match={match}
+                  showPrediction
+                  prediction={predictionMap.get(match.id)}
+                />
+              ))
+            ) : (
               <div className="text-center py-12 text-muted-foreground">
                 <CheckCircle2 className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                <p>Aún no tienes predicciones guardadas</p>
+                <p className="text-sm font-medium">Sin predicciones para los partidos de hoy</p>
+                <p className="text-xs mt-1 text-muted-foreground/60">Cuando hagas predicciones para los juegos del día, aparecerán aquí</p>
               </div>
             )}
           </div>
@@ -354,10 +520,17 @@ export function PredictionsView() {
 
         <TabsContent value="finished">
           <div className="space-y-2">
-            {finished.map((match) => (
-              <MatchCard key={match.id} match={match} />
-            ))}
-            {finished.length === 0 && (
+            {isLoading ? (
+              Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)
+            ) : finished.length > 0 ? (
+              finished.map((match) => (
+                <FinishedPredictionCard
+                  key={match.id}
+                  match={match}
+                  prediction={predictionMap.get(match.id)}
+                />
+              ))
+            ) : (
               <div className="text-center py-12 text-muted-foreground">
                 <p>No hay partidos finalizados aún</p>
               </div>
