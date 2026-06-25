@@ -44,8 +44,7 @@ const FEDERATION_CRESTS: Record<string, string> = {
 // Verified API-Football player IDs (tested against API)
 const PLAYER_API_IDS: Record<string, number> = {
   // Current players — IDs verified ✓
-  "Kylian Mbappé":      278,
-  "Lionel Messi":       154,
+  // Messi and Mbappé omitted: their totals in ALL_TIME_SCORERS already include WC 2026
   "Erling Haaland":     1100,
   "Harry Kane":         184,
   "Cristiano Ronaldo":  874,

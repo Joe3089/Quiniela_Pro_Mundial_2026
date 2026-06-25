@@ -119,7 +119,9 @@ export const fixturesService = {
 
     const run = async (tid?: string): Promise<Match[] | null> => {
       try {
-        let q = supabase.from("matches").select("*").order("match_date", { ascending: true });
+        let q = supabase.from("matches").select("*")
+          .order("bracket_slot", { ascending: true, nullsFirst: false })
+          .order("match_date", { ascending: true });
         if (tid) q = q.eq("tournament_id", tid);
 
         const rows = (await queryWithTimeout(q)) as any[] | null;

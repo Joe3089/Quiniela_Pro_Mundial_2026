@@ -32,24 +32,28 @@ function isThird(s: SeedSlot): s is ThirdSeed {
   return !Array.isArray(s);
 }
 
-// Official FIFA WC 2026 R32 bracket seedings (M73–M88, ordered by match date)
+// Official FIFA WC 2026 R32 seedings ordered by bracket_slot (visual position)
+// Left side (slots 0-7, top to bottom):
+//   0=M74, 1=M77, 2=M73, 3=M75, 4=M79, 5=M83, 6=M76, 7=M78
+// Right side (slots 8-15, top to bottom):
+//   8=M84, 9=M80, 10=M85, 11=M81, 12=M86, 13=M82, 14=M88, 15=M87
 const R32_SEEDING: { home: SeedSlot; away: SeedSlot }[] = [
-  { home: ["A", 2], away: ["B", 2] },                                        // M73
-  { home: ["E", 1], away: { pos: 3, groups: ["A","B","C","D","F"] } },       // M74
-  { home: ["F", 1], away: ["C", 2] },                                        // M75
-  { home: ["C", 1], away: ["F", 2] },                                        // M76
-  { home: ["I", 1], away: { pos: 3, groups: ["C","D","F","G","H"] } },       // M77
-  { home: ["E", 2], away: ["I", 2] },                                        // M78
-  { home: ["A", 1], away: { pos: 3, groups: ["C","E","F","H","I"] } },       // M79
-  { home: ["L", 1], away: { pos: 3, groups: ["E","H","I","J","K"] } },       // M80
-  { home: ["D", 1], away: { pos: 3, groups: ["B","E","F","I","J"] } },       // M81
-  { home: ["G", 1], away: { pos: 3, groups: ["A","H","I","J"] } },           // M82
-  { home: ["K", 2], away: ["L", 2] },                                        // M83
-  { home: ["H", 1], away: ["J", 2] },                                        // M84
-  { home: ["B", 1], away: { pos: 3, groups: ["E","F","G","I","J"] } },       // M85
-  { home: ["J", 1], away: ["H", 2] },                                        // M86
-  { home: ["K", 1], away: { pos: 3, groups: ["D","E","I","J","L"] } },       // M87
-  { home: ["D", 2], away: ["G", 2] },                                        // M88
+  { home: ["E", 1], away: { pos: 3, groups: ["A","B","C","D","F"] } },       // slot 0 = M74
+  { home: ["I", 1], away: { pos: 3, groups: ["C","D","F","G","H"] } },       // slot 1 = M77
+  { home: ["A", 2], away: ["B", 2] },                                        // slot 2 = M73
+  { home: ["F", 1], away: ["C", 2] },                                        // slot 3 = M75
+  { home: ["A", 1], away: { pos: 3, groups: ["C","E","F","H","I"] } },       // slot 4 = M79
+  { home: ["K", 2], away: ["L", 2] },                                        // slot 5 = M83
+  { home: ["C", 1], away: ["F", 2] },                                        // slot 6 = M76
+  { home: ["E", 2], away: ["I", 2] },                                        // slot 7 = M78
+  { home: ["H", 1], away: ["J", 2] },                                        // slot 8 = M84
+  { home: ["L", 1], away: { pos: 3, groups: ["E","H","I","J","K"] } },       // slot 9 = M80
+  { home: ["B", 1], away: { pos: 3, groups: ["E","F","G","I","J"] } },       // slot 10 = M85
+  { home: ["D", 1], away: { pos: 3, groups: ["B","E","F","I","J"] } },       // slot 11 = M81
+  { home: ["J", 1], away: ["H", 2] },                                        // slot 12 = M86
+  { home: ["G", 1], away: { pos: 3, groups: ["A","H","I","J"] } },           // slot 13 = M82
+  { home: ["D", 2], away: ["G", 2] },                                        // slot 14 = M88
+  { home: ["K", 1], away: { pos: 3, groups: ["D","E","I","J","L"] } },       // slot 15 = M87
 ];
 
 type TeamStanding = {
@@ -108,7 +112,7 @@ export async function runBracketSync() {
     teams.forEach((t, i) => { t.position = i + 1; });
   }
 
-  // Check how many groups have all 3 games played (each team played 3)
+  // Check how many groups have all 3 games played
   const completedGroups = GROUPS.filter((g) => {
     const teams = groupTeams[g] ?? [];
     return teams.length === 4 && teams.every((t) => t.played >= 3);
@@ -128,7 +132,6 @@ export async function runBracketSync() {
       b.goal_difference - a.goal_difference ||
       b.goals_for - a.goals_for
     );
-    // Keep only best 8
     thirdPlaceRanked = thirdPlaceRanked.slice(0, 8);
   }
 
@@ -142,13 +145,13 @@ export async function runBracketSync() {
     return null;
   }
 
-  // ── 3. Load R32 matches ordered by date ──────────────────────────────────────
+  // ── 3. Load R32 matches ordered by bracket_slot ───────────────────────────────
   const { data: r32Matches } = await supabase
     .from("matches")
-    .select("id, home_team_id, away_team_id, match_date, status")
+    .select("id, home_team_id, away_team_id, match_date, status, bracket_slot")
     .eq("tournament_id", TOURNAMENT_ID)
     .eq("phase", "round_of_32")
-    .order("match_date", { ascending: true });
+    .order("bracket_slot", { ascending: true });
 
   const r32 = r32Matches ?? [];
   const updates: Array<{ id: string; home_team_id: string | null; away_team_id: string | null }> = [];
@@ -157,7 +160,6 @@ export async function runBracketSync() {
   for (let slot = 0; slot < Math.min(R32_SEEDING.length, r32.length); slot++) {
     const match = r32[slot];
     if (!match) continue;
-    // Skip finished matches to avoid overwriting played results
     if (match.status === "finished" || match.status === "live") continue;
 
     const seeding = R32_SEEDING[slot];
@@ -174,12 +176,10 @@ export async function runBracketSync() {
 
     const homeId = resolveSlot(seeding.home);
     const awayId = resolveSlot(seeding.away);
-
-    // Always push update (even nulls) to overwrite wrong assignments
     updates.push({ id: match.id, home_team_id: homeId, away_team_id: awayId });
   }
 
-  // ── 5. KO Advancement: advance winners through rounds ─────────────────────────
+  // ── 5. KO Advancement ─────────────────────────────────────────────────────────
   const koAdvanceUpdates = await computeKOAdvancement(supabase);
   updates.push(...koAdvanceUpdates);
 
@@ -210,16 +210,17 @@ async function computeKOAdvancement(supabase: Awaited<ReturnType<typeof createAd
     quarter_final: "semi_final",
     semi_final: "final",
   };
-  const thirdPhase = "semi_final";
-  const thirdPlacePhase = "third_place";
 
   for (const phase of phases) {
+    // R32 uses bracket_slot order; other phases use match_date
+    const orderCol = phase === "round_of_32" ? "bracket_slot" : "match_date";
+
     const { data: phaseMtchs } = await supabase
       .from("matches")
-      .select("id, home_team_id, away_team_id, home_score, away_score, home_score_penalties, away_score_penalties, status, match_date")
+      .select("id, home_team_id, away_team_id, home_score, away_score, home_score_penalties, away_score_penalties, status, match_date, bracket_slot")
       .eq("tournament_id", TOURNAMENT_ID)
       .eq("phase", phase)
-      .order("match_date", { ascending: true });
+      .order(orderCol, { ascending: true });
 
     if (!phaseMtchs) continue;
 
@@ -233,7 +234,6 @@ async function computeKOAdvancement(supabase: Awaited<ReturnType<typeof createAd
 
     if (!nextPhaseMtchs) continue;
 
-    // Pair consecutive finished matches: [0,1]→nextSlot 0, [2,3]→nextSlot 1, etc.
     for (let i = 0; i < phaseMtchs.length; i += 2) {
       const matchA = phaseMtchs[i];
       const matchB = phaseMtchs[i + 1];
@@ -247,16 +247,17 @@ async function computeKOAdvancement(supabase: Awaited<ReturnType<typeof createAd
       const upd: { id: string; home_team_id?: string; away_team_id?: string } = { id: nextMatch.id };
       if (winnerA && !nextMatch.home_team_id) upd.home_team_id = winnerA;
       if (winnerB && !nextMatch.away_team_id) upd.away_team_id = winnerB;
-      if (upd.home_team_id || upd.away_team_id) updates.push({ ...upd, home_team_id: upd.home_team_id ?? null, away_team_id: upd.away_team_id ?? null });
+      if (upd.home_team_id || upd.away_team_id)
+        updates.push({ ...upd, home_team_id: upd.home_team_id ?? null, away_team_id: upd.away_team_id ?? null });
     }
 
-    // For semis: advance losers to 3rd place match
-    if (phase === thirdPhase) {
+    // Advance semi-final losers to 3rd place
+    if (phase === "semi_final") {
       const { data: thirdMatch } = await supabase
         .from("matches")
         .select("id, home_team_id, away_team_id")
         .eq("tournament_id", TOURNAMENT_ID)
-        .eq("phase", thirdPlacePhase)
+        .eq("phase", "third_place")
         .single();
 
       if (thirdMatch && !(thirdMatch.home_team_id && thirdMatch.away_team_id)) {
@@ -267,7 +268,8 @@ async function computeKOAdvancement(supabase: Awaited<ReturnType<typeof createAd
         const upd: { id: string; home_team_id?: string; away_team_id?: string } = { id: thirdMatch.id };
         if (loserA && !thirdMatch.home_team_id) upd.home_team_id = loserA;
         if (loserB && !thirdMatch.away_team_id) upd.away_team_id = loserB;
-        if (upd.home_team_id || upd.away_team_id) updates.push({ ...upd, home_team_id: upd.home_team_id ?? null, away_team_id: upd.away_team_id ?? null });
+        if (upd.home_team_id || upd.away_team_id)
+          updates.push({ ...upd, home_team_id: upd.home_team_id ?? null, away_team_id: upd.away_team_id ?? null });
       }
     }
   }
@@ -276,34 +278,22 @@ async function computeKOAdvancement(supabase: Awaited<ReturnType<typeof createAd
 }
 
 function getWinner(match: {
-  home_team_id: string | null;
-  away_team_id: string | null;
-  home_score: number | null;
-  away_score: number | null;
-  home_score_penalties?: number | null;
-  away_score_penalties?: number | null;
+  home_team_id: string | null; away_team_id: string | null;
+  home_score: number | null; away_score: number | null;
+  home_score_penalties?: number | null; away_score_penalties?: number | null;
 }): string | null {
   if (!match.home_team_id || !match.away_team_id) return null;
-  const hs = match.home_score ?? 0;
-  const as = match.away_score ?? 0;
+  const hs = match.home_score ?? 0, as = match.away_score ?? 0;
   if (hs > as) return match.home_team_id;
   if (as > hs) return match.away_team_id;
-  const hp = match.home_score_penalties ?? 0;
-  const ap = match.away_score_penalties ?? 0;
+  const hp = match.home_score_penalties ?? 0, ap = match.away_score_penalties ?? 0;
   if (hp > ap) return match.home_team_id;
   if (ap > hp) return match.away_team_id;
   return match.home_team_id;
 }
 
-function getLoser(match: {
-  home_team_id: string | null;
-  away_team_id: string | null;
-  home_score: number | null;
-  away_score: number | null;
-  home_score_penalties?: number | null;
-  away_score_penalties?: number | null;
-}): string | null {
-  const winner = getWinner(match);
-  if (!winner) return null;
-  return winner === match.home_team_id ? match.away_team_id : match.home_team_id;
+function getLoser(match: Parameters<typeof getWinner>[0]): string | null {
+  const w = getWinner(match);
+  if (!w) return null;
+  return w === match.home_team_id ? match.away_team_id : match.home_team_id;
 }
