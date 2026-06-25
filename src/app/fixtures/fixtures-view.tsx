@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Trophy, Users, GitBranch, Database } from "lucide-react";
+import { Trophy, Users, GitBranch, Database, CalendarDays } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { MatchCard } from "@/features/fixtures/components/match-card";
 import { GroupStandings, computeStandings } from "@/features/fixtures/components/group-standings";
@@ -11,7 +11,7 @@ import { TournamentBracket } from "@/features/fixtures/components/tournament-bra
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMatches, useGroups } from "@/features/fixtures/hooks/use-fixtures";
 import type { MatchPhase } from "@/types/database";
-import type { BracketRound, BracketMatch } from "@/types/fixtures";
+import type { BracketRound, BracketMatch, Match } from "@/types/fixtures";
 
 function EmptyDbState() {
   return (
@@ -92,6 +92,46 @@ export function FixturesView() {
   const groupMatches = matches?.filter((m) => m.phase === "group") ?? [];
   const bracketRounds = buildBracketRounds(matches);
 
+  const PHASE_LABELS: Record<string, string> = {
+    group: "Fase de Grupos",
+    round_of_32: "Ronda de 32",
+    round_of_16: "Octavos de Final",
+    quarter_final: "Cuartos de Final",
+    semi_final: "Semifinales",
+    third_place: "3er Lugar",
+    final: "Final",
+  };
+
+  // Build calendar: group all matches by local date (ET)
+  const calendarDays = useMemo(() => {
+    if (!matches?.length) return [];
+    const TZ = "America/New_York";
+    const grouped = new Map<string, Match[]>();
+    for (const m of matches) {
+      const d = new Date(m.match_date);
+      const key = new Intl.DateTimeFormat("en-CA", { timeZone: TZ }).format(d);
+      if (!grouped.has(key)) grouped.set(key, []);
+      grouped.get(key)!.push(m);
+    }
+    return Array.from(grouped.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([dateKey, dayMatches]) => {
+        const d = new Date(dateKey + "T12:00:00Z");
+        const label = new Intl.DateTimeFormat("es-MX", {
+          weekday: "long", day: "numeric", month: "long", timeZone: "UTC",
+        }).format(d);
+        const firstMatch = dayMatches[0];
+        let sublabel = "";
+        if (firstMatch.phase === "group") {
+          const rn = firstMatch.round_number;
+          sublabel = rn ? `Jornada ${rn}` : "Fase de Grupos";
+        } else {
+          sublabel = PHASE_LABELS[firstMatch.phase] ?? firstMatch.phase;
+        }
+        return { dateKey, label: label.charAt(0).toUpperCase() + label.slice(1), sublabel, dayMatches };
+      });
+  }, [matches]);
+
   // Compute best-thirds qualification map: groupId → boolean
   const thirdQualifiesMap = useMemo<Record<string, boolean>>(() => {
     if (!groups?.length) return {};
@@ -135,7 +175,7 @@ export function FixturesView() {
             Eliminación
           </TabsTrigger>
           <TabsTrigger value="calendario" className="gap-2">
-            <Trophy className="h-4 w-4" />
+            <CalendarDays className="h-4 w-4" />
             Calendario
           </TabsTrigger>
         </TabsList>
@@ -184,10 +224,25 @@ export function FixturesView() {
                 <Skeleton key={i} className="h-20 rounded-xl" />
               ))}
             </div>
-          ) : groupMatches.length > 0 ? (
-            <div className="space-y-2">
-              {groupMatches.map((match) => (
-                <MatchCard key={match.id} match={match} onClick={() => router.push(`/fixtures/${match.id}`)} />
+          ) : calendarDays.length > 0 ? (
+            <div className="space-y-6">
+              {calendarDays.map(({ dateKey, label, sublabel, dayMatches }) => (
+                <div key={dateKey}>
+                  <div className="flex items-center gap-2 mb-2 px-1">
+                    <CalendarDays className="h-3.5 w-3.5 text-[hsl(var(--brand-gold))] shrink-0" />
+                    <span className="text-sm font-black text-white">{label}</span>
+                    {sublabel && (
+                      <span className="text-[10px] font-semibold text-muted-foreground bg-white/5 border border-white/8 px-2 py-0.5 rounded-full">
+                        {sublabel}
+                      </span>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    {dayMatches.map((match) => (
+                      <MatchCard key={match.id} match={match} onClick={() => router.push(`/fixtures/${match.id}`)} />
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           ) : (
