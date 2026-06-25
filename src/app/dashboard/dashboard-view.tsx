@@ -17,6 +17,12 @@ import { useQuery } from "@tanstack/react-query";
 import { SCORING } from "@/constants";
 import { useFormatDate } from "@/hooks/use-format-date";
 import type { AFFixture } from "@/services/api-football";
+import dynamic from "next/dynamic";
+
+const WCTrophy = dynamic(() => import("@/components/ui/wc-trophy"), {
+  ssr: false,
+  loading: () => <div style={{ width: 72, height: 72 }} />,
+});
 
 async function fetchLiveMatches(): Promise<AFFixture[]> {
   try {
@@ -173,6 +179,10 @@ export function DashboardView() {
                 ? `Posición #${userRank.rank_position} · ${userRank.total_points ?? 0} puntos`
                 : "Bienvenido a tu panel de predicciones"}
             </p>
+          </div>
+          {/* WC Trophy */}
+          <div className="shrink-0 flex items-center justify-center" style={{ minWidth: 72 }}>
+            <WCTrophy size={72} />
           </div>
           {/* Compact stat highlight */}
           <div className="hidden sm:flex flex-col items-end gap-1 shrink-0">

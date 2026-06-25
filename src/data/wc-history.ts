@@ -84,34 +84,36 @@ export const WC_CHAMPIONS: WCChampion[] = [
   { country: "España",      flag: "🇪🇸", fifaCode: "ESP", titles: 1, years: [2010], runnerUp: 0, runnerUpYears: [], thirdPlace: 0, confederation: "UEFA" },
 ];
 
+// Updated with WC 2026 stats: Messi +5 (18 total, new record), Mbappé +4 (16, ties Klose),
+// CR7 +2 (10 total), Kane +2 (10 total)
 export const ALL_TIME_SCORERS: TopScorer[] = [
-  { rank: 1,  name: "Miroslav Klose",   country: "Alemania",  flag: "🇩🇪", fifaCode: "GER", confederation: "UEFA",     goals: 16, editions: 4, years: "2002–2014" },
-  { rank: 2,  name: "Ronaldo (R9)",     country: "Brasil",    flag: "🇧🇷", fifaCode: "BRA", confederation: "CONMEBOL", goals: 15, editions: 4, years: "1994–2006" },
-  { rank: 3,  name: "Gerd Müller",      country: "Alemania",  flag: "🇩🇪", fifaCode: "GER", confederation: "UEFA",     goals: 14, editions: 2, years: "1970–1974" },
-  { rank: 4,  name: "Just Fontaine",    country: "Francia",   flag: "🇫🇷", fifaCode: "FRA", confederation: "UEFA",     goals: 13, editions: 1, years: "1958" },
-  { rank: 5,  name: "Pelé",             country: "Brasil",    flag: "🇧🇷", fifaCode: "BRA", confederation: "CONMEBOL", goals: 12, editions: 4, years: "1958–1970" },
-  { rank: 6,  name: "Kylian Mbappé",    country: "Francia",   flag: "🇫🇷", fifaCode: "FRA", confederation: "UEFA",     goals: 12, editions: 2, years: "2018–2022" },
-  { rank: 7,  name: "Sándor Kocsis",    country: "Hungría",   flag: "🇭🇺", fifaCode: "HUN", confederation: "UEFA",     goals: 11, editions: 1, years: "1954" },
+  { rank: 1,  name: "Lionel Messi",     country: "Argentina", flag: "🇦🇷", fifaCode: "ARG", confederation: "CONMEBOL", goals: 18, editions: 6, years: "2006–2026" },
+  { rank: 2,  name: "Miroslav Klose",   country: "Alemania",  flag: "🇩🇪", fifaCode: "GER", confederation: "UEFA",     goals: 16, editions: 4, years: "2002–2014" },
+  { rank: 2,  name: "Kylian Mbappé",    country: "Francia",   flag: "🇫🇷", fifaCode: "FRA", confederation: "UEFA",     goals: 16, editions: 3, years: "2018–2026" },
+  { rank: 4,  name: "Ronaldo (R9)",     country: "Brasil",    flag: "🇧🇷", fifaCode: "BRA", confederation: "CONMEBOL", goals: 15, editions: 4, years: "1994–2006" },
+  { rank: 5,  name: "Gerd Müller",      country: "Alemania",  flag: "🇩🇪", fifaCode: "GER", confederation: "UEFA",     goals: 14, editions: 2, years: "1970–1974" },
+  { rank: 6,  name: "Just Fontaine",    country: "Francia",   flag: "🇫🇷", fifaCode: "FRA", confederation: "UEFA",     goals: 13, editions: 1, years: "1958" },
+  { rank: 7,  name: "Pelé",             country: "Brasil",    flag: "🇧🇷", fifaCode: "BRA", confederation: "CONMEBOL", goals: 12, editions: 4, years: "1958–1970" },
+  { rank: 8,  name: "Sándor Kocsis",    country: "Hungría",   flag: "🇭🇺", fifaCode: "HUN", confederation: "UEFA",     goals: 11, editions: 1, years: "1954" },
   { rank: 8,  name: "Jürgen Klinsmann", country: "Alemania",  flag: "🇩🇪", fifaCode: "GER", confederation: "UEFA",     goals: 11, editions: 3, years: "1990–1998" },
-  { rank: 9,  name: "Gabriel Batistuta",country: "Argentina", flag: "🇦🇷", fifaCode: "ARG", confederation: "CONMEBOL", goals: 10, editions: 3, years: "1994–2002" },
+  { rank: 10, name: "Gabriel Batistuta",country: "Argentina", flag: "🇦🇷", fifaCode: "ARG", confederation: "CONMEBOL", goals: 10, editions: 3, years: "1994–2002" },
   { rank: 10, name: "Gary Lineker",     country: "Inglaterra",flag: "󠁧󠁢󠁥󠁮󠁧󠁿🏴󠁧󠁢󠁥󠁮󠁧󠁿", fifaCode: "ENG", confederation: "UEFA",     goals: 10, editions: 2, years: "1986–1990" },
-  { rank: 11, name: "Teófilo Cubillas", country: "Perú",      flag: "🇵🇪", fifaCode: "PER", confederation: "CONMEBOL", goals: 10, editions: 2, years: "1970–1978" },
-  { rank: 12, name: "Grzegorz Lato",    country: "Polonia",   flag: "🇵🇱", fifaCode: "POL", confederation: "UEFA",     goals: 10, editions: 3, years: "1974–1982" },
-  { rank: 13, name: "Harry Kane",       country: "Inglaterra",flag: "󠁧󠁢󠁥󠁮󠁧󠁿🏴󠁧󠁢󠁥󠁮󠁧󠁿", fifaCode: "ENG", confederation: "UEFA",     goals: 8,  editions: 2, years: "2018–2022" },
-  { rank: 14, name: "Cristiano Ronaldo",country: "Portugal",  flag: "🇵🇹", fifaCode: "POR", confederation: "UEFA",     goals: 8,  editions: 5, years: "2006–2022" },
-  { rank: 15, name: "Lionel Messi",     country: "Argentina", flag: "🇦🇷", fifaCode: "ARG", confederation: "CONMEBOL", goals: 13, editions: 5, years: "2006–2022" },
+  { rank: 10, name: "Teófilo Cubillas", country: "Perú",      flag: "🇵🇪", fifaCode: "PER", confederation: "CONMEBOL", goals: 10, editions: 2, years: "1970–1978" },
+  { rank: 10, name: "Grzegorz Lato",    country: "Polonia",   flag: "🇵🇱", fifaCode: "POL", confederation: "UEFA",     goals: 10, editions: 3, years: "1974–1982" },
+  { rank: 10, name: "Harry Kane",       country: "Inglaterra",flag: "󠁧󠁢󠁥󠁮󠁧󠁿🏴󠁧󠁢󠁥󠁮󠁧󠁿", fifaCode: "ENG", confederation: "UEFA",     goals: 10, editions: 3, years: "2018–2026" },
+  { rank: 10, name: "Cristiano Ronaldo",country: "Portugal",  flag: "🇵🇹", fifaCode: "POR", confederation: "UEFA",     goals: 10, editions: 6, years: "2006–2026" },
 ];
 
 export const RECORDS_2026: WCRecord[] = [
   {
     category: "Goleador histórico",
     record: "Más goles en Copas del Mundo",
-    holder: "Miroslav Klose (Alemania)",
-    value: "16 goles (2002–2014)",
-    year: 2014,
-    vulnerable: true,
-    challengedBy: "Kylian Mbappé (Francia) – 12 goles",
-    context: "Mbappé necesita 5 goles en 2026 para igualar el récord a los 27 años."
+    holder: "Lionel Messi (Argentina) 🏆",
+    value: "18 goles (2006–2026) — NUEVO RÉCORD",
+    year: 2026,
+    vulnerable: false,
+    challengedBy: "Kylian Mbappé (Francia) – 16 goles",
+    context: "Messi superó a Klose (16) en el Mundial 2026 con 18 goles históricos. Mbappé alcanzó también a Klose con 16."
   },
   {
     category: "Goles en un torneo",
@@ -126,9 +128,9 @@ export const RECORDS_2026: WCRecord[] = [
     category: "Participaciones",
     record: "Más Mundiales jugados (jugador)",
     holder: "Lionel Messi / Cristiano Ronaldo",
-    value: "5 Mundiales",
+    value: "6 Mundiales (2026) — NUEVO RÉCORD",
     vulnerable: false,
-    context: "Tanto Messi (38) como CR7 (41) podrían jugar un 6to Mundial, lo que sería histórico."
+    context: "Tanto Messi como CR7 están disputando su 6to Mundial en 2026, estableciendo un nuevo récord histórico de participaciones."
   },
   {
     category: "Participaciones selección",

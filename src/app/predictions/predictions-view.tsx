@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Target, Lock, CheckCircle2, Clock, Users, Star, ChevronDown, Goal, AlertTriangle, ArrowLeftRight } from "lucide-react";
+import { Target, Lock, CheckCircle2, Clock, Users, Star, ChevronDown, Goal, AlertTriangle, ArrowLeftRight, UserRound, Gavel } from "lucide-react";
 import Link from "next/link";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -250,18 +250,108 @@ function TodayMatchesBanner({ matches, predictionMap }: {
   );
 }
 
-/* ── Finished Prediction with match events ────────────────── */
-interface MatchEvent {
-  id: string; type: string; player_name: string; minute: number;
-  minute_extra: number; assist_name: string | null; team_id: string | null;
+/* ── Finished Prediction with full match detail ───────────── */
+interface MatchDetailEvent {
+  minute: number; minuteExtra: number | null;
+  teamName: string; teamLogo: string | null;
+  playerName: string; assistName: string | null;
+  type: string; detail: string;
+}
+interface LineupPlayer { id: number; name: string; number: number; position: string; grid: string | null; }
+interface TeamLineup {
+  teamName: string; teamLogo: string | null; formation: string | null; coach: string | null;
+  starters: LineupPlayer[]; substitutes: LineupPlayer[];
+}
+interface MatchDetail {
+  referee: string | null; refereeCountry: string | null;
+  lineups: { home: TeamLineup | null; away: TeamLineup | null };
+  events: MatchDetailEvent[];
 }
 
-function eventIcon(type: string) {
-  if (type === "goal" || type === "penalty") return <Goal className="h-3 w-3 text-emerald-400 shrink-0" />;
-  if (type === "yellow_card") return <AlertTriangle className="h-3 w-3 text-yellow-400 shrink-0" />;
-  if (type === "red_card") return <AlertTriangle className="h-3 w-3 text-red-400 shrink-0" />;
-  if (type === "substitution") return <ArrowLeftRight className="h-3 w-3 text-blue-400 shrink-0" />;
-  return <ChevronDown className="h-3 w-3 text-muted-foreground shrink-0" />;
+const POS_COLORS: Record<string, string> = {
+  G: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
+  D: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+  M: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
+  F: "bg-red-500/20 text-red-400 border-red-500/30",
+};
+const POS_LABELS: Record<string, string> = { G: "POR", D: "DEF", M: "MED", F: "DEL" };
+
+function posClass(pos: string) {
+  const k = pos?.charAt(0).toUpperCase() ?? "M";
+  return POS_COLORS[k] ?? "bg-white/10 text-white/60 border-white/15";
+}
+function posLabel(pos: string) {
+  return POS_LABELS[pos?.charAt(0).toUpperCase() ?? ""] ?? pos;
+}
+
+function eventIcon(type: string, detail: string) {
+  if (type === "Goal") {
+    if (detail === "Penalty") return <Goal className="h-3 w-3 text-amber-400 shrink-0" />;
+    if (detail === "Own Goal") return <Goal className="h-3 w-3 text-red-400 shrink-0" />;
+    return <Goal className="h-3 w-3 text-emerald-400 shrink-0" />;
+  }
+  if (type === "subst") return <ArrowLeftRight className="h-3 w-3 text-blue-400 shrink-0" />;
+  if (type === "Card") {
+    if (detail === "Red Card") return <AlertTriangle className="h-3 w-3 text-red-500 shrink-0" />;
+    return <AlertTriangle className="h-3 w-3 text-yellow-400 shrink-0" />;
+  }
+  return null;
+}
+
+function LineupColumn({ lineup, side }: { lineup: TeamLineup; side: "home" | "away" }) {
+  const borderCls = side === "home" ? "border-r border-white/8" : "";
+  return (
+    <div className={`flex-1 ${borderCls} p-3`}>
+      <div className="flex items-center gap-2 mb-2">
+        {lineup.teamLogo && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={lineup.teamLogo} alt={lineup.teamName} width={20} height={20} className="h-5 w-5 object-contain" />
+        )}
+        <div>
+          <p className="text-xs font-bold text-white truncate">{lineup.teamName}</p>
+          {lineup.formation && <p className="text-[10px] text-muted-foreground">{lineup.formation}</p>}
+        </div>
+      </div>
+      {lineup.coach && (
+        <p className="text-[10px] text-muted-foreground mb-1.5 flex items-center gap-1">
+          <UserRound className="h-2.5 w-2.5 shrink-0" />
+          DT: {lineup.coach}
+        </p>
+      )}
+      <p className="text-[9px] font-black text-muted-foreground/60 uppercase tracking-widest mb-1">XI Titular</p>
+      <div className="space-y-1 mb-2">
+        {lineup.starters.map((p) => (
+          <div key={p.id} className="flex items-center gap-1.5">
+            <span className="h-5 w-5 rounded text-[9px] font-black flex items-center justify-center bg-white/8 text-white/70 shrink-0">
+              {p.number}
+            </span>
+            <span className="text-[11px] text-white/90 flex-1 truncate">{p.name}</span>
+            <span className={cn("text-[8px] font-bold px-1 py-0.5 rounded border shrink-0", posClass(p.position))}>
+              {posLabel(p.position)}
+            </span>
+          </div>
+        ))}
+      </div>
+      {lineup.substitutes.length > 0 && (
+        <>
+          <p className="text-[9px] font-black text-muted-foreground/60 uppercase tracking-widest mb-1">Suplentes</p>
+          <div className="space-y-1">
+            {lineup.substitutes.map((p) => (
+              <div key={p.id} className="flex items-center gap-1.5 opacity-60">
+                <span className="h-5 w-5 rounded text-[9px] font-black flex items-center justify-center bg-white/5 text-white/50 shrink-0">
+                  {p.number}
+                </span>
+                <span className="text-[11px] text-white/70 flex-1 truncate">{p.name}</span>
+                <span className={cn("text-[8px] font-bold px-1 py-0.5 rounded border shrink-0 opacity-70", posClass(p.position))}>
+                  {posLabel(p.position)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
 }
 
 function FinishedPredictionCard({
@@ -272,8 +362,8 @@ function FinishedPredictionCard({
   prediction?: { home: number; away: number } | null;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const [events, setEvents] = useState<MatchEvent[] | null>(null);
-  const [loadingEvents, setLoadingEvents] = useState(false);
+  const [detail, setDetail] = useState<MatchDetail | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const pointsEarned = (() => {
     if (!prediction) return null;
@@ -291,53 +381,34 @@ function FinishedPredictionCard({
   })();
 
   const toggleExpand = async () => {
-    if (!expanded && events === null) {
-      setLoadingEvents(true);
+    if (!expanded && !detail) {
+      setLoading(true);
       try {
-        const res = await fetch(`/api/matches/${match.id}/events`);
-        if (res.ok) setEvents(await res.json());
-        else setEvents([]);
-      } catch { setEvents([]); }
-      setLoadingEvents(false);
+        const res = await fetch(`/api/matches/${match.id}/detail`);
+        if (res.ok) setDetail(await res.json());
+      } catch { /* non-fatal */ }
+      setLoading(false);
     }
     setExpanded(!expanded);
   };
 
-  const homeCode = match.home_team?.fifa_code;
-  const awayCode = match.away_team?.fifa_code;
+  const goals = detail?.events.filter((e) => e.type === "Goal") ?? [];
+  const subs = detail?.events.filter((e) => e.type === "subst") ?? [];
+  const cards = detail?.events.filter((e) => e.type === "Card") ?? [];
 
   return (
     <div className="glass rounded-xl border border-border/40 overflow-hidden">
-      <button
-        className="w-full text-left hover:bg-white/3 transition-colors"
-        onClick={toggleExpand}
-      >
+      <button className="w-full text-left hover:bg-white/3 transition-colors" onClick={toggleExpand}>
         <MatchCard match={match} showPrediction={!!prediction} prediction={prediction} compact />
-        {/* Points earned row */}
         <div className="px-4 pb-3 flex items-center justify-between gap-2">
-          {prediction && pointsEarned !== null && (
+          {prediction && pointsEarned !== null ? (
             <span className={cn("text-xs font-bold", pointsEarned.cls)}>
               {pointsEarned.pts > 0 ? `+${pointsEarned.pts} pts` : "0 pts"} · {pointsEarned.label}
             </span>
+          ) : (
+            <span className="text-xs text-muted-foreground">Sin predicción</span>
           )}
-          {!prediction && <span className="text-xs text-muted-foreground">Sin predicción</span>}
-          <div className="flex items-center gap-2">
-            {(homeCode || awayCode) && (
-              <div className="flex items-center gap-1">
-                {homeCode && (
-                  <Link href={`/selecciones/${homeCode}`} onClick={(e) => e.stopPropagation()} className="flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 hover:bg-emerald-500/20">
-                    <Users className="h-3 w-3" /> XI {homeCode}
-                  </Link>
-                )}
-                {awayCode && (
-                  <Link href={`/selecciones/${awayCode}`} onClick={(e) => e.stopPropagation()} className="flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-lg bg-blue-500/10 border border-blue-500/25 text-blue-400 hover:bg-blue-500/20">
-                    <Users className="h-3 w-3" /> XI {awayCode}
-                  </Link>
-                )}
-              </div>
-            )}
-            <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", expanded && "rotate-180")} />
-          </div>
+          <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform shrink-0", expanded && "rotate-180")} />
         </div>
       </button>
 
@@ -349,57 +420,140 @@ function FinishedPredictionCard({
             exit={{ height: 0, opacity: 0 }}
             className="border-t border-border/20 overflow-hidden"
           >
-            <div className="p-4 space-y-3">
-              {/* Prediction detail */}
-              {prediction && (
-                <div className="rounded-lg bg-white/4 border border-white/8 p-3">
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Tu predicción</p>
-                  <div className="flex items-center gap-2 text-sm font-bold">
-                    <span className="text-white">{match.home_team?.short_name ?? match.home_team?.name}</span>
-                    <span className={cn("tabular-nums px-2 py-0.5 rounded font-black", pointsEarned?.pts === 5 ? "bg-primary/20 text-primary" : "text-white/70")}>
-                      {prediction.home} – {prediction.away}
-                    </span>
-                    <span className="text-white">{match.away_team?.short_name ?? match.away_team?.name}</span>
-                    {pointsEarned && (
-                      <span className={cn("ml-auto text-xs font-bold", pointsEarned.cls)}>
-                        {pointsEarned.pts > 0 ? `+${pointsEarned.pts}` : "✗"}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              )}
+            {loading && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground p-4">
+                <div className="h-3 w-3 border border-muted-foreground/40 border-t-transparent rounded-full animate-spin" />
+                Cargando detalles del partido...
+              </div>
+            )}
 
-              {/* Match events */}
-              {loadingEvents && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
-                  <div className="h-3 w-3 border border-muted-foreground/40 border-t-transparent rounded-full animate-spin" />
-                  Cargando eventos del partido...
-                </div>
-              )}
-              {!loadingEvents && events && events.length > 0 && (
-                <div>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Eventos del partido</p>
-                  <div className="space-y-1.5">
-                    {events.map((e) => (
-                      <div key={e.id} className="flex items-center gap-2 text-xs">
-                        <span className="w-8 text-right text-muted-foreground tabular-nums font-mono shrink-0">
-                          {e.minute}{e.minute_extra > 0 ? `+${e.minute_extra}` : ""}&apos;
+            {!loading && (
+              <div className="space-y-0">
+                {/* Tu predicción */}
+                {prediction && (
+                  <div className="mx-4 my-3 rounded-lg bg-white/4 border border-white/8 p-3">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Tu predicción</p>
+                    <div className="flex items-center gap-2 text-sm font-bold flex-wrap">
+                      <span className="text-white">{match.home_team?.short_name ?? match.home_team?.name}</span>
+                      <span className={cn("tabular-nums px-2 py-0.5 rounded font-black", pointsEarned?.pts === 5 ? "bg-primary/20 text-primary" : "text-white/70")}>
+                        {prediction.home} – {prediction.away}
+                      </span>
+                      <span className="text-white">{match.away_team?.short_name ?? match.away_team?.name}</span>
+                      {pointsEarned && (
+                        <span className={cn("ml-auto text-xs font-bold", pointsEarned.cls)}>
+                          {pointsEarned.pts > 0 ? `+${pointsEarned.pts}` : "✗"}
                         </span>
-                        {eventIcon(e.type)}
-                        <span className="text-white/90 font-medium truncate">{e.player_name}</span>
-                        {e.assist_name && (
-                          <span className="text-muted-foreground truncate">(A: {e.assist_name})</span>
-                        )}
-                        {e.type === "penalty" && <span className="text-[9px] px-1 py-0.5 rounded bg-yellow-500/15 text-yellow-400 font-bold shrink-0">PEN</span>}
-                      </div>
-                    ))}
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
-              {!loadingEvents && events !== null && events.length === 0 && (
-                <p className="text-xs text-muted-foreground">No hay eventos registrados para este partido.</p>
-              )}
-            </div>
+                )}
+
+                {/* Goles */}
+                {goals.length > 0 && (
+                  <div className="px-4 py-2.5 border-t border-white/5">
+                    <p className="text-[10px] font-black text-muted-foreground/70 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                      <Goal className="h-3 w-3 text-emerald-400" /> Goles
+                    </p>
+                    <div className="space-y-1">
+                      {goals.map((e, i) => (
+                        <div key={i} className="flex items-center gap-2 text-xs">
+                          <span className="w-7 text-right text-muted-foreground tabular-nums shrink-0">
+                            {e.minute}{e.minuteExtra ? `+${e.minuteExtra}` : ""}&apos;
+                          </span>
+                          {eventIcon(e.type, e.detail)}
+                          <span className="font-semibold text-white/90 truncate">{e.playerName}</span>
+                          {e.assistName && <span className="text-muted-foreground truncate">(A: {e.assistName})</span>}
+                          {e.detail === "Penalty" && <span className="text-[9px] px-1 py-0.5 rounded bg-amber-500/15 text-amber-400 font-bold shrink-0">PEN</span>}
+                          {e.detail === "Own Goal" && <span className="text-[9px] px-1 py-0.5 rounded bg-red-500/15 text-red-400 font-bold shrink-0">PP</span>}
+                          {e.teamLogo && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={e.teamLogo} alt="" width={12} height={12} className="h-3 w-3 object-contain ml-auto shrink-0 opacity-60" />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Tarjetas */}
+                {cards.length > 0 && (
+                  <div className="px-4 py-2.5 border-t border-white/5">
+                    <p className="text-[10px] font-black text-muted-foreground/70 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                      <AlertTriangle className="h-3 w-3 text-yellow-400" /> Tarjetas
+                    </p>
+                    <div className="space-y-1">
+                      {cards.map((e, i) => (
+                        <div key={i} className="flex items-center gap-2 text-xs">
+                          <span className="w-7 text-right text-muted-foreground tabular-nums shrink-0">{e.minute}&apos;</span>
+                          {eventIcon(e.type, e.detail)}
+                          <span className="font-semibold text-white/90 truncate">{e.playerName}</span>
+                          <span className={cn("text-[9px] px-1 py-0.5 rounded font-bold shrink-0", e.detail === "Red Card" ? "bg-red-500/20 text-red-400" : "bg-yellow-500/20 text-yellow-400")}>
+                            {e.detail === "Red Card" ? "ROJA" : "AMARILLA"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Cambios */}
+                {subs.length > 0 && (
+                  <div className="px-4 py-2.5 border-t border-white/5">
+                    <p className="text-[10px] font-black text-muted-foreground/70 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                      <ArrowLeftRight className="h-3 w-3 text-blue-400" /> Cambios
+                    </p>
+                    <div className="space-y-1">
+                      {subs.map((e, i) => (
+                        <div key={i} className="flex items-center gap-2 text-xs">
+                          <span className="w-7 text-right text-muted-foreground tabular-nums shrink-0">{e.minute}&apos;</span>
+                          <ArrowLeftRight className="h-3 w-3 text-blue-400 shrink-0" />
+                          <span className="text-emerald-400 truncate">{e.playerName}</span>
+                          {e.assistName && <><span className="text-muted-foreground">↔</span><span className="text-red-400/80 truncate">{e.assistName}</span></>}
+                          {e.teamLogo && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={e.teamLogo} alt="" width={12} height={12} className="h-3 w-3 object-contain ml-auto shrink-0 opacity-50" />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Alineaciones */}
+                {(detail?.lineups.home || detail?.lineups.away) && (
+                  <div className="border-t border-white/5">
+                    <div className="px-4 py-2 flex items-center gap-1.5">
+                      <Users className="h-3 w-3 text-[hsl(var(--primary))]" />
+                      <p className="text-[10px] font-black text-muted-foreground/70 uppercase tracking-widest">Alineaciones</p>
+                    </div>
+                    <div className="flex divide-x divide-white/8">
+                      {detail.lineups.home && <LineupColumn lineup={detail.lineups.home} side="home" />}
+                      {detail.lineups.away && <LineupColumn lineup={detail.lineups.away} side="away" />}
+                    </div>
+                  </div>
+                )}
+
+                {/* Terna arbitral */}
+                {detail?.referee && (
+                  <div className="px-4 py-2.5 border-t border-white/5 flex items-center gap-2">
+                    <Gavel className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
+                    <div>
+                      <p className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest">Árbitro</p>
+                      <p className="text-xs text-white/80 font-medium">
+                        {detail.referee}
+                        {detail.refereeCountry && (
+                          <span className="ml-1.5 text-muted-foreground">({detail.refereeCountry})</span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {!detail && !loading && (
+                  <p className="text-xs text-muted-foreground px-4 py-3">No hay datos disponibles para este partido.</p>
+                )}
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
