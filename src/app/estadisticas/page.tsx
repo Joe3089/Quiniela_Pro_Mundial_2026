@@ -42,9 +42,8 @@ const FEDERATION_CRESTS: Record<string, string> = {
 };
 
 // Verified API-Football player IDs (tested against API)
+// Used ONLY for WC 2026 goal additions — Messi/Mbappé excluded (already in ALL_TIME_SCORERS with 2026 total)
 const PLAYER_API_IDS: Record<string, number> = {
-  // Current players — IDs verified ✓
-  // Messi and Mbappé omitted: their totals in ALL_TIME_SCORERS already include WC 2026
   "Erling Haaland":     1100,
   "Harry Kane":         184,
   "Cristiano Ronaldo":  874,
@@ -52,6 +51,13 @@ const PLAYER_API_IDS: Record<string, number> = {
   "Neymar":             276,
   "Vinícius Jr.":       384384,
   "Julián Álvarez":     342666,
+};
+
+// Separate map for API-Football photo IDs (includes Messi/Mbappé for photo only)
+const PLAYER_PHOTO_API_IDS: Record<string, number> = {
+  ...PLAYER_API_IDS,
+  "Lionel Messi":  154,
+  "Kylian Mbappé": 278,
 };
 
 // Direct photo URLs for historical players not available in API-Football
@@ -76,7 +82,7 @@ const TEAM_COLORS: Record<string, string> = {
 };
 
 function PlayerPhoto({ name, fifaCode, size = 32 }: { name: string; fifaCode?: string; size?: number }) {
-  const apiId = PLAYER_API_IDS[name];
+  const apiId = PLAYER_PHOTO_API_IDS[name];
   const directUrl = PLAYER_PHOTO_URLS[name];
   const kitColor = fifaCode ? (TEAM_COLORS[fifaCode] ?? "1D4ED8") : "1D4ED8";
 
