@@ -17,18 +17,18 @@ const R32_SEEDS: Record<number, { home: string; away: string }> = {
   1:  { home: "1I",  away: "3CDFGH" },
   2:  { home: "2A",  away: "2B"     },
   3:  { home: "1F",  away: "2C"     },
-  4:  { home: "1A",  away: "3CEFHI" },
-  5:  { home: "2K",  away: "2L"     },
-  6:  { home: "1C",  away: "2F"     },
-  7:  { home: "2E",  away: "2I"     },
-  8:  { home: "1H",  away: "2J"     },
-  9:  { home: "1L",  away: "3EHIJK" },
-  10: { home: "1B",  away: "3EFGIJ" },
-  11: { home: "1D",  away: "3BEFIJ" },
-  12: { home: "1J",  away: "2H"     },
-  13: { home: "1G",  away: "3AHIJ"  },
-  14: { home: "2D",  away: "2G"     },
-  15: { home: "1K",  away: "3DEIJL" },
+  4:  { home: "2K",  away: "2L"     },  // M83
+  5:  { home: "1H",  away: "2J"     },  // M84
+  6:  { home: "1D",  away: "3BEFIJ" },  // M81
+  7:  { home: "1G",  away: "3AHIJ"  },  // M82
+  8:  { home: "1C",  away: "2F"     },  // M76
+  9:  { home: "2E",  away: "2I"     },  // M78
+  10: { home: "1A",  away: "3CEFHI" },  // M79
+  11: { home: "1L",  away: "3EHIJK" },  // M80
+  12: { home: "1J",  away: "2H"     },  // M86
+  13: { home: "2D",  away: "2G"     },  // M88
+  14: { home: "1B",  away: "3EFGIJ" },  // M85
+  15: { home: "1K",  away: "3DEIJL" },  // M87
 };
 
 // ── Constants ─────────────────────────────────────────────────────────────────

@@ -575,13 +575,17 @@ export function PredictionsView() {
 
   const now = Date.now();
   const todayStr = new Date().toDateString();
-  const open = allMatches?.filter((m) => m.status === "scheduled" && new Date(m.match_date).getTime() > now) ?? [];
+  const byDate = (a: { match_date: string }, b: { match_date: string }) =>
+    new Date(a.match_date).getTime() - new Date(b.match_date).getTime();
+  const open = (allMatches?.filter((m) => m.status === "scheduled" && new Date(m.match_date).getTime() > now) ?? [])
+    .sort(byDate);
   // Guardadas: today's matches that already have a prediction saved
-  const savedToday = allMatches?.filter((m) => {
+  const savedToday = (allMatches?.filter((m) => {
     const isToday = new Date(m.match_date).toDateString() === todayStr;
     return isToday && predictionMap.has(m.id);
-  }) ?? [];
-  const finished = allMatches?.filter((m) => m.status === "finished" || (m.status === "scheduled" && new Date(m.match_date).getTime() <= now)) ?? [];
+  }) ?? []).sort(byDate);
+  const finished = (allMatches?.filter((m) => m.status === "finished" || (m.status === "scheduled" && new Date(m.match_date).getTime() <= now)) ?? [])
+    .sort(byDate);
   const isLoading = matchesLoading || predsLoading;
 
   return (

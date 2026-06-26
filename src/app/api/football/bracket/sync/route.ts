@@ -34,25 +34,25 @@ function isThird(s: SeedSlot): s is ThirdSeed {
 
 // Official FIFA WC 2026 R32 seedings ordered by bracket_slot (visual position)
 // Left side (slots 0-7, top to bottom):
-//   0=M74, 1=M77, 2=M73, 3=M75, 4=M79, 5=M83, 6=M76, 7=M78
+//   0=M74, 1=M77, 2=M73, 3=M75, 4=M83, 5=M84, 6=M81, 7=M82
 // Right side (slots 8-15, top to bottom):
-//   8=M84, 9=M80, 10=M85, 11=M81, 12=M86, 13=M82, 14=M88, 15=M87
+//   8=M76, 9=M78, 10=M79, 11=M80, 12=M86, 13=M88, 14=M85, 15=M87
 const R32_SEEDING: { home: SeedSlot; away: SeedSlot }[] = [
   { home: ["E", 1], away: { pos: 3, groups: ["A","B","C","D","F"] } },       // slot 0 = M74
   { home: ["I", 1], away: { pos: 3, groups: ["C","D","F","G","H"] } },       // slot 1 = M77
   { home: ["A", 2], away: ["B", 2] },                                        // slot 2 = M73
   { home: ["F", 1], away: ["C", 2] },                                        // slot 3 = M75
-  { home: ["A", 1], away: { pos: 3, groups: ["C","E","F","H","I"] } },       // slot 4 = M79
-  { home: ["K", 2], away: ["L", 2] },                                        // slot 5 = M83
-  { home: ["C", 1], away: ["F", 2] },                                        // slot 6 = M76
-  { home: ["E", 2], away: ["I", 2] },                                        // slot 7 = M78
-  { home: ["H", 1], away: ["J", 2] },                                        // slot 8 = M84
-  { home: ["L", 1], away: { pos: 3, groups: ["E","H","I","J","K"] } },       // slot 9 = M80
-  { home: ["B", 1], away: { pos: 3, groups: ["E","F","G","I","J"] } },       // slot 10 = M85
-  { home: ["D", 1], away: { pos: 3, groups: ["B","E","F","I","J"] } },       // slot 11 = M81
+  { home: ["K", 2], away: ["L", 2] },                                        // slot 4 = M83
+  { home: ["H", 1], away: ["J", 2] },                                        // slot 5 = M84
+  { home: ["D", 1], away: { pos: 3, groups: ["B","E","F","I","J"] } },       // slot 6 = M81
+  { home: ["G", 1], away: { pos: 3, groups: ["A","H","I","J"] } },           // slot 7 = M82
+  { home: ["C", 1], away: ["F", 2] },                                        // slot 8 = M76
+  { home: ["E", 2], away: ["I", 2] },                                        // slot 9 = M78
+  { home: ["A", 1], away: { pos: 3, groups: ["C","E","F","H","I"] } },       // slot 10 = M79
+  { home: ["L", 1], away: { pos: 3, groups: ["E","H","I","J","K"] } },       // slot 11 = M80
   { home: ["J", 1], away: ["H", 2] },                                        // slot 12 = M86
-  { home: ["G", 1], away: { pos: 3, groups: ["A","H","I","J"] } },           // slot 13 = M82
-  { home: ["D", 2], away: ["G", 2] },                                        // slot 14 = M88
+  { home: ["D", 2], away: ["G", 2] },                                        // slot 13 = M88
+  { home: ["B", 1], away: { pos: 3, groups: ["E","F","G","I","J"] } },       // slot 14 = M85
   { home: ["K", 1], away: { pos: 3, groups: ["D","E","I","J","L"] } },       // slot 15 = M87
 ];
 
