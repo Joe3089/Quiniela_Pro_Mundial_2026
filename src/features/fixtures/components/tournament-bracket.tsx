@@ -11,6 +11,26 @@ const WCTrophy = dynamic(() => import("@/components/ui/wc-trophy"), {
   loading: () => <div style={{ width: 110, height: 110 }} />,
 });
 
+// ── R32 seeding labels per bracket_slot (0-15) ───────────────────────────────
+const R32_SEEDS: Record<number, { home: string; away: string }> = {
+  0:  { home: "1E",  away: "3ABCDF" },
+  1:  { home: "1I",  away: "3CDFGH" },
+  2:  { home: "2A",  away: "2B"     },
+  3:  { home: "1F",  away: "2C"     },
+  4:  { home: "1A",  away: "3CEFHI" },
+  5:  { home: "2K",  away: "2L"     },
+  6:  { home: "1C",  away: "2F"     },
+  7:  { home: "2E",  away: "2I"     },
+  8:  { home: "1H",  away: "2J"     },
+  9:  { home: "1L",  away: "3EHIJK" },
+  10: { home: "1B",  away: "3EFGIJ" },
+  11: { home: "1D",  away: "3BEFIJ" },
+  12: { home: "1J",  away: "2H"     },
+  13: { home: "1G",  away: "3AHIJ"  },
+  14: { home: "2D",  away: "2G"     },
+  15: { home: "1K",  away: "3DEIJL" },
+};
+
 // ── Constants ─────────────────────────────────────────────────────────────────
 const SLOT_H = 90;              // height per slot in R32 column
 const SLOTS = 8;                // R32 matches per side
@@ -24,7 +44,7 @@ const FINAL_CARD_H = 76;        // approximate height of a match card
 const STROKE = "rgba(255,255,255,0.18)";
 
 // ── Match Card ─────────────────────────────────────────────────────────────────
-function MatchCard({ match, gold }: { match: BracketMatch | null; gold?: boolean }) {
+function MatchCard({ match, gold, slotIdx }: { match: BracketMatch | null; gold?: boolean; slotIdx?: number }) {
   const hasScore = match && match.home_score !== null && match.away_score !== null;
   const isLive = match?.status === "live";
 
@@ -46,8 +66,12 @@ function MatchCard({ match, gold }: { match: BracketMatch | null; gold?: boolean
         ) : (
           <div className="w-[18px] h-3 rounded-sm bg-muted/40 shrink-0" />
         )}
-        <span className={cn("text-[11px] font-medium flex-1 truncate max-w-[68px]", won ? "text-foreground font-bold" : "text-muted-foreground", !team && "italic")}>
-          {team?.short_name ?? "TBD"}
+        <span className={cn("text-[11px] font-medium flex-1 truncate max-w-[68px]", won ? "text-foreground font-bold" : "text-muted-foreground", !team && "italic text-[10px]")}>
+          {team?.short_name ?? (
+            slotIdx !== undefined && R32_SEEDS[slotIdx]
+              ? (isHome ? R32_SEEDS[slotIdx].home : R32_SEEDS[slotIdx].away)
+              : "TBD"
+          )}
         </span>
         {hasScore && (
           <span className={cn("text-[11px] font-bold tabular-nums w-3.5 text-right shrink-0", won ? "text-primary" : "text-muted-foreground", isLive && "text-red-400")}>
@@ -114,10 +138,16 @@ function ConnSVG({ n, dir }: { n: number; dir: "r" | "l" }) {
 }
 
 // ── Round column ──────────────────────────────────────────────────────────────
-function RoundCol({ matches }: { matches: (BracketMatch | null)[] }) {
+function RoundCol({ matches, slotOffset = 0 }: { matches: (BracketMatch | null)[]; slotOffset?: number }) {
   return (
     <div className="flex flex-col justify-around shrink-0" style={{ height: TOTAL_H, width: CARD_W }}>
-      {matches.map((m, i) => <MatchCard key={m?.id ?? `e${i}`} match={m} />)}
+      {matches.map((m, i) => (
+        <MatchCard
+          key={m?.id ?? `e${i}`}
+          match={m}
+          slotIdx={m?.phase === "round_of_32" ? slotOffset + i : undefined}
+        />
+      ))}
     </div>
   );
 }
@@ -267,7 +297,7 @@ export function TournamentBracket({ rounds, champion }: TournamentBracketProps) 
 
         {/* ── Bracket row ────────────────────────────────────────────────── */}
         <div className="flex items-center" style={{ gap: 0 }}>
-          <RoundCol matches={r32L} />
+          <RoundCol matches={r32L} slotOffset={0} />
           <ConnSVG n={8} dir="r" />
           <RoundCol matches={r16L} />
           <ConnSVG n={4} dir="r" />
@@ -281,7 +311,7 @@ export function TournamentBracket({ rounds, champion }: TournamentBracketProps) 
           <ConnSVG n={4} dir="l" />
           <RoundCol matches={r16R} />
           <ConnSVG n={8} dir="l" />
-          <RoundCol matches={r32R} />
+          <RoundCol matches={r32R} slotOffset={8} />
         </div>
 
 
