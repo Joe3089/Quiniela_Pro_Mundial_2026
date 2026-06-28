@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { RefreshCw, Trophy, Users, Calendar, Activity, Shield, Zap, CheckCircle2, AlertCircle, Loader2, Bell, Mail, MessageCircle, Edit2 } from "lucide-react";
+import { RefreshCw, Trophy, Users, Calendar, Activity, Shield, Zap, CheckCircle2, AlertCircle, Loader2, Bell, Mail, MessageCircle, Edit2, Eye } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { TOURNAMENT_ID } from "@/constants";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -257,6 +258,102 @@ function MatchesPanel() {
   );
 }
 
+// ── PredictionsPanel — upcoming matches + who predicted what ─────────────────
+
+const OUTCOME_LABEL: Record<string, string> = {
+  "90min": "90'", extra_time: "Prórr.", penalties: "Pen.",
+};
+
+interface MatchWithPreds {
+  id: string;
+  match_date: string;
+  phase: string;
+  home_code: string;
+  away_code: string;
+  preds: { username: string; display_name: string | null; home: number | null; away: number | null; outcome: string | null }[];
+}
+
+function PredictionsPanel() {
+  const [matches, setMatches] = useState<MatchWithPreds[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const supabase = createClient();
+    (supabase as any)
+      .from("matches")
+      .select(`id, match_date, phase,
+        home_team:teams!matches_home_team_id_fkey(fifa_code),
+        away_team:teams!matches_away_team_id_fkey(fifa_code),
+        predictions(home_score_prediction,away_score_prediction,outcome_prediction,
+          user:users(username,display_name))`)
+      .eq("tournament_id", TOURNAMENT_ID)
+      .eq("status", "scheduled")
+      .order("match_date", { ascending: true })
+      .limit(30)
+      .then(({ data }: { data: any[] | null }) => {
+        setMatches((data ?? []).map((m: any) => ({
+          id: m.id,
+          match_date: m.match_date,
+          phase: m.phase,
+          home_code: m.home_team?.fifa_code ?? "?",
+          away_code: m.away_team?.fifa_code ?? "?",
+          preds: (m.predictions ?? []).map((p: any) => ({
+            username: p.user?.username ?? "—",
+            display_name: p.user?.display_name ?? null,
+            home: p.home_score_prediction,
+            away: p.away_score_prediction,
+            outcome: p.outcome_prediction ?? null,
+          })),
+        })));
+        setLoading(false);
+      });
+  }, []);
+
+  const isKO = (phase: string) => phase !== "group";
+
+  if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
+  if (!matches.length) return <div className="text-center py-12 text-muted-foreground text-sm">No hay partidos programados</div>;
+
+  return (
+    <div className="space-y-3">
+      {matches.map((m) => (
+        <div key={m.id} className="glass rounded-xl border border-border/30 overflow-hidden">
+          {/* Match header */}
+          <div className="flex items-center justify-between px-4 py-2 bg-white/3 border-b border-border/20">
+            <span className="text-sm font-bold text-white">{m.home_code} <span className="text-muted-foreground font-normal">vs</span> {m.away_code}</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-muted-foreground">
+                {new Date(m.match_date).toLocaleString("es-VE", { timeZone: "America/Caracas", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+              </span>
+              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${m.preds.length ? "bg-primary/20 text-primary" : "bg-white/10 text-muted-foreground"}`}>
+                {m.preds.length} pronóstico{m.preds.length !== 1 ? "s" : ""}
+              </span>
+            </div>
+          </div>
+          {/* Predictions table */}
+          {m.preds.length === 0 ? (
+            <p className="text-[11px] text-muted-foreground px-4 py-2">Sin pronósticos aún</p>
+          ) : (
+            <div className="divide-y divide-border/10">
+              {m.preds.map((p, i) => (
+                <div key={i} className="flex items-center px-4 py-1.5 gap-3">
+                  <span className="text-[11px] text-muted-foreground flex-1 truncate">{p.display_name ?? p.username}</span>
+                  <span className="text-sm font-bold tabular-nums text-white">
+                    {p.home ?? "—"} – {p.away ?? "—"}
+                  </span>
+                  {isKO(m.phase) && p.outcome && (
+                    <span className="text-[9px] font-semibold text-accent/80 w-10 text-right">{OUTCOME_LABEL[p.outcome] ?? p.outcome}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function ApiFootballPanel() {
   const [apiStatus, setApiStatus] = useState<{ requests?: { current: number; limit_day: number }; subscription?: { plan: string } } | null>(null);
   const [statusLoading, setStatusLoading] = useState(false);
@@ -494,14 +591,29 @@ export function AdminView() {
         ))}
       </div>
 
-      <Tabs defaultValue="api">
+      <Tabs defaultValue="predictions">
         <TabsList className="glass border border-border/30 mb-6 flex-wrap">
+          <TabsTrigger value="predictions"><Eye className="h-3.5 w-3.5 mr-1" />Pronósticos</TabsTrigger>
           <TabsTrigger value="api">API-Football</TabsTrigger>
           <TabsTrigger value="notify">Notificaciones</TabsTrigger>
           <TabsTrigger value="matches">Partidos</TabsTrigger>
           <TabsTrigger value="users">Usuarios</TabsTrigger>
           <TabsTrigger value="system">Sistema</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="predictions">
+          <Card className="glass border-border/40">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Eye className="h-4 w-4 text-primary" />
+                Pronósticos — Partidos programados
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <PredictionsPanel />
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="api">
           <Card className="glass border-border/40">
