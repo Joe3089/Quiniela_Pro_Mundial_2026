@@ -212,8 +212,7 @@ async function computeKOAdvancement(supabase: Awaited<ReturnType<typeof createAd
   };
 
   for (const phase of phases) {
-    // R32 uses bracket_slot order; other phases use match_date
-    const orderCol = phase === "round_of_32" ? "bracket_slot" : "match_date";
+    const orderCol = (phase === "round_of_32" || phase === "round_of_16" || phase === "quarter_final") ? "bracket_slot" : "match_date";
 
     const { data: phaseMtchs } = await supabase
       .from("matches")
@@ -225,12 +224,13 @@ async function computeKOAdvancement(supabase: Awaited<ReturnType<typeof createAd
     if (!phaseMtchs) continue;
 
     const np = nextPhase[phase];
+    const nextOrderCol = (np === "round_of_16" || np === "quarter_final") ? "bracket_slot" : "match_date";
     const { data: nextPhaseMtchs } = await supabase
       .from("matches")
-      .select("id, home_team_id, away_team_id, match_date")
+      .select("id, home_team_id, away_team_id, match_date, bracket_slot")
       .eq("tournament_id", TOURNAMENT_ID)
       .eq("phase", np)
-      .order("match_date", { ascending: true });
+      .order(nextOrderCol, { ascending: true });
 
     if (!nextPhaseMtchs) continue;
 

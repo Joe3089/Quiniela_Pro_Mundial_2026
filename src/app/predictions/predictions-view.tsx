@@ -392,7 +392,8 @@ function FinishedPredictionCard({
     setExpanded(!expanded);
   };
 
-  const goals = detail?.events.filter((e) => e.type === "Goal") ?? [];
+  const totalGoals = (match.home_score ?? 0) + (match.away_score ?? 0);
+  const goals = (detail?.events.filter((e) => e.type === "Goal") ?? []).slice(0, totalGoals);
   const subs = detail?.events.filter((e) => e.type === "subst") ?? [];
   const cards = detail?.events.filter((e) => e.type === "Card") ?? [];
 
