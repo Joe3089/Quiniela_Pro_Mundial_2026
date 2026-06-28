@@ -250,7 +250,11 @@ function computeKOAdvancement(ko: { id: string; phase: string; home_team_id: str
       if (winnerA && !nextMatch.home_team_id) upd.home_team_id = winnerA;
       if (winnerB && !nextMatch.away_team_id) upd.away_team_id = winnerB;
       if (upd.home_team_id || upd.away_team_id)
-        updates.push({ ...upd, home_team_id: upd.home_team_id ?? null, away_team_id: upd.away_team_id ?? null });
+        updates.push({
+          id: nextMatch.id,
+          home_team_id: upd.home_team_id ?? nextMatch.home_team_id,
+          away_team_id: upd.away_team_id ?? nextMatch.away_team_id,
+        });
     }
 
     // Advance semi-final losers to 3rd place
@@ -265,7 +269,11 @@ function computeKOAdvancement(ko: { id: string; phase: string; home_team_id: str
         if (loserA && !thirdMatch.home_team_id) upd.home_team_id = loserA;
         if (loserB && !thirdMatch.away_team_id) upd.away_team_id = loserB;
         if (upd.home_team_id || upd.away_team_id)
-          updates.push({ ...upd, home_team_id: upd.home_team_id ?? null, away_team_id: upd.away_team_id ?? null });
+          updates.push({
+            id: thirdMatch.id,
+            home_team_id: upd.home_team_id ?? thirdMatch.home_team_id,
+            away_team_id: upd.away_team_id ?? thirdMatch.away_team_id,
+          });
       }
     }
   }
