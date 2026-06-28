@@ -279,34 +279,48 @@ function PredictionsPanel() {
 
   useEffect(() => {
     const supabase = createClient();
-    (supabase as any)
-      .from("matches")
-      .select(`id, match_date, phase,
-        home_team:teams!matches_home_team_id_fkey(fifa_code),
-        away_team:teams!matches_away_team_id_fkey(fifa_code),
-        predictions!predictions_match_id_fkey(home_score_prediction,away_score_prediction,outcome_prediction,
-          user:users!predictions_user_id_fkey(username,display_name))`)
-      .eq("tournament_id", TOURNAMENT_ID)
-      .eq("status", "scheduled")
-      .order("match_date", { ascending: true })
-      .limit(30)
-      .then(({ data }: { data: any[] | null }) => {
-        setMatches((data ?? []).map((m: any) => ({
-          id: m.id,
-          match_date: m.match_date,
-          phase: m.phase,
-          home_code: m.home_team?.fifa_code ?? "?",
-          away_code: m.away_team?.fifa_code ?? "?",
-          preds: (m.predictions ?? []).map((p: any) => ({
-            username: p.user?.username ?? "—",
-            display_name: p.user?.display_name ?? null,
-            home: p.home_score_prediction,
-            away: p.away_score_prediction,
-            outcome: p.outcome_prediction ?? null,
-          })),
-        })));
-        setLoading(false);
-      });
+    const load = async () => {
+      const { data: matchData } = await (supabase as any)
+        .from("matches")
+        .select(`id, match_date, phase,
+          home_team:teams!matches_home_team_id_fkey(fifa_code),
+          away_team:teams!matches_away_team_id_fkey(fifa_code)`)
+        .eq("tournament_id", TOURNAMENT_ID)
+        .eq("status", "scheduled")
+        .order("match_date", { ascending: true })
+        .limit(30);
+
+      const ids: string[] = (matchData ?? []).map((m: any) => m.id);
+
+      const { data: predData } = ids.length ? await (supabase as any)
+        .from("predictions")
+        .select(`match_id, home_score_prediction, away_score_prediction, outcome_prediction,
+          user:users!predictions_user_id_fkey(username, display_name)`)
+        .in("match_id", ids) : { data: [] };
+
+      const predsByMatch: Record<string, any[]> = {};
+      for (const p of (predData ?? [])) {
+        if (!predsByMatch[p.match_id]) predsByMatch[p.match_id] = [];
+        predsByMatch[p.match_id].push(p);
+      }
+
+      setMatches((matchData ?? []).map((m: any) => ({
+        id: m.id,
+        match_date: m.match_date,
+        phase: m.phase,
+        home_code: m.home_team?.fifa_code ?? "?",
+        away_code: m.away_team?.fifa_code ?? "?",
+        preds: (predsByMatch[m.id] ?? []).map((p: any) => ({
+          username: p.user?.username ?? "—",
+          display_name: p.user?.display_name ?? null,
+          home: p.home_score_prediction,
+          away: p.away_score_prediction,
+          outcome: p.outcome_prediction ?? null,
+        })),
+      })));
+      setLoading(false);
+    };
+    load();
   }, []);
 
   const isKO = (phase: string) => phase !== "group";
