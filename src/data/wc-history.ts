@@ -84,10 +84,10 @@ export const WC_CHAMPIONS: WCChampion[] = [
   { country: "España",      flag: "🇪🇸", fifaCode: "ESP", titles: 1, years: [2010], runnerUp: 0, runnerUpYears: [], thirdPlace: 0, confederation: "UEFA" },
 ];
 
-// Updated with WC 2026 stats: Messi +5 (18 total, new record), Mbappé +4 (16, ties Klose),
-// CR7 +2 (10 total), Kane +2 (10 total)
+// Messi base = 13 (pre-2026 historical); WC2026 goals fetched live via PLAYER_API_IDS (id 154)
+// Mbappé +4 (16 hardcoded, ties Klose), CR7 +2 (10), Kane +2 (10)
 export const ALL_TIME_SCORERS: TopScorer[] = [
-  { rank: 1,  name: "Lionel Messi",     country: "Argentina", flag: "🇦🇷", fifaCode: "ARG", confederation: "CONMEBOL", goals: 18, editions: 6, years: "2006–2026" },
+  { rank: 1,  name: "Lionel Messi",     country: "Argentina", flag: "🇦🇷", fifaCode: "ARG", confederation: "CONMEBOL", goals: 13, editions: 6, years: "2006–2026" },
   { rank: 2,  name: "Miroslav Klose",   country: "Alemania",  flag: "🇩🇪", fifaCode: "GER", confederation: "UEFA",     goals: 16, editions: 4, years: "2002–2014" },
   { rank: 2,  name: "Kylian Mbappé",    country: "Francia",   flag: "🇫🇷", fifaCode: "FRA", confederation: "UEFA",     goals: 16, editions: 3, years: "2018–2026" },
   { rank: 4,  name: "Ronaldo (R9)",     country: "Brasil",    flag: "🇧🇷", fifaCode: "BRA", confederation: "CONMEBOL", goals: 15, editions: 4, years: "1994–2006" },
@@ -109,11 +109,11 @@ export const RECORDS_2026: WCRecord[] = [
     category: "Goleador histórico",
     record: "Más goles en Copas del Mundo",
     holder: "Lionel Messi (Argentina) 🏆",
-    value: "18 goles (2006–2026) — NUEVO RÉCORD",
+    value: "19+ goles (2006–2026) — NUEVO RÉCORD",
     year: 2026,
     vulnerable: false,
     challengedBy: "Kylian Mbappé (Francia) – 16 goles",
-    context: "Messi superó a Klose (16) en el Mundial 2026 con 18 goles históricos. Mbappé alcanzó también a Klose con 16."
+    context: "Messi superó a Klose (16) en el Mundial 2026 ampliando su récord histórico. Mbappé alcanzó a Klose con 16."
   },
   {
     category: "Goles en un torneo",

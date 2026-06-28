@@ -42,8 +42,9 @@ const FEDERATION_CRESTS: Record<string, string> = {
 };
 
 // Verified API-Football player IDs (tested against API)
-// Used ONLY for WC 2026 goal additions — Messi/Mbappé excluded (already in ALL_TIME_SCORERS with 2026 total)
+// WC 2026 goals fetched from API and added to ALL_TIME_SCORERS base (pre-2026 historical)
 const PLAYER_API_IDS: Record<string, number> = {
+  "Lionel Messi":       154,
   "Erling Haaland":     1100,
   "Harry Kane":         184,
   "Cristiano Ronaldo":  874,
