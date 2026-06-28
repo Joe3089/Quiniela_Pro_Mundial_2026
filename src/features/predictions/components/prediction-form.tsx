@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
-import { Minus, Plus, CheckCircle2 } from "lucide-react";
+import { Minus, Plus, CheckCircle2, Check } from "lucide-react";
 import { predictionSchema, type PredictionInput } from "@/validations/predictions";
 import { useSavePrediction } from "../hooks/use-predictions";
 import { Button } from "@/components/ui/button";
@@ -129,24 +129,28 @@ export function PredictionForm({ match, existingPrediction, onSuccess }: Predict
             <div className="glass rounded-lg p-3 space-y-2">
               <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">¿Cómo termina?</span>
               <div className="grid grid-cols-3 gap-1.5">
-                {OUTCOME_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    disabled={isLocked}
-                    onClick={() => setValue("outcome_prediction", opt.value)}
-                    className={cn(
-                      "flex flex-col items-center gap-0.5 rounded-lg px-2 py-2 text-center border transition-all",
-                      outcome === opt.value
-                        ? "border-primary/70 bg-primary/10 text-primary"
-                        : "border-border/30 text-muted-foreground hover:border-primary/30",
-                      isLocked && "opacity-50 cursor-not-allowed"
-                    )}
-                  >
-                    <span className="text-[11px] font-bold">{opt.label}</span>
-                    <span className="text-[9px] opacity-70 leading-tight">{opt.desc}</span>
-                  </button>
-                ))}
+                {OUTCOME_OPTIONS.map((opt) => {
+                  const sel = outcome === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      disabled={isLocked}
+                      onClick={() => setValue("outcome_prediction", opt.value)}
+                      className={cn(
+                        "relative flex flex-col items-center gap-0.5 rounded-lg px-2 py-2.5 text-center border-2 transition-all active:scale-95",
+                        sel
+                          ? "border-primary bg-primary/15 text-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.25)]"
+                          : "border-border/40 text-muted-foreground hover:border-primary/50 hover:bg-muted/20",
+                        isLocked && "opacity-50 cursor-not-allowed"
+                      )}
+                    >
+                      {sel && <Check className="absolute top-1 right-1 h-3 w-3 text-primary" />}
+                      <span className="text-[11px] font-bold">{opt.label}</span>
+                      <span className="text-[9px] opacity-70 leading-tight">{opt.desc}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -158,28 +162,32 @@ export function PredictionForm({ match, existingPrediction, onSuccess }: Predict
                   {[
                     { id: homeId, team: match.home_team },
                     { id: awayId, team: match.away_team },
-                  ].map(({ id, team }) => (
-                    <button
-                      key={id}
-                      type="button"
-                      disabled={isLocked || !id}
-                      onClick={() => setValue("qualifier_team_id", qualifier === id ? null : id)}
-                      className={cn(
-                        "flex items-center gap-2 rounded-lg px-3 py-2 border transition-all",
-                        qualifier === id
-                          ? "border-primary/70 bg-primary/10"
-                          : "border-border/30 hover:border-primary/30",
-                        (isLocked || !id) && "opacity-50 cursor-not-allowed"
-                      )}
-                    >
-                      {team?.flag_url && (
-                        <Image src={team.flag_url} alt={team.name} width={22} height={15} className="rounded-sm object-cover shrink-0" />
-                      )}
-                      <span className={cn("text-[11px] font-semibold truncate", qualifier === id ? "text-primary" : "text-muted-foreground")}>
-                        {team?.short_name ?? "TBD"}
-                      </span>
-                    </button>
-                  ))}
+                  ].map(({ id, team }) => {
+                    const sel = qualifier === id;
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        disabled={isLocked || !id}
+                        onClick={() => setValue("qualifier_team_id", sel ? null : id)}
+                        className={cn(
+                          "relative flex items-center gap-2 rounded-lg px-3 py-2.5 border-2 transition-all active:scale-95",
+                          sel
+                            ? "border-primary bg-primary/15 shadow-[0_0_10px_rgba(var(--primary-rgb),0.25)]"
+                            : "border-border/40 hover:border-primary/50 hover:bg-muted/20",
+                          (isLocked || !id) && "opacity-50 cursor-not-allowed"
+                        )}
+                      >
+                        {sel && <Check className="absolute top-1 right-1 h-3 w-3 text-primary" />}
+                        {team?.flag_url && (
+                          <Image src={team.flag_url} alt={team.name} width={22} height={15} className="rounded-sm object-cover shrink-0" />
+                        )}
+                        <span className={cn("text-[11px] font-semibold truncate", sel ? "text-primary" : "text-muted-foreground")}>
+                          {team?.short_name ?? "TBD"}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
