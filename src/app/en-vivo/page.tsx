@@ -87,15 +87,15 @@ interface UpcomingMatch {
 async function fetchUpcoming(): Promise<UpcomingMatch[]> {
   const supabase = createClient() as any;
   const now = new Date().toISOString();
-  const { data } = await supabase
+  const { data: rawData } = await supabase
     .from("matches")
     .select("id, match_date, status, home_score, away_score, venue, city, home_team_id, away_team_id")
     .eq("tournament_id", TOURNAMENT_ID)
-    .eq("status", "scheduled")
     .gte("match_date", now)
     .order("match_date", { ascending: true })
-    .limit(8);
+    .limit(20);
 
+  const data = (rawData ?? []).filter((m: any) => m.status === "scheduled").slice(0, 8);
   if (!data?.length) return [];
 
   const teamIds = [...new Set(data.flatMap((m: any) => [m.home_team_id, m.away_team_id]).filter(Boolean))];

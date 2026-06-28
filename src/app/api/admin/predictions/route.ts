@@ -14,18 +14,19 @@ export async function GET() {
   const { data: profile } = await supabase.from("users").select("is_admin").eq("id", user.id).single();
   if (!profile?.is_admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  // Fetch scheduled matches
+  // Fetch upcoming matches — filter status in JS to avoid enum cast issue
   const { data: matchData } = await supabase
     .from("matches")
-    .select(`id, match_date, phase,
+    .select(`id, match_date, phase, status,
       home_team:teams!matches_home_team_id_fkey(fifa_code),
       away_team:teams!matches_away_team_id_fkey(fifa_code)`)
     .eq("tournament_id", TOURNAMENT_ID)
-    .eq("status", "scheduled")
+    .gte("match_date", new Date().toISOString())
     .order("match_date", { ascending: true })
     .limit(50);
+  const filteredMatchData = (matchData ?? []).filter((m: any) => m.status === "scheduled");
 
-  const ids = (matchData ?? []).map((m: any) => m.id);
+  const ids = filteredMatchData.map((m: any) => m.id);
 
   const { data: predData } = ids.length
     ? await supabase
@@ -42,7 +43,7 @@ export async function GET() {
     byMatch[p.match_id].push(p);
   }
 
-  const result = (matchData ?? []).map((m: any) => ({
+  const result = filteredMatchData.map((m: any) => ({
     id: m.id,
     match_date: m.match_date,
     phase: m.phase,

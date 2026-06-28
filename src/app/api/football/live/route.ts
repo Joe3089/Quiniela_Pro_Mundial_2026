@@ -33,12 +33,12 @@ async function checkAndSync(liveApiIds: Set<number>) {
   try {
     const supabase = await createAdminClient();
 
-    const { data: dbLive } = await supabase
+    const { data: dbLiveRaw } = await supabase
       .from("matches")
-      .select("id, api_football_fixture_id, updated_at")
+      .select("id, api_football_fixture_id, updated_at, status")
       .eq("tournament_id", TOURNAMENT_ID)
-      .eq("status", "live")
       .not("api_football_fixture_id", "is", null);
+    const dbLive = (dbLiveRaw ?? []).filter((m: any) => m.status === "live");
 
     if (!dbLive || dbLive.length === 0) return;
 
