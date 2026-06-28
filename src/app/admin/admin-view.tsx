@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { RefreshCw, Trophy, Users, Calendar, Activity, Shield, Zap, CheckCircle2, AlertCircle, Loader2, Bell, Mail, MessageCircle, Edit2, Eye } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { TOURNAMENT_ID } from "@/constants";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -260,70 +259,31 @@ function MatchesPanel() {
 
 // ── PredictionsPanel — upcoming matches + who predicted what ─────────────────
 
-const OUTCOME_LABEL: Record<string, string> = {
-  "90min": "90'", extra_time: "Prórr.", penalties: "Pen.",
-};
+const OUTCOME_LABEL: Record<string, string> = { "90min": "90'", extra_time: "Prórr.", penalties: "Pen." };
 
-interface MatchWithPreds {
-  id: string;
-  match_date: string;
-  phase: string;
-  home_code: string;
-  away_code: string;
-  preds: { username: string; display_name: string | null; home: number | null; away: number | null; outcome: string | null }[];
-}
+interface PredRow { name: string; home: number | null; away: number | null; outcome: string | null; updated_at: string | null; }
+interface MatchWithPreds { id: string; match_date: string; phase: string; home_code: string; away_code: string; preds: PredRow[]; }
 
 function PredictionsPanel() {
   const [matches, setMatches] = useState<MatchWithPreds[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const fetchData = async () => {
+    const res = await fetch("/api/admin/predictions");
+    if (res.ok) setMatches(await res.json());
+    setLoading(false);
+  };
+
   useEffect(() => {
+    fetchData();
     const supabase = createClient();
-    const load = async () => {
-      const { data: matchData } = await (supabase as any)
-        .from("matches")
-        .select(`id, match_date, phase,
-          home_team:teams!matches_home_team_id_fkey(fifa_code),
-          away_team:teams!matches_away_team_id_fkey(fifa_code)`)
-        .eq("tournament_id", TOURNAMENT_ID)
-        .eq("status", "scheduled")
-        .order("match_date", { ascending: true })
-        .limit(30);
-
-      const ids: string[] = (matchData ?? []).map((m: any) => m.id);
-
-      const { data: predData } = ids.length ? await (supabase as any)
-        .from("predictions")
-        .select(`match_id, home_score_prediction, away_score_prediction, outcome_prediction,
-          user:users!predictions_user_id_fkey(username, display_name)`)
-        .in("match_id", ids) : { data: [] };
-
-      const predsByMatch: Record<string, any[]> = {};
-      for (const p of (predData ?? [])) {
-        if (!predsByMatch[p.match_id]) predsByMatch[p.match_id] = [];
-        predsByMatch[p.match_id].push(p);
-      }
-
-      setMatches((matchData ?? []).map((m: any) => ({
-        id: m.id,
-        match_date: m.match_date,
-        phase: m.phase,
-        home_code: m.home_team?.fifa_code ?? "?",
-        away_code: m.away_team?.fifa_code ?? "?",
-        preds: (predsByMatch[m.id] ?? []).map((p: any) => ({
-          username: p.user?.username ?? "—",
-          display_name: p.user?.display_name ?? null,
-          home: p.home_score_prediction,
-          away: p.away_score_prediction,
-          outcome: p.outcome_prediction ?? null,
-        })),
-      })));
-      setLoading(false);
-    };
-    load();
+    const channel = supabase
+      .channel("admin-preds-watch")
+      .on("postgres_changes", { event: "*", schema: "public", table: "predictions" }, fetchData)
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const isKO = (phase: string) => phase !== "group";
 
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
   if (!matches.length) return <div className="text-center py-12 text-muted-foreground text-sm">No hay partidos programados</div>;
@@ -332,7 +292,6 @@ function PredictionsPanel() {
     <div className="space-y-3">
       {matches.map((m) => (
         <div key={m.id} className="glass rounded-xl border border-border/30 overflow-hidden">
-          {/* Match header */}
           <div className="flex items-center justify-between px-4 py-2 bg-white/3 border-b border-border/20">
             <span className="text-sm font-bold text-white">{m.home_code} <span className="text-muted-foreground font-normal">vs</span> {m.away_code}</span>
             <div className="flex items-center gap-2">
@@ -344,19 +303,21 @@ function PredictionsPanel() {
               </span>
             </div>
           </div>
-          {/* Predictions table */}
           {m.preds.length === 0 ? (
             <p className="text-[11px] text-muted-foreground px-4 py-2">Sin pronósticos aún</p>
           ) : (
             <div className="divide-y divide-border/10">
               {m.preds.map((p, i) => (
                 <div key={i} className="flex items-center px-4 py-1.5 gap-3">
-                  <span className="text-[11px] text-muted-foreground flex-1 truncate">{p.display_name ?? p.username}</span>
-                  <span className="text-sm font-bold tabular-nums text-white">
-                    {p.home ?? "—"} – {p.away ?? "—"}
-                  </span>
-                  {isKO(m.phase) && p.outcome && (
-                    <span className="text-[9px] font-semibold text-accent/80 w-10 text-right">{OUTCOME_LABEL[p.outcome] ?? p.outcome}</span>
+                  <span className="text-[11px] font-semibold text-white flex-1 truncate">{p.name}</span>
+                  <span className="text-sm font-bold tabular-nums text-primary">{m.home_code} {p.home ?? "?"}-{p.away ?? "?"} {m.away_code}</span>
+                  {m.phase !== "group" && p.outcome && (
+                    <span className="text-[9px] font-semibold text-accent/80 w-10 text-right shrink-0">{OUTCOME_LABEL[p.outcome] ?? p.outcome}</span>
+                  )}
+                  {p.updated_at && (
+                    <span className="text-[9px] text-muted-foreground/60 shrink-0 hidden sm:block">
+                      {new Date(p.updated_at).toLocaleString("es-VE", { timeZone: "America/Caracas", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                    </span>
                   )}
                 </div>
               ))}
