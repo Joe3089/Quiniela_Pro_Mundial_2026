@@ -285,7 +285,7 @@ function PredictionsPanel() {
         home_team:teams!matches_home_team_id_fkey(fifa_code),
         away_team:teams!matches_away_team_id_fkey(fifa_code),
         predictions(home_score_prediction,away_score_prediction,outcome_prediction,
-          user:users(username,display_name))`)
+          user:users!predictions_user_id_fkey(username,display_name))`)
       .eq("tournament_id", TOURNAMENT_ID)
       .eq("status", "scheduled")
       .order("match_date", { ascending: true })
