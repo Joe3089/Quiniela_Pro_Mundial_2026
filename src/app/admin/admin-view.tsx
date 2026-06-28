@@ -284,7 +284,7 @@ function PredictionsPanel() {
       .select(`id, match_date, phase,
         home_team:teams!matches_home_team_id_fkey(fifa_code),
         away_team:teams!matches_away_team_id_fkey(fifa_code),
-        predictions(home_score_prediction,away_score_prediction,outcome_prediction,
+        predictions!predictions_match_id_fkey(home_score_prediction,away_score_prediction,outcome_prediction,
           user:users!predictions_user_id_fkey(username,display_name))`)
       .eq("tournament_id", TOURNAMENT_ID)
       .eq("status", "scheduled")
