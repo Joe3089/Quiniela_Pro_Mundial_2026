@@ -161,6 +161,7 @@ export async function runBracketSync() {
     const match = r32[slot];
     if (!match) continue;
     if (match.status === "finished" || match.status === "live") continue;
+    if (match.home_team_id && match.away_team_id) continue; // manual assignment set — don't overwrite
 
     const seeding = R32_SEEDING[slot];
 
