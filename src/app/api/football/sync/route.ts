@@ -180,10 +180,11 @@ async function syncFixtures(
   let inserted = 0;
   let skipped = 0;
 
-  // Pre-load all teams → group_id mapping to assign group on insert
+  // Pre-load group-phase teams → group_id mapping (KO matches explicitly excluded)
   const { data: allMatches } = await supabase
     .from("matches")
     .select("home_team_id, away_team_id, group_id")
+    .eq("phase", "group")
     .not("group_id", "is", null);
   const teamGroupMap = new Map<string, string>();
   for (const m of (allMatches ?? []) as { home_team_id: string; away_team_id: string; group_id: string }[]) {
@@ -201,7 +202,9 @@ async function syncFixtures(
     }
 
     const existing = await findExistingMatch(supabase, fixture, home.data.id, away.data.id);
-    const groupId = teamGroupMap.get(home.data.id) ?? teamGroupMap.get(away.data.id) ?? null;
+    const phase = mapPhase(fixture.league.round);
+    // Only group-stage matches get a group_id; KO matches always get null
+    const groupId = phase === "group" ? (teamGroupMap.get(home.data.id) ?? teamGroupMap.get(away.data.id) ?? null) : null;
     const matchData = toMatchRow(fixture, home.data.id, away.data.id, groupId);
 
     if (existing?.id) {
