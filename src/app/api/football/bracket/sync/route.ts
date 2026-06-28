@@ -145,15 +145,16 @@ export async function runBracketSync() {
     return null;
   }
 
-  // ── 3. Load R32 matches ordered by bracket_slot ───────────────────────────────
-  const { data: r32Matches } = await supabase
+  // ── 3. Load ALL KO matches in one query, filter by phase in JS ───────────────
+  const { data: allKoMatches } = await supabase
     .from("matches")
-    .select("id, home_team_id, away_team_id, match_date, status, bracket_slot")
+    .select("id, home_team_id, away_team_id, home_score, away_score, home_score_penalties, away_score_penalties, match_date, status, bracket_slot, phase")
     .eq("tournament_id", TOURNAMENT_ID)
-    .eq("phase", "round_of_32")
+    .not("bracket_slot", "is", null)
     .order("bracket_slot", { ascending: true });
 
-  const r32 = r32Matches ?? [];
+  const ko = allKoMatches ?? [];
+  const r32 = ko.filter((m: { phase: string }) => m.phase === "round_of_32");
   const updates: Array<{ id: string; home_team_id: string | null; away_team_id: string | null }> = [];
 
   // ── 4. Populate R32 slots from official seedings (always overwrite) ───────────
@@ -181,7 +182,7 @@ export async function runBracketSync() {
   }
 
   // ── 5. KO Advancement ─────────────────────────────────────────────────────────
-  const koAdvanceUpdates = await computeKOAdvancement(supabase);
+  const koAdvanceUpdates = computeKOAdvancement(ko);
   updates.push(...koAdvanceUpdates);
 
   // ── 6. Apply all updates ──────────────────────────────────────────────────────
@@ -201,7 +202,8 @@ export async function runBracketSync() {
   };
 }
 
-async function computeKOAdvancement(supabase: Awaited<ReturnType<typeof createAdminClient>>) {
+// ko: all non-group matches sorted by bracket_slot (already loaded, phase returned as string)
+function computeKOAdvancement(ko: { id: string; phase: string; home_team_id: string | null; away_team_id: string | null; home_score: number | null; away_score: number | null; home_score_penalties: number | null; away_score_penalties: number | null; status: string; match_date: string; bracket_slot: number | null }[]) {
   const updates: Array<{ id: string; home_team_id: string | null; away_team_id: string | null }> = [];
 
   const phases = ["round_of_32", "round_of_16", "quarter_final", "semi_final"] as const;
@@ -213,27 +215,26 @@ async function computeKOAdvancement(supabase: Awaited<ReturnType<typeof createAd
   };
 
   for (const phase of phases) {
-    const orderCol = (phase === "round_of_32" || phase === "round_of_16" || phase === "quarter_final") ? "bracket_slot" : "match_date";
+    const phaseMtchs = ko
+      .filter((m) => m.phase === phase)
+      .sort((a, b) =>
+        phase === "semi_final"
+          ? new Date(a.match_date).getTime() - new Date(b.match_date).getTime()
+          : (a.bracket_slot ?? 0) - (b.bracket_slot ?? 0)
+      );
 
-    const { data: phaseMtchs } = await supabase
-      .from("matches")
-      .select("id, home_team_id, away_team_id, home_score, away_score, home_score_penalties, away_score_penalties, status, match_date, bracket_slot")
-      .eq("tournament_id", TOURNAMENT_ID)
-      .eq("phase", phase)
-      .order(orderCol, { ascending: true });
-
-    if (!phaseMtchs) continue;
+    if (!phaseMtchs.length) continue;
 
     const np = nextPhase[phase];
-    const nextOrderCol = (np === "round_of_16" || np === "quarter_final") ? "bracket_slot" : "match_date";
-    const { data: nextPhaseMtchs } = await supabase
-      .from("matches")
-      .select("id, home_team_id, away_team_id, match_date, bracket_slot")
-      .eq("tournament_id", TOURNAMENT_ID)
-      .eq("phase", np)
-      .order(nextOrderCol, { ascending: true });
+    const nextPhaseMtchs = ko
+      .filter((m) => m.phase === np)
+      .sort((a, b) =>
+        np === "semi_final" || np === "final"
+          ? new Date(a.match_date).getTime() - new Date(b.match_date).getTime()
+          : (a.bracket_slot ?? 0) - (b.bracket_slot ?? 0)
+      );
 
-    if (!nextPhaseMtchs) continue;
+    if (!nextPhaseMtchs.length) continue;
 
     for (let i = 0; i < phaseMtchs.length; i += 2) {
       const matchA = phaseMtchs[i];
@@ -254,13 +255,7 @@ async function computeKOAdvancement(supabase: Awaited<ReturnType<typeof createAd
 
     // Advance semi-final losers to 3rd place
     if (phase === "semi_final") {
-      const { data: thirdMatch } = await supabase
-        .from("matches")
-        .select("id, home_team_id, away_team_id")
-        .eq("tournament_id", TOURNAMENT_ID)
-        .eq("phase", "third_place")
-        .single();
-
+      const thirdMatch = ko.find((m) => m.phase === "third_place");
       if (thirdMatch && !(thirdMatch.home_team_id && thirdMatch.away_team_id)) {
         const sfA = phaseMtchs[0];
         const sfB = phaseMtchs[1];

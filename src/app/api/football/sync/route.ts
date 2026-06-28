@@ -440,16 +440,16 @@ function mapPhase(round: string): string {
 async function scoreFinishedMatches(supabase: any) {
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-  // Get recently finished matches that still have unscored predictions
-  const { data: matches, error: mErr } = await supabase
+  // Get recently finished matches — filter status in JS to avoid enum cast issue
+  const { data: recentMatches, error: mErr } = await supabase
     .from("matches")
-    .select("id, home_team_id, away_team_id, home_score, away_score, match_date, venue")
+    .select("id, home_team_id, away_team_id, home_score, away_score, match_date, venue, status")
     .eq("tournament_id", TOURNAMENT_ID)
-    .eq("status", "finished")
     .not("home_score", "is", null)
     .gte("match_date", since);
 
-  if (mErr || !matches?.length) return { scored: 0, notified: 0 };
+  const matches = (recentMatches ?? []).filter((m: { status: string }) => m.status === "finished");
+  if (mErr || !matches.length) return { scored: 0, notified: 0 };
 
   let scored = 0;
   let notified = 0;
