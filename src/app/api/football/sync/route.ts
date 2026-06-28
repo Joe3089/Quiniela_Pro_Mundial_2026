@@ -184,7 +184,7 @@ async function syncFixtures(
   const { data: allMatches } = await supabase
     .from("matches")
     .select("home_team_id, away_team_id, group_id")
-    .eq("phase", "group")
+    .filter("phase::text", "eq", "group")
     .not("group_id", "is", null);
   const teamGroupMap = new Map<string, string>();
   for (const m of (allMatches ?? []) as { home_team_id: string; away_team_id: string; group_id: string }[]) {
