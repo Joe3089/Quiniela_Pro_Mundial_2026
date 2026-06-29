@@ -241,39 +241,23 @@ function computeKOAdvancement(ko: { id: string; phase: string; home_team_id: str
       const matchB = phaseMtchs[i + 1];
       const nextMatch = nextPhaseMtchs[Math.floor(i / 2)];
       if (!nextMatch) continue;
-      if (nextMatch.home_team_id && nextMatch.away_team_id) continue;
 
       const winnerA = matchA?.status === "finished" ? getWinner(matchA) : null;
       const winnerB = matchB?.status === "finished" ? getWinner(matchB) : null;
 
-      const upd: { id: string; home_team_id?: string; away_team_id?: string } = { id: nextMatch.id };
-      if (winnerA && !nextMatch.home_team_id) upd.home_team_id = winnerA;
-      if (winnerB && !nextMatch.away_team_id) upd.away_team_id = winnerB;
-      if (upd.home_team_id || upd.away_team_id)
-        updates.push({
-          id: nextMatch.id,
-          home_team_id: upd.home_team_id ?? nextMatch.home_team_id,
-          away_team_id: upd.away_team_id ?? nextMatch.away_team_id,
-        });
+      // Self-healing: always overwrite with current truth (clears stale teams)
+      if (nextMatch.home_team_id !== winnerA || nextMatch.away_team_id !== winnerB)
+        updates.push({ id: nextMatch.id, home_team_id: winnerA, away_team_id: winnerB });
     }
 
     // Advance semi-final losers to 3rd place
     if (phase === "semi_final") {
       const thirdMatch = ko.find((m) => m.phase === "third_place");
-      if (thirdMatch && !(thirdMatch.home_team_id && thirdMatch.away_team_id)) {
-        const sfA = phaseMtchs[0];
-        const sfB = phaseMtchs[1];
-        const loserA = sfA?.status === "finished" ? getLoser(sfA) : null;
-        const loserB = sfB?.status === "finished" ? getLoser(sfB) : null;
-        const upd: { id: string; home_team_id?: string; away_team_id?: string } = { id: thirdMatch.id };
-        if (loserA && !thirdMatch.home_team_id) upd.home_team_id = loserA;
-        if (loserB && !thirdMatch.away_team_id) upd.away_team_id = loserB;
-        if (upd.home_team_id || upd.away_team_id)
-          updates.push({
-            id: thirdMatch.id,
-            home_team_id: upd.home_team_id ?? thirdMatch.home_team_id,
-            away_team_id: upd.away_team_id ?? thirdMatch.away_team_id,
-          });
+      if (thirdMatch) {
+        const loserA = phaseMtchs[0]?.status === "finished" ? getLoser(phaseMtchs[0]) : null;
+        const loserB = phaseMtchs[1]?.status === "finished" ? getLoser(phaseMtchs[1]) : null;
+        if (thirdMatch.home_team_id !== loserA || thirdMatch.away_team_id !== loserB)
+          updates.push({ id: thirdMatch.id, home_team_id: loserA, away_team_id: loserB });
       }
     }
   }
