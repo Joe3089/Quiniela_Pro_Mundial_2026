@@ -47,6 +47,9 @@ const STROKE = "rgba(255,255,255,0.18)";
 function MatchCard({ match, gold, slotIdx }: { match: BracketMatch | null; gold?: boolean; slotIdx?: number }) {
   const hasScore = match && match.home_score !== null && match.away_score !== null;
   const isLive = match?.status === "live";
+  const afStatus = match?.match?.api_football_status;
+  const isPen = afStatus === "PEN";
+  const isAet = afStatus === "AET";
 
   const renderTeam = (
     team: BracketMatch["home_team"],
@@ -91,15 +94,24 @@ function MatchCard({ match, gold, slotIdx }: { match: BracketMatch | null; gold?
       style={{ width: CARD_W }}
     >
       {match?.match_date && (
-        <div className={cn("px-2 py-0.5 border-b border-border/20", gold ? "bg-yellow-500/10" : "bg-muted/30")}>
-          <span className="text-[9px] text-muted-foreground">{formatDateShort(match.match_date)}</span>
-          {isLive && <span className="ml-1 text-[9px] text-red-400 font-bold animate-pulse">● LIVE</span>}
+        <div className={cn("px-2 py-0.5 border-b border-border/20 flex items-center gap-1", gold ? "bg-yellow-500/10" : "bg-muted/30")}>
+          <span className="text-[9px] text-muted-foreground flex-1">{formatDateShort(match.match_date)}</span>
+          {isLive && <span className="text-[9px] text-red-400 font-bold animate-pulse">● LIVE</span>}
+          {isPen && <span className="text-[8px] font-bold text-amber-400 bg-amber-400/10 px-1 rounded">PEN</span>}
+          {isAet && <span className="text-[8px] font-bold text-blue-400 bg-blue-400/10 px-1 rounded">ET</span>}
         </div>
       )}
       <div className="divide-y divide-border/20">
         {renderTeam(match?.home_team ?? null, match?.home_score ?? null, true)}
         {renderTeam(match?.away_team ?? null, match?.away_score ?? null, false)}
       </div>
+      {isPen && match?.match?.home_score_penalties != null && (
+        <div className="px-2 py-0.5 text-center border-t border-border/10 bg-amber-400/5">
+          <span className="text-[8px] text-amber-400 font-semibold tabular-nums">
+            {match.match.home_score_penalties} - {match.match.away_score_penalties} pen.
+          </span>
+        </div>
+      )}
     </div>
   );
 }

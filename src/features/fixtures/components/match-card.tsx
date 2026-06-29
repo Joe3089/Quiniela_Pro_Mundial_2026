@@ -65,18 +65,28 @@ export function MatchCard({ match, showPrediction, prediction, onClick, compact 
 
         {/* Score / VS */}
         <div className={cn(
-          "flex items-center gap-1.5 min-w-[64px] justify-center",
+          "flex flex-col items-center gap-0.5 min-w-[64px] justify-center",
           compact && "min-w-[48px]"
         )}>
           {hasScore ? (
             <>
-              <span className={cn("font-bold text-lg tabular-nums", isLive && "text-red-400", compact && "text-base")}>
-                {match.home_score}
-              </span>
-              <span className="text-muted-foreground">-</span>
-              <span className={cn("font-bold text-lg tabular-nums", isLive && "text-red-400", compact && "text-base")}>
-                {match.away_score}
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className={cn("font-bold text-lg tabular-nums", isLive && "text-red-400", compact && "text-base")}>
+                  {match.home_score}
+                </span>
+                <span className="text-muted-foreground">-</span>
+                <span className={cn("font-bold text-lg tabular-nums", isLive && "text-red-400", compact && "text-base")}>
+                  {match.away_score}
+                </span>
+              </div>
+              {match.api_football_status === "PEN" && (
+                <span className="text-[9px] font-semibold text-amber-400 leading-none">
+                  ({match.home_score_penalties}-{match.away_score_penalties} PEN)
+                </span>
+              )}
+              {match.api_football_status === "AET" && (
+                <span className="text-[9px] font-semibold text-blue-400 leading-none">ET</span>
+              )}
             </>
           ) : (
             <span className="text-muted-foreground text-sm font-medium">vs</span>
