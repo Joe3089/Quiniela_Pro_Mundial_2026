@@ -118,13 +118,25 @@ export async function fetchBroadcastVideos(): Promise<YoutubeVideo[]> {
   return all;
 }
 
+function escapeRegex(s: string) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function nameMatchesTitle(title: string, name: string): boolean {
+  try {
+    // Word boundary match prevents "Nusa" matching "USA" or "para" matching "PAR"
+    return new RegExp(`\\b${escapeRegex(name)}\\b`, "i").test(title);
+  } catch {
+    return title.toLowerCase().includes(name.toLowerCase());
+  }
+}
+
 export function videoMatchesTeams(
   title: string,
   homeNames: (string | null)[],
   awayNames: (string | null)[]
 ): boolean {
-  const t = title.toLowerCase();
-  const homeMatch = homeNames.some((n) => n && t.includes(n.toLowerCase()));
-  const awayMatch = awayNames.some((n) => n && t.includes(n.toLowerCase()));
+  const homeMatch = homeNames.some((n) => n && n.length >= 3 && nameMatchesTitle(title, n));
+  const awayMatch = awayNames.some((n) => n && n.length >= 3 && nameMatchesTitle(title, n));
   return homeMatch && awayMatch;
 }
