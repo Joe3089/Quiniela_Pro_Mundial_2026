@@ -7,6 +7,10 @@
     {
       "path": "/api/football/sync?action=scores",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/youtube/sync",
+      "schedule": "0 */4 * * *"
     }
   ],
   "headers": [

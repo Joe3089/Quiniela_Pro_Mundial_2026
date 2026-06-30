@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Clock, MapPin, Users, Loader2, Gavel } from "lucide-react";
+import { ArrowLeft, Clock, MapPin, Users, Loader2, Gavel, Play, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { useMatch } from "@/features/fixtures/hooks/use-fixtures";
 import { FlagImage } from "@/components/ui/flag-image";
@@ -562,7 +562,119 @@ export default function MatchDetailPage({ params }: { params: Promise<{ id: stri
           refereeCountry={detail?.refereeCountry ?? null}
         />
       )}
+
+      {/* ── Videos Oficiales FIFA ──────────────────────────────────────────── */}
+      <FifaVideosCard matchId={match.id} />
     </div>
+  );
+}
+
+// ── FIFA Official Videos Card ─────────────────────────────────────────────────
+type MatchVideo = {
+  id: string; match_id: string; youtube_video_id: string;
+  title: string; type: "highlights" | "preview";
+  thumbnail_url: string | null; published_at: string | null;
+};
+
+function FifaVideosCard({ matchId }: { matchId: string }) {
+  const [videos, setVideos] = useState<MatchVideo[]>([]);
+  const [playing, setPlaying] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch(`/api/matches/${matchId}/videos`)
+      .then((r) => r.ok ? r.json() : [])
+      .then((d) => Array.isArray(d) ? setVideos(d) : null)
+      .catch(() => null);
+  }, [matchId]);
+
+  if (!videos.length) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.12 }}
+      className="glass-card rounded-2xl border border-white/8 overflow-hidden mb-5"
+    >
+      <div className="p-4 border-b border-white/5 flex items-center gap-2">
+        <div className="h-7 w-7 rounded-lg bg-red-500/15 flex items-center justify-center">
+          <svg className="h-3.5 w-3.5 text-red-400" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+          </svg>
+        </div>
+        <h2 className="font-bold text-sm">Videos Oficiales FIFA</h2>
+        <span className="ml-auto text-[9px] text-muted-foreground/60 font-medium uppercase tracking-wide">Canal oficial</span>
+      </div>
+
+      <div className="p-4 space-y-4">
+        {videos.map((video) => (
+          <div key={video.id} className="space-y-2">
+            {/* Badge */}
+            <div className="flex items-center gap-2">
+              <span className={cn(
+                "text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded",
+                video.type === "highlights"
+                  ? "bg-emerald-500/15 text-emerald-400"
+                  : "bg-blue-500/15 text-blue-400"
+              )}>
+                {video.type === "highlights" ? "Match Highlights" : "Match Preview"}
+              </span>
+            </div>
+
+            {/* Player or Thumbnail */}
+            {playing === video.youtube_video_id ? (
+              <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+                <iframe
+                  className="absolute inset-0 w-full h-full rounded-xl"
+                  src={`https://www.youtube.com/embed/${video.youtube_video_id}?autoplay=1&rel=0`}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+            ) : (
+              <button
+                onClick={() => setPlaying(video.youtube_video_id)}
+                className="relative w-full rounded-xl overflow-hidden group focus:outline-none"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={video.thumbnail_url ?? `https://i.ytimg.com/vi/${video.youtube_video_id}/hqdefault.jpg`}
+                  alt={video.title}
+                  className="w-full object-cover aspect-video"
+                />
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center group-hover:bg-black/30 transition-colors">
+                  <div className="h-14 w-14 rounded-full bg-red-600 flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform">
+                    <Play className="h-6 w-6 text-white fill-white ml-1" />
+                  </div>
+                </div>
+              </button>
+            )}
+
+            {/* Meta */}
+            <div className="space-y-0.5">
+              <p className="text-xs font-semibold text-white/90 leading-snug line-clamp-2">{video.title}</p>
+              <div className="flex items-center justify-between">
+                {video.published_at && (
+                  <span className="text-[10px] text-muted-foreground">
+                    {new Date(video.published_at).toLocaleDateString("es", { day: "numeric", month: "short", year: "numeric" })}
+                  </span>
+                )}
+                <a
+                  href={`https://www.youtube.com/watch?v=${video.youtube_video_id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-red-400 transition-colors"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  YouTube
+                </a>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </motion.div>
   );
 }
 
