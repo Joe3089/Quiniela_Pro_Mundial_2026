@@ -331,15 +331,25 @@ export function DashboardView() {
                             <span className="text-xs font-semibold text-white truncate max-w-[60px]">{match.home_team?.short_name ?? "LOC"}</span>
                             {match.home_team?.fifa_code && <FlagImage fifaCode={match.home_team.fifa_code} size="sm" className="shrink-0" />}
                           </div>
-                          <span className={`text-sm font-black tabular-nums w-12 text-center shrink-0 ${isLive ? "text-cyan-400" : "text-white"}`}>
-                            {match.home_score ?? 0} – {match.away_score ?? 0}
-                          </span>
+                          <div className="flex flex-col items-center w-12 shrink-0">
+                            <span className={`text-sm font-black tabular-nums text-center ${isLive ? "text-cyan-400" : "text-white"}`}>
+                              {match.home_score ?? 0} – {match.away_score ?? 0}
+                            </span>
+                            {match.api_football_status === "PEN" && (
+                              <span className="text-[8px] font-bold text-amber-400 leading-none">
+                                ({match.home_score_penalties}-{match.away_score_penalties} pen)
+                              </span>
+                            )}
+                            {match.api_football_status === "AET" && (
+                              <span className="text-[8px] font-bold text-blue-400 leading-none">ET</span>
+                            )}
+                          </div>
                           <div className="flex items-center gap-1.5 flex-1 justify-start">
                             {match.away_team?.fifa_code && <FlagImage fifaCode={match.away_team.fifa_code} size="sm" className="shrink-0" />}
                             <span className="text-xs font-semibold text-white truncate max-w-[60px]">{match.away_team?.short_name ?? "VIS"}</span>
                           </div>
                           <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0 ${isLive ? "bg-cyan-400/20 text-cyan-400" : "bg-emerald-500/15 text-emerald-400"}`}>
-                            {isLive ? "LIVE" : "FT"}
+                            {isLive ? "LIVE" : match.api_football_status === "PEN" ? "PEN" : match.api_football_status === "AET" ? "AET" : "FT"}
                           </span>
                         </div>
                         {isLive && (
