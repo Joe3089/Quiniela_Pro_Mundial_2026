@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { TOURNAMENT_ID } from "@/constants";
-import { fetchFifaYoutubeVideos, detectVideoType, videoMatchesTeams } from "@/services/youtube";
+import { fetchFifaYoutubeVideos, detectVideoType, videoMatchesTeams, FIFA_CODE_ENGLISH } from "@/services/youtube";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -40,8 +40,16 @@ export async function GET(request: NextRequest) {
     for (const match of matches) {
       const home = match.home_team as any;
       const away = match.away_team as any;
-      const homeNames = [home?.name, home?.short_name, home?.fifa_code];
-      const awayNames = [away?.name, away?.short_name, away?.fifa_code];
+      const homeCode = home?.fifa_code as string | undefined;
+      const awayCode = away?.fifa_code as string | undefined;
+      const homeNames = [
+        home?.name, home?.short_name, homeCode,
+        ...(homeCode ? (FIFA_CODE_ENGLISH[homeCode] ?? []) : []),
+      ];
+      const awayNames = [
+        away?.name, away?.short_name, awayCode,
+        ...(awayCode ? (FIFA_CODE_ENGLISH[awayCode] ?? []) : []),
+      ];
 
       if (!videoMatchesTeams(video.title, homeNames, awayNames)) continue;
       if (type === "highlights" && match.status !== "finished") continue;

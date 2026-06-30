@@ -1,6 +1,37 @@
 // Official FIFA YouTube channel
 const FIFA_CHANNEL_ID = "UCpcTrCXblq78GZrTUTLWeBw";
 
+// FIFA code → English name (for matching YouTube titles which use English)
+export const FIFA_CODE_ENGLISH: Record<string, string[]> = {
+  ARG: ["Argentina"], AUS: ["Australia"], BEL: ["Belgium"],
+  BRA: ["Brazil"], CAN: ["Canada"], CHN: ["China", "PR China"],
+  CMR: ["Cameroon"], COD: ["DR Congo", "Congo DR"], COL: ["Colombia"],
+  CRC: ["Costa Rica"], CRO: ["Croatia"], ECU: ["Ecuador"],
+  EGY: ["Egypt"], ENG: ["England"], ESP: ["Spain"],
+  FRA: ["France"], GER: ["Germany"], GHA: ["Ghana"],
+  GRE: ["Greece"], HUN: ["Hungary"], IRN: ["Iran"],
+  JAM: ["Jamaica"], JPN: ["Japan"], KAZ: ["Kazakhstan"],
+  KOR: ["South Korea", "Korea Republic"], MAR: ["Morocco"],
+  MEX: ["Mexico"], MOR: ["Morocco"], NED: ["Netherlands", "Holland"],
+  NGA: ["Nigeria"], NOR: ["Norway"], NZL: ["New Zealand"],
+  PAR: ["Paraguay"], PER: ["Peru"], POL: ["Poland"],
+  POR: ["Portugal"], RSA: ["South Africa"], RUS: ["Russia"],
+  SAU: ["Saudi Arabia"], SEN: ["Senegal"], SRB: ["Serbia"],
+  SUI: ["Switzerland"], SVK: ["Slovakia"], TAN: ["Tanzania"],
+  THA: ["Thailand"], TUN: ["Tunisia"], URU: ["Uruguay"],
+  USA: ["USA", "United States"], VEN: ["Venezuela"],
+  BIH: ["Bosnia", "Bosnia and Herzegovina"], CIV: ["Ivory Coast", "Côte d'Ivoire"],
+  ALB: ["Albania"], AUT: ["Austria"], BLR: ["Belarus"],
+  CZE: ["Czech Republic", "Czechia"], DEN: ["Denmark"],
+  FIN: ["Finland"], IRL: ["Republic of Ireland", "Ireland"],
+  ISL: ["Iceland"], ISR: ["Israel"], MNE: ["Montenegro"],
+  MKD: ["North Macedonia"], QAT: ["Qatar"], ROM: ["Romania"],
+  SCO: ["Scotland"], SVN: ["Slovenia"], SWE: ["Sweden"],
+  TUR: ["Turkey"], UKR: ["Ukraine"], WAL: ["Wales"],
+  LUX: ["Luxembourg"], GEO: ["Georgia"], KWT: ["Kuwait"],
+  BHR: ["Bahrain"], OMN: ["Oman"],
+};
+
 export interface YoutubeVideo {
   videoId: string;
   title: string;
