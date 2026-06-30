@@ -12,18 +12,19 @@ export async function GET(
 
   const { data } = await supabase
     .from("match_videos")
-    .select("*")
+    .select("id, match_id, youtube_video_id, title, type, thumbnail_url, published_at, channel_source, channel_priority, duration_seconds")
     .eq("match_id", matchId)
+    .order("channel_priority", { ascending: true })
     .order("published_at", { ascending: false });
 
-  // Deduplicate by type — prefer most recent per type
+  // Best video per type (lowest channel_priority = highest priority)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const byType: Record<string, any> = {};
   for (const v of data ?? []) {
     if (!byType[v.type]) byType[v.type] = v;
   }
 
-  // Return highlights first, then preview
+  // highlights first, then preview — never duplicates
   const result = [byType["highlights"], byType["preview"]].filter(Boolean);
 
   return NextResponse.json(result);
