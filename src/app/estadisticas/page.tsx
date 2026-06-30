@@ -56,10 +56,12 @@ const PLAYER_API_IDS: Record<string, number> = {
 
 // Abbreviated API event names → full historical scorer names (for match_events fallback)
 const EVENT_NAME_TO_SCORER: Record<string, string> = {
-  "L. Messi":    "Lionel Messi",
-  "K. Mbappé":   "Kylian Mbappé",
-  "H. Kane":     "Harry Kane",
-  "C. Ronaldo":  "Cristiano Ronaldo",
+  "L. Messi":        "Lionel Messi",
+  "K. Mbappe":       "Kylian Mbappé",
+  "K. Mbappé":       "Kylian Mbappé",
+  "H. Kane":         "Harry Kane",
+  "C. Ronaldo":      "Cristiano Ronaldo",
+  "Vinicius Junior": "Vinícius Jr.",
 };
 
 // Separate map for API-Football photo IDs (includes Messi/Mbappé for photo only)
