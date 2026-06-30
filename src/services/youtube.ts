@@ -74,7 +74,7 @@ export const FIFA_CODE_ENGLISH: Record<string, string[]> = {
   DEN: ["Denmark"], ISL: ["Iceland"], IRL: ["Ireland", "Republic of Ireland"],
   ISR: ["Israel"], MNE: ["Montenegro"], MKD: ["North Macedonia"],
   QAT: ["Qatar"], ROM: ["Romania"], SCO: ["Scotland"],
-  SVN: ["Slovenia"], SWE: ["Sweden"], TUR: ["Turkey"],
+  SVN: ["Slovenia"], SWE: ["Sweden"], TUR: ["Turkey", "Türkiye"],
   UKR: ["Ukraine"], WAL: ["Wales"], GEO: ["Georgia"],
   KSA: ["Saudi Arabia"], RDC: ["DR Congo", "Congo DR", "DRC", "Congo"],
   CPV: ["Cape Verde"], CUW: ["Curacao", "Curaçao"],
