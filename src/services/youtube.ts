@@ -70,12 +70,16 @@ export const FIFA_CODE_ENGLISH: Record<string, string[]> = {
   USA: ["USA", "United States"], VEN: ["Venezuela"],
   BIH: ["Bosnia", "Bosnia and Herzegovina"],
   CIV: ["Ivory Coast", "Cote d'Ivoire", "Côte d'Ivoire"],
-  ALB: ["Albania"], AUT: ["Austria"], CZE: ["Czech Republic", "Czechia"],
+  ALG: ["Algeria"], AUT: ["Austria"], CZE: ["Czech Republic", "Czechia"],
   DEN: ["Denmark"], ISL: ["Iceland"], IRL: ["Ireland", "Republic of Ireland"],
   ISR: ["Israel"], MNE: ["Montenegro"], MKD: ["North Macedonia"],
   QAT: ["Qatar"], ROM: ["Romania"], SCO: ["Scotland"],
   SVN: ["Slovenia"], SWE: ["Sweden"], TUR: ["Turkey"],
   UKR: ["Ukraine"], WAL: ["Wales"], GEO: ["Georgia"],
+  KSA: ["Saudi Arabia"], RDC: ["DR Congo", "Congo DR", "DRC", "Congo"],
+  CPV: ["Cape Verde"], CUW: ["Curacao", "Curaçao"],
+  HAI: ["Haiti"], IRQ: ["Iraq"], JOR: ["Jordan"],
+  PAN: ["Panama"], UZB: ["Uzbekistan"],
 };
 
 function parseRss(xml: string, channelName: string, priority: number): YoutubeVideo[] {
