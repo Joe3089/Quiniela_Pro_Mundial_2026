@@ -10,10 +10,28 @@ export interface YoutubeVideo {
 
 export type VideoType = "highlights" | "preview";
 
+// Score pattern like "1-0", "(2)1-1(3)"
+const SCORE_RE = /\(\d+\)\d+-\d+\(\d+\)|\d+-\d+/;
+
 export function detectVideoType(title: string): VideoType | null {
   const t = title.toLowerCase();
-  if (t.includes("highlight")) return "highlights";
-  if (t.includes("preview") || t.includes("match preview")) return "preview";
+  // Highlights: score in title, or match result/recap keywords
+  if (
+    SCORE_RE.test(title) ||
+    t.includes("highlight") ||
+    t.includes("eliminate") ||
+    t.includes("recap") ||
+    t.includes("penalty shootout") ||
+    t.includes("full match") ||
+    t.includes("goal |") ||
+    t.includes("goals |")
+  ) return "highlights";
+  // Preview: live stream or preview keywords
+  if (
+    t.includes("watch live") ||
+    t.includes("preview") ||
+    t.includes("live |")
+  ) return "preview";
   return null;
 }
 
