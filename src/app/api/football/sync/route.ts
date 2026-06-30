@@ -4,6 +4,7 @@ import {
   getTeamPlayers,
   getWCFixtures,
   getWCTeams,
+  getFixtureEvents,
   type AFFixture,
   type AFTeam,
 } from "@/services/api-football";
@@ -81,6 +82,7 @@ export async function GET(request: NextRequest) {
 
       if (action === "scores" || action === "all") {
         results.scores = await syncFixtures(supabase, { onlyPlayedOrLive: true });
+        results.events = await syncEvents(supabase);
         results.scoring = await scoreFinishedMatches(supabase);
         results.bracket = await runBracketSync().catch(() => ({ status: "error" }));
       }
@@ -121,6 +123,7 @@ export async function POST(request: NextRequest) {
 
     if (action === "scores" || action === "all") {
       results.scores = await syncFixtures(supabase, { onlyPlayedOrLive: true });
+      results.events = await syncEvents(supabase);
       results.scoring = await scoreFinishedMatches(supabase);
       results.bracket = await runBracketSync().catch(() => ({ status: "error" }));
     }
@@ -336,6 +339,54 @@ function toMatchRow(fixture: AFFixture, homeTeamId: string, awayTeamId: string, 
     city: fixture.fixture.venue.city,
     status: mapStatus(fixture.fixture.status.short),
   };
+}
+
+async function syncEvents(supabase: SupabaseClient) {
+  // Get finished matches with an API fixture ID
+  const { data: finished } = await supabase
+    .from("matches")
+    .select("id, api_football_fixture_id, home_team_id, away_team_id, api_football_home_team_id, api_football_away_team_id")
+    .eq("tournament_id", TOURNAMENT_ID)
+    .eq("status", "finished")
+    .not("api_football_fixture_id", "is", null);
+
+  if (!finished?.length) return { synced: 0, skipped: 0 };
+
+  // Find match_ids that already have events (skip them)
+  const { data: existing } = await supabase
+    .from("match_events")
+    .select("match_id")
+    .in("match_id", finished.map((m) => m.id));
+
+  const alreadySynced = new Set((existing ?? []).map((e) => e.match_id));
+  const toSync = finished.filter((m) => !alreadySynced.has(m.id));
+
+  let synced = 0;
+  for (const match of toSync) {
+    try {
+      const events = await getFixtureEvents(match.api_football_fixture_id as number);
+      const goalEvents = events.filter(
+        (e) => e.type === "Goal" && e.detail !== "Missed Penalty"
+      );
+      if (!goalEvents.length) continue;
+
+      const rows = goalEvents.map((e) => ({
+        match_id: match.id,
+        tournament_id: TOURNAMENT_ID,
+        team_id: e.team.id === match.api_football_home_team_id ? match.home_team_id : match.away_team_id,
+        type: "goal",
+        player_name: e.player.name,
+        minute: e.time.elapsed,
+        minute_extra: e.time.extra ?? null,
+        assist_name: e.assist.name ?? null,
+      }));
+
+      await supabase.from("match_events").insert(rows);
+      synced++;
+    } catch { /* skip individual match failures */ }
+  }
+
+  return { synced, skipped: alreadySynced.size };
 }
 
 function isPlayedOrLive(fixture: AFFixture) {

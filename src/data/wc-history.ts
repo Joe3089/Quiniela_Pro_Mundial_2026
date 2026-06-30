@@ -32,7 +32,8 @@ export interface TopScorer {
   flag: string;
   fifaCode?: string;
   confederation?: string;
-  goals: number;
+  goals: number;       // Pre-2026 historical goals only
+  gamesPlayed: number; // Pre-2026 WC appearances
   editions: number;
   years: string;
 }
@@ -84,24 +85,24 @@ export const WC_CHAMPIONS: WCChampion[] = [
   { country: "España",      flag: "🇪🇸", fifaCode: "ESP", titles: 1, years: [2010], runnerUp: 0, runnerUpYears: [], thirdPlace: 0, confederation: "UEFA" },
 ];
 
-// Messi base = 13 (pre-2026 historical); WC2026 goals fetched live via PLAYER_API_IDS (id 154)
-// Mbappé +4 (16 hardcoded, ties Klose), CR7 +2 (10), Kane +2 (10)
+// goals = pre-2026 historical ONLY; WC2026 goals merged live from API-Football (PLAYER_API_IDS in estadisticas/page.tsx)
+// gamesPlayed = pre-2026 WC appearances
 export const ALL_TIME_SCORERS: TopScorer[] = [
-  { rank: 1,  name: "Lionel Messi",     country: "Argentina", flag: "🇦🇷", fifaCode: "ARG", confederation: "CONMEBOL", goals: 13, editions: 6, years: "2006–2026" },
-  { rank: 2,  name: "Miroslav Klose",   country: "Alemania",  flag: "🇩🇪", fifaCode: "GER", confederation: "UEFA",     goals: 16, editions: 4, years: "2002–2014" },
-  { rank: 2,  name: "Kylian Mbappé",    country: "Francia",   flag: "🇫🇷", fifaCode: "FRA", confederation: "UEFA",     goals: 16, editions: 3, years: "2018–2026" },
-  { rank: 4,  name: "Ronaldo (R9)",     country: "Brasil",    flag: "🇧🇷", fifaCode: "BRA", confederation: "CONMEBOL", goals: 15, editions: 4, years: "1994–2006" },
-  { rank: 5,  name: "Gerd Müller",      country: "Alemania",  flag: "🇩🇪", fifaCode: "GER", confederation: "UEFA",     goals: 14, editions: 2, years: "1970–1974" },
-  { rank: 6,  name: "Just Fontaine",    country: "Francia",   flag: "🇫🇷", fifaCode: "FRA", confederation: "UEFA",     goals: 13, editions: 1, years: "1958" },
-  { rank: 7,  name: "Pelé",             country: "Brasil",    flag: "🇧🇷", fifaCode: "BRA", confederation: "CONMEBOL", goals: 12, editions: 4, years: "1958–1970" },
-  { rank: 8,  name: "Sándor Kocsis",    country: "Hungría",   flag: "🇭🇺", fifaCode: "HUN", confederation: "UEFA",     goals: 11, editions: 1, years: "1954" },
-  { rank: 8,  name: "Jürgen Klinsmann", country: "Alemania",  flag: "🇩🇪", fifaCode: "GER", confederation: "UEFA",     goals: 11, editions: 3, years: "1990–1998" },
-  { rank: 10, name: "Gabriel Batistuta",country: "Argentina", flag: "🇦🇷", fifaCode: "ARG", confederation: "CONMEBOL", goals: 10, editions: 3, years: "1994–2002" },
-  { rank: 10, name: "Gary Lineker",     country: "Inglaterra",flag: "󠁧󠁢󠁥󠁮󠁧󠁿🏴󠁧󠁢󠁥󠁮󠁧󠁿", fifaCode: "ENG", confederation: "UEFA",     goals: 10, editions: 2, years: "1986–1990" },
-  { rank: 10, name: "Teófilo Cubillas", country: "Perú",      flag: "🇵🇪", fifaCode: "PER", confederation: "CONMEBOL", goals: 10, editions: 2, years: "1970–1978" },
-  { rank: 10, name: "Grzegorz Lato",    country: "Polonia",   flag: "🇵🇱", fifaCode: "POL", confederation: "UEFA",     goals: 10, editions: 3, years: "1974–1982" },
-  { rank: 10, name: "Harry Kane",       country: "Inglaterra",flag: "󠁧󠁢󠁥󠁮󠁧󠁿🏴󠁧󠁢󠁥󠁮󠁧󠁿", fifaCode: "ENG", confederation: "UEFA",     goals: 10, editions: 3, years: "2018–2026" },
-  { rank: 10, name: "Cristiano Ronaldo",country: "Portugal",  flag: "🇵🇹", fifaCode: "POR", confederation: "UEFA",     goals: 10, editions: 6, years: "2006–2026" },
+  { rank: 1,  name: "Lionel Messi",     country: "Argentina", flag: "🇦🇷", fifaCode: "ARG", confederation: "CONMEBOL", goals: 10, gamesPlayed: 26, editions: 6, years: "2006–2026" },
+  { rank: 2,  name: "Miroslav Klose",   country: "Alemania",  flag: "🇩🇪", fifaCode: "GER", confederation: "UEFA",     goals: 16, gamesPlayed: 24, editions: 4, years: "2002–2014" },
+  { rank: 2,  name: "Kylian Mbappé",    country: "Francia",   flag: "🇫🇷", fifaCode: "FRA", confederation: "UEFA",     goals: 12, gamesPlayed: 13, editions: 3, years: "2018–2026" },
+  { rank: 4,  name: "Ronaldo (R9)",     country: "Brasil",    flag: "🇧🇷", fifaCode: "BRA", confederation: "CONMEBOL", goals: 15, gamesPlayed: 19, editions: 4, years: "1994–2006" },
+  { rank: 5,  name: "Gerd Müller",      country: "Alemania",  flag: "🇩🇪", fifaCode: "GER", confederation: "UEFA",     goals: 14, gamesPlayed: 13, editions: 2, years: "1970–1974" },
+  { rank: 6,  name: "Just Fontaine",    country: "Francia",   flag: "🇫🇷", fifaCode: "FRA", confederation: "UEFA",     goals: 13, gamesPlayed:  6, editions: 1, years: "1958" },
+  { rank: 7,  name: "Pelé",             country: "Brasil",    flag: "🇧🇷", fifaCode: "BRA", confederation: "CONMEBOL", goals: 12, gamesPlayed: 14, editions: 4, years: "1958–1970" },
+  { rank: 8,  name: "Sándor Kocsis",    country: "Hungría",   flag: "🇭🇺", fifaCode: "HUN", confederation: "UEFA",     goals: 11, gamesPlayed:  5, editions: 1, years: "1954" },
+  { rank: 8,  name: "Jürgen Klinsmann", country: "Alemania",  flag: "🇩🇪", fifaCode: "GER", confederation: "UEFA",     goals: 11, gamesPlayed: 17, editions: 3, years: "1990–1998" },
+  { rank: 10, name: "Gabriel Batistuta",country: "Argentina", flag: "🇦🇷", fifaCode: "ARG", confederation: "CONMEBOL", goals: 10, gamesPlayed: 12, editions: 3, years: "1994–2002" },
+  { rank: 10, name: "Gary Lineker",     country: "Inglaterra",flag: "󠁧󠁢󠁥󠁮󠁧󠁿🏴󠁧󠁢󠁥󠁮󠁧󠁿", fifaCode: "ENG", confederation: "UEFA",     goals: 10, gamesPlayed: 12, editions: 2, years: "1986–1990" },
+  { rank: 10, name: "Teófilo Cubillas", country: "Perú",      flag: "🇵🇪", fifaCode: "PER", confederation: "CONMEBOL", goals: 10, gamesPlayed:  9, editions: 2, years: "1970–1978" },
+  { rank: 10, name: "Grzegorz Lato",    country: "Polonia",   flag: "🇵🇱", fifaCode: "POL", confederation: "UEFA",     goals: 10, gamesPlayed: 14, editions: 3, years: "1974–1982" },
+  { rank: 10, name: "Harry Kane",       country: "Inglaterra",flag: "󠁧󠁢󠁥󠁮󠁧󠁿🏴󠁧󠁢󠁥󠁮󠁧󠁿", fifaCode: "ENG", confederation: "UEFA",     goals:  8, gamesPlayed: 12, editions: 3, years: "2018–2026" },
+  { rank: 10, name: "Cristiano Ronaldo",country: "Portugal",  flag: "🇵🇹", fifaCode: "POR", confederation: "UEFA",     goals:  8, gamesPlayed: 22, editions: 6, years: "2006–2026" },
 ];
 
 export const RECORDS_2026: WCRecord[] = [

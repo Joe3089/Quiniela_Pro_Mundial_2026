@@ -41,17 +41,25 @@ const FEDERATION_CRESTS: Record<string, string> = {
 
 };
 
-// Verified API-Football player IDs (tested against API)
-// WC 2026 goals fetched from API and added to ALL_TIME_SCORERS base (pre-2026 historical)
+// API-Football player IDs — WC2026 goals auto-merged; base goals in wc-history.ts are pre-2026 only
 const PLAYER_API_IDS: Record<string, number> = {
   "Lionel Messi":       154,
-  "Erling Haaland":     1100,
+  "Kylian Mbappé":      278,
   "Harry Kane":         184,
   "Cristiano Ronaldo":  874,
+  "Erling Haaland":     1100,
   "Neymar Jr.":         276,
   "Neymar":             276,
   "Vinícius Jr.":       384384,
   "Julián Álvarez":     342666,
+};
+
+// Abbreviated API event names → full historical scorer names (for match_events fallback)
+const EVENT_NAME_TO_SCORER: Record<string, string> = {
+  "L. Messi":    "Lionel Messi",
+  "K. Mbappé":   "Kylian Mbappé",
+  "H. Kane":     "Harry Kane",
+  "C. Ronaldo":  "Cristiano Ronaldo",
 };
 
 // Separate map for API-Football photo IDs (includes Messi/Mbappé for photo only)
@@ -314,6 +322,7 @@ function HistorialTab() {
 
 /* ── GOLEADORES TAB ─────────────────────────────────────────── */
 function GoladoresTab() {
+  // Primary: API-Football topscorers (full player IDs + goals)
   const { data: scorers2026 = [] } = useQuery({
     queryKey: ["top-scorers"],
     queryFn: () => fetchTopScorers("scorers"),
@@ -321,7 +330,18 @@ function GoladoresTab() {
     refetchInterval: 300_000,
   });
 
-  // API-Football player ID → WC 2026 goals
+  // Backup + team games played: Supabase match_events aggregate
+  const { data: sbStats } = useQuery({
+    queryKey: ["wc2026-scorers-sb"],
+    queryFn: () => fetch("/api/stats/wc2026-scorers").then((r) => r.json()) as Promise<{
+      goals: Record<string, number>;
+      teamGamesPlayed: Record<string, number>;
+    }>,
+    staleTime: 300_000,
+    refetchInterval: 300_000,
+  });
+
+  // API-Football player ID → WC2026 goals (primary)
   const goals2026ByApiId = useMemo(() => {
     const m: Record<number, number> = {};
     for (const entry of scorers2026) {
@@ -331,17 +351,37 @@ function GoladoresTab() {
     return m;
   }, [scorers2026]);
 
-  // Historical totals + WC 2026 additions merged and re-ranked
+  // Supabase match_events goals → normalized by scorer name (backup)
+  const goals2026ByName = useMemo(() => {
+    const raw = sbStats?.goals ?? {};
+    const result: Record<string, number> = {};
+    for (const [abbrev, count] of Object.entries(raw)) {
+      const full = EVENT_NAME_TO_SCORER[abbrev] ?? abbrev;
+      result[full] = (result[full] ?? 0) + count;
+    }
+    return result;
+  }, [sbStats]);
+
+  const teamGamesPlayed = sbStats?.teamGamesPlayed ?? {};
+
+  // Historical totals + WC2026 additions merged and re-ranked
   const mergedScorers = useMemo(() => {
     return [...ALL_TIME_SCORERS]
       .map((s) => {
         const apiId = PLAYER_API_IDS[s.name];
-        const extra2026 = apiId ? (goals2026ByApiId[apiId] ?? 0) : 0;
-        return { ...s, goals: s.goals + extra2026, extra2026 };
+        // Primary: API-Football ID match; Backup: Supabase match_events name match
+        const extra2026 = apiId
+          ? (goals2026ByApiId[apiId] ?? goals2026ByName[s.name] ?? 0)
+          : (goals2026ByName[s.name] ?? 0);
+        // Total games: pre-2026 + WC2026 team games (for active players)
+        const wc2026Games = s.fifaCode ? (teamGamesPlayed[s.fifaCode] ?? 0) : 0;
+        const totalGames = s.gamesPlayed + wc2026Games;
+        const totalGoals = s.goals + extra2026;
+        return { ...s, goals: totalGoals, extra2026, totalGames };
       })
       .sort((a, b) => b.goals - a.goals || a.name.localeCompare(b.name))
       .map((s, i) => ({ ...s, rank: i + 1 }));
-  }, [goals2026ByApiId]);
+  }, [goals2026ByApiId, goals2026ByName, teamGamesPlayed]);
 
   const maxGoals = mergedScorers[0]?.goals ?? 16;
 
@@ -395,11 +435,18 @@ function GoladoresTab() {
               </div>
             </div>
             <div className="flex items-center gap-3 shrink-0">
-              <div className="w-20 h-2 bg-white/5 rounded-full overflow-hidden hidden sm:block">
-                <div
-                  className="h-full rounded-full"
-                  style={{ width: `${(s.goals / maxGoals) * 100}%`, background: "#F5A500" }}
-                />
+              <div className="hidden sm:flex flex-col items-end gap-0.5">
+                <div className="w-20 h-2 bg-white/5 rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full"
+                    style={{ width: `${(s.goals / maxGoals) * 100}%`, background: "#F5A500" }}
+                  />
+                </div>
+                {s.totalGames > 0 && (
+                  <span className="text-[10px] text-muted-foreground">
+                    {(s.goals / s.totalGames).toFixed(2)}/ptdo
+                  </span>
+                )}
               </div>
               <span className="text-2xl font-black text-[hsl(var(--brand-gold))] w-8 text-right">
                 {s.goals}
