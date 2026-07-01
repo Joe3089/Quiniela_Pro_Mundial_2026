@@ -6,7 +6,7 @@
   "crons": [
     {
       "path": "/api/football/sync?action=scores",
-      "schedule": "0 */2 * * *"
+      "schedule": "0 3 * * *"
     },
     {
       "path": "/api/youtube/sync",
