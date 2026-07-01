@@ -339,8 +339,9 @@ function GoladoresTab() {
       goals: Record<string, number>;
       teamGamesPlayed: Record<string, number>;
     }>,
-    staleTime: 300_000,
+    staleTime: 60_000,
     refetchInterval: 300_000,
+    refetchOnWindowFocus: true,
   });
 
   // API-Football player ID → WC2026 goals (primary)
@@ -499,13 +500,17 @@ function Mundial2026Tab() {
   const { data: scorers = [], isLoading: scorersLoading } = useQuery({
     queryKey: ["top-scorers"],
     queryFn: () => fetchTopScorers("scorers"),
-    staleTime: 3_600_000,
+    staleTime: 60_000,
+    refetchInterval: 300_000,
+    refetchOnWindowFocus: true,
   });
 
   const { data: assists = [], isLoading: assistsLoading } = useQuery({
     queryKey: ["top-assists"],
     queryFn: () => fetchTopScorers("assists"),
-    staleTime: 3_600_000,
+    staleTime: 300_000,
+    refetchInterval: 900_000,
+    refetchOnWindowFocus: true,
   });
 
   const played = matchStats?.played ?? 0;
