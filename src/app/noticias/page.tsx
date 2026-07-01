@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { Newspaper, ExternalLink, RefreshCw, Clock, Loader2, WifiOff, Globe, Shield, Trophy, Users } from "lucide-react";
+import { Newspaper, ExternalLink, RefreshCw, Clock, Loader2, WifiOff, Globe, Trophy, Users, Tv, Radio } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,21 +22,27 @@ interface NewsItem {
 const TABS = [
   { id: "all",           label: "Todas",          icon: Newspaper },
   { id: "fifa",          label: "FIFA",            icon: Globe },
-  { id: "federaciones",  label: "Federaciones",    icon: Shield },
   { id: "mundial",       label: "Mundial 2026",    icon: Trophy },
   { id: "convocatorias", label: "Convocatorias",   icon: Users },
+  { id: "espn",          label: "ESPN",            icon: Tv },
+  { id: "foxsports",     label: "FOX Sports",      icon: Tv },
+  { id: "sportscenter",  label: "SportsCenter",    icon: Radio },
+  { id: "dsports",       label: "DSPORTS",         icon: Tv },
+  { id: "diarioas",      label: "Diario AS",       icon: Newspaper },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
 
 const SOURCE_COLORS: Record<string, string> = {
   "FIFA News":    "#044B96",
-  "UEFA":         "#003DA5",
   "BBC Sport":    "#BB1919",
-  "ESPN FC":      "#FF6B00",
-  "Goal.com":     "#00B04B",
   "Sky Sports":   "#00A0E2",
   "Marca":        "#E31E24",
+  "ESPN":         "#FF6B00",
+  "FOX Sports":   "#003DA5",
+  "SportsCenter": "#CC0000",
+  "DSPORTS":      "#0057A8",
+  "Diario AS":    "#1E3A8A",
 };
 
 function formatDate(dateStr: string): string {
@@ -146,7 +152,7 @@ export default function NoticiasPage() {
             <h1 className="text-2xl font-black text-white">Noticias</h1>
           </div>
           <p className="text-xs text-muted-foreground">
-            {updatedAt ? `Actualizado a las ${updatedAt}` : "FIFA · Federaciones · Mundial 2026 · Convocatorias"}
+            {updatedAt ? `Actualizado a las ${updatedAt}` : "FIFA · ESPN · FOX Sports · SportsCenter · DSPORTS · Diario AS"}
           </p>
         </div>
         <Button variant="glass" size="sm" onClick={() => refetch()} disabled={isFetching} className="gap-2">
