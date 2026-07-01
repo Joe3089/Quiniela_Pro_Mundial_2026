@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
     else data = await getTopScorers();
 
     return NextResponse.json(data, {
-      headers: { "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=60" },
+      headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=30" },
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";

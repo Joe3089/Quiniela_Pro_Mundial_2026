@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { TrendingUp, Trophy, Clock, Star, AlertTriangle, Globe2, Users, Zap, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -328,7 +328,7 @@ function GoladoresTab() {
   const { data: scorers2026 = [] } = useQuery({
     queryKey: ["top-scorers"],
     queryFn: () => fetchTopScorers("scorers"),
-    staleTime: 3_600_000,
+    staleTime: 60_000,
     refetchInterval: 300_000,
   });
 
@@ -736,8 +736,39 @@ function RecordsTab() {
   );
 }
 
+const HIST_GOALS = WC_EDITIONS.reduce((s, e) => s + e.totalGoals, 0); // 2720 (1930–2022)
+
 /* ── PAGE ───────────────────────────────────────────────────── */
 export default function EstadisticasPage() {
+  const queryClient = useQueryClient();
+
+  // Live WC2026 goals — shared by header + tabs via same queryKey
+  const { data: matchStats } = useQuery({
+    queryKey: ["match-stats-summary"],
+    queryFn: fetchMatchStats,
+    staleTime: 60_000,
+    refetchInterval: 120_000,
+  });
+
+  const liveGoals   = matchStats?.goals  ?? 0;
+  const totalGoals  = HIST_GOALS + liveGoals; // 2720 + WC2026 = running total since 1930
+
+  // Supabase Realtime: auto-invalidate when match scores or goal events change
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel("stats-realtime")
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "matches" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["match-stats-summary"] });
+      })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "match_events" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["wc2026-scorers-sb"] });
+        queryClient.invalidateQueries({ queryKey: ["top-scorers"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       {/* Header */}
@@ -753,16 +784,18 @@ export default function EstadisticasPage() {
         <h1 className="text-3xl font-black tracking-tight mb-1">
           <span className="text-gradient-gold">Estadísticas</span>
         </h1>
-        <p className="text-muted-foreground text-sm">Mundial FIFA desde 1930 hasta 2022 · 22 ediciones · {WC_EDITIONS.reduce((s, e) => s + e.totalGoals, 0).toLocaleString()} goles históricos</p>
+        <p className="text-muted-foreground text-sm">
+          Mundial FIFA 1930–2026 · 23 ediciones · {totalGoals.toLocaleString("es")} goles totales
+        </p>
       </motion.div>
 
-      {/* Quick stats */}
+      {/* Quick stats — all dynamic */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
         {[
-          { label: "Ediciones",       value: "22",    color: "#3b82f6" },
-          { label: "Países campeones", value: "8",    color: "#F5A500" },
-          { label: "Goles totales",   value: "2,548", color: "#10b981" },
-          { label: "Años de historia","value": "96",  color: "#8b5cf6" },
+          { label: "Ediciones",        value: "23",                                   color: "#3b82f6" },
+          { label: "Países campeones", value: "8",                                    color: "#F5A500" },
+          { label: "Goles 1930–2026",  value: totalGoals.toLocaleString("es"),        color: "#10b981" },
+          { label: "Goles WC 2026",    value: liveGoals > 0 ? String(liveGoals) : "—", color: "#8b5cf6" },
         ].map((s) => (
           <div key={s.label} className="glass rounded-xl border border-white/5 p-3 text-center">
             <div className="text-2xl font-black" style={{ color: s.color }}>{s.value}</div>

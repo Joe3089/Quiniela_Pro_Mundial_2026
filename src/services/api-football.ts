@@ -215,7 +215,7 @@ export interface AFTopScorer {
 
 /** Top scorers for WC 2026 (cached 1h) */
 export async function getTopScorers(): Promise<AFTopScorer[]> {
-  return get<AFTopScorer[]>(`/players/topscorers?league=${FIFA_WC_LEAGUE}&season=${SEASON}`, { revalidate: 3600 });
+  return get<AFTopScorer[]>(`/players/topscorers?league=${FIFA_WC_LEAGUE}&season=${SEASON}`, { revalidate: 300 });
 }
 
 /** Top assists for WC 2026 (cached 1h) */
