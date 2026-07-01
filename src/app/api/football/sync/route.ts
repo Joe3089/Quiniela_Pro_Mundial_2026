@@ -8,7 +8,7 @@ import {
   type AFFixture,
   type AFTeam,
 } from "@/services/api-football";
-import { notifyMatchFinished, sendInternalNotification } from "@/services/notifications";
+import { notifyMatchFinished, sendInternalNotification, notifyRecordBroken } from "@/services/notifications";
 import { runBracketSync } from "@/app/api/football/bracket/sync/route";
 import { TOURNAMENT_ID } from "@/constants";
 
@@ -83,6 +83,7 @@ export async function GET(request: NextRequest) {
       if (action === "scores" || action === "all") {
         results.scores = await syncFixtures(supabase, { onlyPlayedOrLive: true });
         results.events = await syncEvents(supabase);
+        results.records = await checkAndNotifyBrokenRecords(supabase);
         results.scoring = await scoreFinishedMatches(supabase);
         results.bracket = await runBracketSync().catch(() => ({ status: "error" }));
       }
@@ -124,6 +125,7 @@ export async function POST(request: NextRequest) {
     if (action === "scores" || action === "all") {
       results.scores = await syncFixtures(supabase, { onlyPlayedOrLive: true });
       results.events = await syncEvents(supabase);
+      results.records = await checkAndNotifyBrokenRecords(supabase);
       results.scoring = await scoreFinishedMatches(supabase);
       results.bracket = await runBracketSync().catch(() => ({ status: "error" }));
     }
@@ -387,6 +389,85 @@ async function syncEvents(supabase: SupabaseClient) {
   }
 
   return { synced, skipped: alreadySynced.size };
+}
+
+// ── Record-broken auto-notifications ─────────────────────────────────────────
+// Runs after each syncEvents. Sends in-app + email/WhatsApp the FIRST time a
+// record threshold is crossed. De-duplicates via notifications table check.
+async function checkAndNotifyBrokenRecords(supabase: SupabaseClient) {
+  // Current WC2026 goals per player from match_events
+  const { data: events } = await supabase
+    .from("match_events")
+    .select("player_name")
+    .eq("tournament_id", TOURNAMENT_ID)
+    .eq("type", "goal");
+
+  const wc2026: Record<string, number> = {};
+  for (const e of events ?? []) {
+    wc2026[e.player_name] = (wc2026[e.player_name] ?? 0) + 1;
+  }
+
+  // base = pre-2026 historical goals (must mirror wc-history.ts)
+  const SCORERS = [
+    { event: "L. Messi",   name: "Lionel Messi",     base: 13 },
+    { event: "K. Mbappe",  name: "Kylian Mbappé",    base: 12 },
+    { event: "H. Kane",    name: "Harry Kane",        base: 8  },
+    { event: "C. Ronaldo", name: "Cristiano Ronaldo", base: 8  },
+  ];
+
+  // Records to monitor: id (unique key), threshold, description of prior record
+  const RECORD_THRESHOLDS = [
+    { id: "all_time_goals_16", threshold: 16, prevHolder: "Miroslav Klose", prevValue: 16 },
+    { id: "single_edition_13", threshold: 13, prevHolder: "Just Fontaine",  prevValue: 13 },
+  ];
+
+  const { data: allUsers } = await supabase.from("users").select("id");
+  const userIds = (allUsers ?? []).map((u: { id: string }) => u.id);
+
+  let notified = 0;
+  for (const scorer of SCORERS) {
+    const total = scorer.base + (wc2026[scorer.event] ?? 0);
+    const wc2026Goals = wc2026[scorer.event] ?? 0;
+
+    for (const rec of RECORD_THRESHOLDS) {
+      if (total <= rec.threshold) continue;
+      if (rec.id === "single_edition_13" && wc2026Goals <= rec.threshold) continue;
+
+      // De-dup: check if already notified for this scorer+record combo
+      const notifKey = `${rec.id}:${scorer.name}`;
+      const { count } = await supabase
+        .from("notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("tournament_id", TOURNAMENT_ID)
+        .eq("type", "record_broken")
+        .like("body", `%${notifKey}%`);
+
+      if ((count ?? 0) > 0) continue;
+
+      // In-app notification
+      if (userIds.length) {
+        await sendInternalNotification(supabase, {
+          tournamentId: TOURNAMENT_ID,
+          type: "record_broken",
+          title: `🏆 ¡Récord histórico roto!`,
+          body: `[${notifKey}] ${scorer.name} supera a ${rec.prevHolder} con ${total} goles en la historia de los Mundiales.`,
+          userIds,
+        });
+      }
+
+      // Email + WhatsApp
+      await notifyRecordBroken({
+        playerName: scorer.name,
+        totalGoals: total,
+        previousHolder: rec.prevHolder,
+        previousRecord: rec.prevValue,
+      }).catch(() => { /* non-fatal */ });
+
+      notified++;
+    }
+  }
+
+  return { notified };
 }
 
 function isPlayedOrLive(fixture: AFFixture) {

@@ -88,7 +88,7 @@ export const WC_CHAMPIONS: WCChampion[] = [
 // goals = pre-2026 historical ONLY; WC2026 goals merged live from API-Football (PLAYER_API_IDS in estadisticas/page.tsx)
 // gamesPlayed = pre-2026 WC appearances
 export const ALL_TIME_SCORERS: TopScorer[] = [
-  { rank: 1,  name: "Lionel Messi",     country: "Argentina", flag: "🇦🇷", fifaCode: "ARG", confederation: "CONMEBOL", goals: 10, gamesPlayed: 26, editions: 6, years: "2006–2026" },
+  { rank: 1,  name: "Lionel Messi",     country: "Argentina", flag: "🇦🇷", fifaCode: "ARG", confederation: "CONMEBOL", goals: 13, gamesPlayed: 26, editions: 6, years: "2006–2026" },
   { rank: 2,  name: "Miroslav Klose",   country: "Alemania",  flag: "🇩🇪", fifaCode: "GER", confederation: "UEFA",     goals: 16, gamesPlayed: 24, editions: 4, years: "2002–2014" },
   { rank: 2,  name: "Kylian Mbappé",    country: "Francia",   flag: "🇫🇷", fifaCode: "FRA", confederation: "UEFA",     goals: 12, gamesPlayed: 13, editions: 3, years: "2018–2026" },
   { rank: 4,  name: "Ronaldo (R9)",     country: "Brasil",    flag: "🇧🇷", fifaCode: "BRA", confederation: "CONMEBOL", goals: 15, gamesPlayed: 19, editions: 4, years: "1994–2006" },
@@ -113,8 +113,18 @@ export const RECORDS_2026: WCRecord[] = [
     value: "19+ goles (2006–2026) — NUEVO RÉCORD",
     year: 2026,
     vulnerable: false,
-    challengedBy: "Kylian Mbappé (Francia) – 16 goles",
-    context: "Messi superó a Klose (16) en el Mundial 2026 ampliando su récord histórico. Mbappé alcanzó a Klose con 16."
+    challengedBy: "Kylian Mbappé (Francia) – 18 goles",
+    context: "Messi superó a Klose (16) y es el máximo goleador histórico con 19 goles en 6 Mundiales. Mbappé alcanza 18 en 3 ediciones."
+  },
+  {
+    category: "Goleador histórico",
+    record: "2º máximo goleador histórico de todos los tiempos",
+    holder: "Kylian Mbappé (Francia) 🏆",
+    value: "18 goles (2018–2026) — NUEVO RÉCORD",
+    year: 2026,
+    vulnerable: false,
+    challengedBy: "Miroslav Klose – 16 goles (record anterior)",
+    context: "Mbappé superó a Klose (16) en solo 3 Mundiales. El alemán baja al 3er puesto con 16 goles en 4 ediciones."
   },
   {
     category: "Goles en un torneo",

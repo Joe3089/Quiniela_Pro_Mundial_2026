@@ -186,6 +186,67 @@ export async function sendInternalNotification(
   }
 }
 
+// ── Record broken notifications ───────────────────────────────────────────────
+
+export async function notifyRecordBroken(opts: {
+  playerName: string;
+  totalGoals: number;
+  previousHolder: string;
+  previousRecord: number;
+}): Promise<{ email: boolean; whatsapp: boolean }> {
+  const title = `🏆 ¡Récord histórico roto en el Mundial 2026!`;
+  const body =
+    `*${opts.playerName}* supera a ${opts.previousHolder} (${opts.previousRecord} goles) ` +
+    `con *${opts.totalGoals} goles* en la historia de los Mundiales. ` +
+    `¡Nuevo máximo goleador de todos los tiempos!\n\n` +
+    `👉 Ver estadísticas: https://quiniela-pro-mundial-2026.vercel.app/estadisticas`;
+
+  const apiKey = process.env.RESEND_API_KEY;
+  const emailsRaw = process.env.NOTIFICATION_EMAILS ?? "1001.19687168.ucla@gmail.com";
+  const emails = emailsRaw.split(",").map((e) => e.trim()).filter(Boolean);
+
+  let emailOk = false;
+  if (apiKey && emails.length) {
+    try {
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          from: "Quiniela Pro <onboarding@resend.dev>",
+          to: emails,
+          subject: title,
+          html: `<div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#0f172a;color:white;border-radius:12px;overflow:hidden;padding:24px">
+            <h1 style="color:#F5A500;margin:0 0 16px">🏆 Récord histórico roto</h1>
+            <p style="font-size:16px;line-height:1.6">${body.replace(/\*/g, "<b>").replace(/\*/g, "</b>")}</p>
+            <p style="margin-top:24px;text-align:center">
+              <a href="https://quiniela-pro-mundial-2026.vercel.app/estadisticas" style="background:#1D4ED8;color:white;padding:10px 24px;border-radius:8px;text-decoration:none;font-weight:bold">Ver estadísticas →</a>
+            </p></div>`,
+        }),
+      });
+      emailOk = res.ok;
+    } catch { emailOk = false; }
+  }
+
+  const token   = process.env.META_WHATSAPP_TOKEN;
+  const phoneId = process.env.META_WHATSAPP_PHONE_ID;
+  const numbers = (process.env.NOTIFICATION_WHATSAPPS ?? "").split(",").map((n) => n.trim()).filter(Boolean);
+  let waOk = false;
+  if (token && phoneId && numbers.length) {
+    for (const to of numbers) {
+      try {
+        await fetch(`https://graph.facebook.com/v20.0/${phoneId}/messages`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ messaging_product: "whatsapp", to, type: "text", text: { body: `⚽ Quiniela Pro | FIFA WC 2026\n\n${body}` } }),
+        });
+        waOk = true;
+      } catch { /* non-fatal */ }
+    }
+  }
+
+  return { email: emailOk, whatsapp: waOk };
+}
+
 // ── Combined sender ───────────────────────────────────────────────────────────
 
 export async function notifyMatchFinished(match: MatchNotification) {

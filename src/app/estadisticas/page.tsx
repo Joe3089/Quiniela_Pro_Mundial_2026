@@ -235,6 +235,28 @@ function CampeonesTab() {
   );
 }
 
+// Spanish country name → FIFA code (for historical editions flags)
+const HIST_FLAGS: Record<string, string> = {
+  "Uruguay": "URU", "Italia": "ITA", "Alemania": "GER", "Brasil": "BRA",
+  "Inglaterra": "ENG", "Argentina": "ARG", "Francia": "FRA", "España": "ESP",
+  "Holanda": "NED", "Checoslovaquia": "CZE", "Suecia": "SWE", "Hungría": "HUN",
+  "Polonia": "POL", "Croacia": "CRO", "Marruecos": "MAR", "Austria": "AUT",
+  "Portugal": "POR", "Bélgica": "BEL", "Corea del Sur": "KOR", "URSS": "RUS",
+  "Chile": "CHI", "México": "MEX", "Qatar": "QAT", "Rusia": "RUS",
+  "Suiza": "SUI", "Japón": "JPN", "Turquía": "TUR", "Yugoslavia": "SRB",
+  "Sudáfrica": "RSA", "Corea/Japón": "KOR", "EE.UU.": "USA",
+};
+
+function CountryWithFlag({ name, className }: { name: string; className?: string }) {
+  const code = HIST_FLAGS[name];
+  return (
+    <span className={cn("inline-flex items-center gap-1", className)}>
+      {code && <FlagImage fifaCode={code} size="sm" className="w-4 h-3 shrink-0" />}
+      {name}
+    </span>
+  );
+}
+
 /* ── HISTORIAL TAB ──────────────────────────────────────────── */
 function HistorialTab() {
   const { data: matchStats } = useQuery({
@@ -294,16 +316,22 @@ function HistorialTab() {
             <div className="flex items-start gap-3">
               <div className="shrink-0 text-center w-12">
                 <div className="text-base font-black text-white">{ed.year}</div>
-                <div className="text-[9px] text-muted-foreground">{ed.host}</div>
+                <div className="text-[9px] text-muted-foreground">
+                  <CountryWithFlag name={ed.host} />
+                </div>
               </div>
               <div className="flex-1 min-w-0 grid grid-cols-2 md:grid-cols-4 gap-2">
                 <div>
                   <p className="text-[10px] text-muted-foreground">Campeón</p>
-                  <p className="text-xs font-bold text-[hsl(var(--brand-gold))]">{ed.champion}</p>
+                  <p className="text-xs font-bold text-[hsl(var(--brand-gold))]">
+                    <CountryWithFlag name={ed.champion} />
+                  </p>
                 </div>
                 <div>
                   <p className="text-[10px] text-muted-foreground">Subcampeón</p>
-                  <p className="text-xs font-semibold text-white">{ed.runnerUp}</p>
+                  <p className="text-xs font-semibold text-white">
+                    <CountryWithFlag name={ed.runnerUp} />
+                  </p>
                 </div>
                 <div>
                   <p className="text-[10px] text-muted-foreground">Goleador</p>
