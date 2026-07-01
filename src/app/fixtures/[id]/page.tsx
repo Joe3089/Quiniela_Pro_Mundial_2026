@@ -45,7 +45,8 @@ const POS_COLORS: Record<string, string> = {
 };
 const posColor = (pos: string) => POS_COLORS[pos] ?? "bg-white/5 text-white/40 border-white/10";
 
-function initials(name: string) {
+function initials(name: string | null | undefined) {
+  if (!name) return "?";
   const parts = name.split(" ").filter(Boolean);
   if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
@@ -383,8 +384,8 @@ export default function MatchDetailPage({ params }: { params: Promise<{ id: stri
     return (
       <div className="max-w-3xl mx-auto px-4 py-12 text-center">
         <p className="text-muted-foreground">Partido no encontrado</p>
-        <Link href="/fixtures" className="mt-4 inline-flex items-center gap-1.5 text-sm text-[hsl(var(--brand-blue-light))]">
-          <ArrowLeft className="h-4 w-4" /> Volver a Partidos
+        <Link href="/fixtures?tab=calendario" className="mt-4 inline-flex items-center gap-1.5 text-sm text-[hsl(var(--brand-blue-light))]">
+          <ArrowLeft className="h-4 w-4" /> Volver a Calendario
         </Link>
       </div>
     );
@@ -419,11 +420,11 @@ export default function MatchDetailPage({ params }: { params: Promise<{ id: stri
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
       <Link
-        href="/fixtures"
+        href="/fixtures?tab=calendario"
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-white mb-6 transition-colors"
       >
         <ArrowLeft className="h-4 w-4" />
-        Partidos
+        Regresar
       </Link>
 
       {/* ── Score Hero ─────────────────────────────────────────────────────── */}

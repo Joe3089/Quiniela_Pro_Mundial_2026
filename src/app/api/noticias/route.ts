@@ -11,39 +11,22 @@ interface NewsItem {
   source: string;
   sourceColor: string;
   category: string;
+  image?: string | null;
 }
 
 const RSS_SOURCES = [
-  // FIFA / Federaciones oficiales
+  // FIFA oficial
   {
     name: "FIFA News",
     url: "https://www.fifa.com/rss/news_en.xml",
     color: "#044B96",
     category: "fifa",
   },
-  {
-    name: "UEFA",
-    url: "https://www.uefa.com/rssfeed/rss.xml",
-    color: "#003DA5",
-    category: "federaciones",
-  },
-  // General / Mundial 2026
+  // Mundial 2026
   {
     name: "BBC Sport",
     url: "https://feeds.bbci.co.uk/sport/football/rss.xml",
     color: "#BB1919",
-    category: "mundial",
-  },
-  {
-    name: "ESPN FC",
-    url: "https://www.espn.com/espn/rss/soccer/news",
-    color: "#FF6B00",
-    category: "mundial",
-  },
-  {
-    name: "Goal.com",
-    url: "https://www.goal.com/feeds/en/news",
-    color: "#00B04B",
     category: "mundial",
   },
   // Convocatorias
@@ -58,6 +41,42 @@ const RSS_SOURCES = [
     url: "https://www.marca.com/rss/futbol.xml",
     color: "#E31E24",
     category: "convocatorias",
+  },
+  // ESPN
+  {
+    name: "ESPN",
+    url: "https://www.espn.com/espn/rss/soccer/news",
+    color: "#FF6B00",
+    category: "espn",
+  },
+  // FOX Sports — GNews fallback (curated soccer feed)
+  {
+    name: "FOX Sports",
+    url: "https://gnews.io/api/v4/search?q=soccer+world+cup+2026&lang=en&country=us&max=10&apikey=pub_fallback",
+    color: "#003DA5",
+    category: "foxsports",
+    gnews: true,
+  },
+  // SportsCenter (ESPN Latam)
+  {
+    name: "SportsCenter",
+    url: "https://www.espn.com.mx/rss/news",
+    color: "#CC0000",
+    category: "sportscenter",
+  },
+  // DSPORTS
+  {
+    name: "DSPORTS",
+    url: "https://dsports.com/feed",
+    color: "#0057A8",
+    category: "dsports",
+  },
+  // Diario AS
+  {
+    name: "Diario AS",
+    url: "https://as.com/rss/futbol/mundial/",
+    color: "#1E3A8A",
+    category: "diarioas",
   },
 ];
 
@@ -102,7 +121,7 @@ function extractImage(itemXml: string): string | null {
   return null;
 }
 
-async function fetchSource(
+async function fetchRssSource(
   source: { name: string; url: string; color: string; category: string },
   count = 8
 ): Promise<NewsItem[]> {
@@ -131,6 +150,56 @@ async function fetchSource(
   }
 }
 
+async function fetchGNewsSource(
+  source: { name: string; color: string; category: string },
+  count = 8
+): Promise<NewsItem[]> {
+  try {
+    const apiKey = process.env.GNEWS_API_KEY;
+    if (!apiKey) return [];
+
+    const url = `https://gnews.io/api/v4/search?q=soccer+world+cup+2026&lang=en&max=${count}&apikey=${apiKey}`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
+    if (!res.ok) return [];
+
+    const data = await res.json() as { articles?: Array<{ title: string; url: string; description: string; publishedAt: string; image?: string }> };
+    if (!data.articles) return [];
+
+    return data.articles.map((a) => ({
+      title: a.title ?? "",
+      link: a.url ?? "#",
+      description: (a.description ?? "").slice(0, 220),
+      pubDate: a.publishedAt ?? "",
+      source: source.name,
+      sourceColor: source.color,
+      category: source.category,
+      image: a.image ?? null,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+async function fetchSource(
+  source: { name: string; url: string; color: string; category: string; gnews?: boolean },
+  count = 8
+): Promise<NewsItem[]> {
+  if (source.gnews) {
+    return fetchGNewsSource(source, count);
+  }
+  return fetchRssSource(source, count);
+}
+
+// Deduplicate by link
+function deduplicate(items: NewsItem[]): NewsItem[] {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    if (seen.has(item.link)) return false;
+    seen.add(item.link);
+    return true;
+  });
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const category = searchParams.get("category") ?? "all";
@@ -152,8 +221,10 @@ export async function GET(request: NextRequest) {
     return db - da;
   });
 
+  const unique = deduplicate(allItems.filter((i) => i.title && i.link !== "#"));
+
   return NextResponse.json(
-    { items: allItems.filter((i) => i.title && i.link !== "#") },
+    { items: unique },
     { headers: { "Cache-Control": "public, s-maxage=900, stale-while-revalidate=120" } }
   );
 }
