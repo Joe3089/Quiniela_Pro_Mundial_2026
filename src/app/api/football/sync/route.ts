@@ -10,6 +10,7 @@ import {
 } from "@/services/api-football";
 import { notifyMatchFinished, sendInternalNotification, notifyRecordBroken } from "@/services/notifications";
 import { runBracketSync } from "@/app/api/football/bracket/sync/route";
+import { syncVideosForMatch } from "@/app/api/youtube/sync/route";
 import { TOURNAMENT_ID } from "@/constants";
 
 export const dynamic = "force-dynamic";
@@ -81,11 +82,30 @@ export async function GET(request: NextRequest) {
       }
 
       if (action === "scores" || action === "all") {
-        results.scores = await syncFixtures(supabase, { onlyPlayedOrLive: true });
+        const scoresResult = await syncFixtures(supabase, { onlyPlayedOrLive: true });
+        results.scores = scoresResult;
         results.events = await syncEvents(supabase);
         results.records = await checkAndNotifyBrokenRecords(supabase);
         results.scoring = await scoreFinishedMatches(supabase);
         results.bracket = await runBracketSync().catch(() => ({ status: "error" }));
+
+        // Trigger video sync for matches that just became finished
+        if (scoresResult.justFinished?.length) {
+          const videoResults = await Promise.all(
+            scoresResult.justFinished.map((m) =>
+              syncVideosForMatch(
+                supabase, m.id,
+                m.homeTeamName, m.awayTeamName,
+                m.homeTeamCode, m.awayTeamCode,
+                m.hasPenalties
+              ).catch(() => ({ added: 0 }))
+            )
+          );
+          results.videos = {
+            matches: scoresResult.justFinished.length,
+            videosAdded: videoResults.reduce((s, r) => s + r.added, 0),
+          };
+        }
       }
 
       return NextResponse.json({ ok: true, action, source: isVercelCron ? "vercel-cron" : "manual-get", results });
@@ -123,11 +143,30 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "scores" || action === "all") {
-      results.scores = await syncFixtures(supabase, { onlyPlayedOrLive: true });
+      const scoresResult = await syncFixtures(supabase, { onlyPlayedOrLive: true });
+      results.scores = scoresResult;
       results.events = await syncEvents(supabase);
       results.records = await checkAndNotifyBrokenRecords(supabase);
       results.scoring = await scoreFinishedMatches(supabase);
       results.bracket = await runBracketSync().catch(() => ({ status: "error" }));
+
+      // Trigger video sync for matches that just became finished
+      if (scoresResult.justFinished?.length) {
+        const videoResults = await Promise.all(
+          scoresResult.justFinished.map((m) =>
+            syncVideosForMatch(
+              supabase, m.id,
+              m.homeTeamName, m.awayTeamName,
+              m.homeTeamCode, m.awayTeamCode,
+              m.hasPenalties
+            ).catch(() => ({ added: 0 }))
+          )
+        );
+        results.videos = {
+          matches: scoresResult.justFinished.length,
+          videosAdded: videoResults.reduce((s, r) => s + r.added, 0),
+        };
+      }
     }
 
     if (action === "players") {
@@ -175,6 +214,15 @@ async function syncTeams(supabase: SupabaseClient) {
   return { total: afTeams.length, updated, skipped };
 }
 
+type JustFinishedMatch = {
+  id: string;
+  homeTeamName: string | null;
+  awayTeamName: string | null;
+  homeTeamCode: string | null;
+  awayTeamCode: string | null;
+  hasPenalties: boolean;
+};
+
 async function syncFixtures(
   supabase: SupabaseClient,
   { onlyPlayedOrLive }: { onlyPlayedOrLive: boolean }
@@ -184,6 +232,7 @@ async function syncFixtures(
   let updated = 0;
   let inserted = 0;
   let skipped = 0;
+  const justFinished: JustFinishedMatch[] = [];
 
   // Pre-load group-phase teams → group_id mapping
   // KO protection is in the groupId assignment below (phase === "group" conditional)
@@ -195,6 +244,24 @@ async function syncFixtures(
   for (const m of (allMatches ?? []) as { home_team_id: string; away_team_id: string; group_id: string }[]) {
     if (m.home_team_id) teamGroupMap.set(m.home_team_id, m.group_id);
     if (m.away_team_id) teamGroupMap.set(m.away_team_id, m.group_id);
+  }
+
+  // Pre-load current statuses to detect finish transitions
+  const { data: currentMatches } = await supabase
+    .from("matches")
+    .select("id, status, home_team_id, away_team_id, api_football_fixture_id");
+  const currentStatusMap = new Map<number, { id: string; status: string; homeTeamId: string; awayTeamId: string }>();
+  for (const m of (currentMatches ?? []) as { id: string; status: string; home_team_id: string; away_team_id: string; api_football_fixture_id: number | null }[]) {
+    if (m.api_football_fixture_id) {
+      currentStatusMap.set(m.api_football_fixture_id, { id: m.id, status: m.status, homeTeamId: m.home_team_id, awayTeamId: m.away_team_id });
+    }
+  }
+
+  // Pre-load team names + codes for just-finished detection
+  const { data: teamRows } = await supabase.from("teams").select("id, name, fifa_code");
+  const teamById = new Map<string, { name: string; fifa_code: string | null }>();
+  for (const t of (teamRows ?? []) as { id: string; name: string; fifa_code: string | null }[]) {
+    teamById.set(t.id, { name: t.name, fifa_code: t.fifa_code });
   }
 
   for (const fixture of selectedFixtures) {
@@ -211,11 +278,31 @@ async function syncFixtures(
     // Only group-stage matches get a group_id; KO matches always get null
     const groupId = phase === "group" ? (teamGroupMap.get(home.data.id) ?? teamGroupMap.get(away.data.id) ?? null) : null;
     const matchData = toMatchRow(fixture, home.data.id, away.data.id, groupId);
+    const newStatus = matchData.status;
 
     if (existing?.id) {
+      // Check if this match just transitioned to "finished"
+      const prev = currentStatusMap.get(fixture.fixture.id);
+      const wasFinished = prev?.status === "finished";
+      const isNowFinished = newStatus === "finished";
+
       const { error } = await supabase.from("matches").update(matchData).eq("id", existing.id);
       if (error) throw new Error(serializeError(error));
       updated++;
+
+      // Track newly finished matches for video sync
+      if (!wasFinished && isNowFinished) {
+        const homeTeam = teamById.get(home.data.id);
+        const awayTeam = teamById.get(away.data.id);
+        justFinished.push({
+          id: existing.id,
+          homeTeamName: homeTeam?.name ?? null,
+          awayTeamName: awayTeam?.name ?? null,
+          homeTeamCode: homeTeam?.fifa_code ?? null,
+          awayTeamCode: awayTeam?.fifa_code ?? null,
+          hasPenalties: fixture.score.penalty.home != null && fixture.score.penalty.away != null,
+        });
+      }
     } else {
       const { error } = await supabase.from("matches").insert(matchData);
       if (error) throw new Error(serializeError(error));
@@ -223,7 +310,7 @@ async function syncFixtures(
     }
   }
 
-  return { total: fixtures.length, checked: selectedFixtures.length, updated, inserted, skipped };
+  return { total: fixtures.length, checked: selectedFixtures.length, updated, inserted, skipped, justFinished };
 }
 
 async function findTeam(supabase: SupabaseClient, team: AFTeam["team"] | AFFixture["teams"]["home"]) {

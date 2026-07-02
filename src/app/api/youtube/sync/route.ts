@@ -105,6 +105,147 @@ function getEnglishName(
   return teamName ?? "";
 }
 
+// ── Exported helper: sync videos for a single just-finished match ────────────
+// Called from football sync route when a match transitions to "finished"
+export async function syncVideosForMatch(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  matchId: string,
+  homeTeamName: string | null,
+  awayTeamName: string | null,
+  homeTeamCode: string | null,
+  awayTeamCode: string | null,
+  hasPenalties: boolean
+): Promise<{ added: number }> {
+  const ytApiKey = process.env.YOUTUBE_API_KEY;
+  let added = 0;
+
+  // Delete any preview videos for this match now it's finished
+  await supabase.from("match_videos").delete().eq("match_id", matchId).eq("type", "preview");
+
+  // Phase 1: RSS-based
+  try {
+    const videos = await fetchBroadcastVideos();
+    const sorted = [...videos].sort((a, b) => a.channelPriority - b.channelPriority);
+
+    const homeNames = [
+      homeTeamName,
+      homeTeamCode,
+      ...(homeTeamCode ? (FIFA_CODE_ENGLISH[homeTeamCode] ?? []) : []),
+    ];
+    const awayNames = [
+      awayTeamName,
+      awayTeamCode,
+      ...(awayTeamCode ? (FIFA_CODE_ENGLISH[awayTeamCode] ?? []) : []),
+    ];
+
+    // Filter out bad video types (individual goals, Best Moments compilations)
+    const goodVideos = sorted.filter((v) => {
+      const t = v.title.toLowerCase();
+      // Reject individual goal clips
+      if (t.includes("gol de ") || t.startsWith("goal |") || t.startsWith("goal:")) return false;
+      // Reject multi-match Best Moments compilations (they have "matchday" + "best moments")
+      if (t.includes("best moments") && t.includes("matchday")) return false;
+      if (t.includes("best moments") && !t.includes(" vs ") && !t.includes(" v ")) return false;
+      return true;
+    });
+
+    let bestPriority = 99;
+    for (const video of goodVideos) {
+      const type = detectVideoType(video.title);
+      if (type !== "highlights") continue;
+      if (!videoMatchesTeams(video.title, homeNames, awayNames)) continue;
+      if (video.channelPriority > bestPriority) continue;
+
+      const { error } = await supabase.from("match_videos").upsert(
+        {
+          match_id: matchId,
+          youtube_video_id: video.videoId,
+          title: video.title,
+          type: "highlights",
+          thumbnail_url: video.thumbnailUrl,
+          published_at: video.publishedAt,
+          channel_source: video.channelSource,
+          channel_priority: video.channelPriority,
+        },
+        { onConflict: "match_id,youtube_video_id" }
+      );
+      if (!error) {
+        added++;
+        bestPriority = Math.min(bestPriority, video.channelPriority);
+      }
+      break;
+    }
+  } catch { /* RSS failures are non-fatal */ }
+
+  // Phase 2: YouTube Data API search (if key available and no priority-1 video yet)
+  if (ytApiKey) {
+    const homeEn = homeTeamCode ? (FIFA_CODE_ENGLISH[homeTeamCode]?.[0] ?? homeTeamName ?? "") : (homeTeamName ?? "");
+    const awayEn = awayTeamCode ? (FIFA_CODE_ENGLISH[awayTeamCode]?.[0] ?? awayTeamName ?? "") : (awayTeamName ?? "");
+
+    if (homeEn && awayEn) {
+      const query = hasPenalties
+        ? `${homeEn} vs ${awayEn} highlights tanda penales World Cup 2026`
+        : `${homeEn} vs ${awayEn} extended highlights World Cup 2026`;
+
+      const ytVideos = await searchYouTube(query, ytApiKey, 5);
+      const homeNames = [homeTeamName, homeTeamCode, ...(homeTeamCode ? (FIFA_CODE_ENGLISH[homeTeamCode] ?? []) : [])];
+      const awayNames = [awayTeamName, awayTeamCode, ...(awayTeamCode ? (FIFA_CODE_ENGLISH[awayTeamCode] ?? []) : [])];
+
+      for (const video of ytVideos) {
+        const t = video.title.toLowerCase();
+        // Filter individual goals and multi-match compilations
+        if (t.includes("gol de ") || (t.includes("best moments") && t.includes("matchday"))) continue;
+        if (detectVideoType(video.title) !== "highlights") continue;
+        if (!videoMatchesTeams(video.title, homeNames, awayNames)) continue;
+
+        const { error } = await supabase.from("match_videos").upsert(
+          {
+            match_id: matchId,
+            youtube_video_id: video.videoId,
+            title: video.title,
+            type: "highlights",
+            thumbnail_url: video.thumbnailUrl,
+            published_at: video.publishedAt,
+            channel_source: video.channelSource,
+            channel_priority: video.channelPriority,
+          },
+          { onConflict: "match_id,youtube_video_id" }
+        );
+        if (!error) added++;
+        break;
+      }
+
+      // Penalty shootout video
+      if (hasPenalties) {
+        const penQuery = `${homeEn} vs ${awayEn} penalty shootout tanda penales World Cup 2026`;
+        const penVideos = await searchYouTube(penQuery, ytApiKey, 3);
+        for (const video of penVideos) {
+          const t = video.title.toLowerCase();
+          if (!t.includes("tanda") && !t.includes("penalty") && !t.includes("penalties") && !t.includes("penales")) continue;
+          const { error } = await supabase.from("match_videos").upsert(
+            {
+              match_id: matchId,
+              youtube_video_id: video.videoId,
+              title: video.title,
+              type: "highlights",
+              thumbnail_url: video.thumbnailUrl,
+              published_at: video.publishedAt,
+              channel_source: video.channelSource,
+              channel_priority: video.channelPriority,
+            },
+            { onConflict: "match_id,youtube_video_id" }
+          );
+          if (!error) added++;
+          break;
+        }
+      }
+    }
+  }
+
+  return { added };
+}
+
 export async function GET(request: NextRequest) {
   const isVercelCron = request.headers.get("user-agent") === "vercel-cron/1.0";
   const secret = process.env.FOOTBALL_SYNC_SECRET;
