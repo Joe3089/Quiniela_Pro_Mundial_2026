@@ -539,7 +539,7 @@ export default function MatchDetailPage({ params }: { params: Promise<{ id: stri
       </motion.div>
 
       {/* ── Terna Arbitral ─────────────────────────────────────────────────── */}
-      {(isFinished || isLive) && (
+      {((match as any).referee ?? detail?.referee) && (
         <TernaArbitral
           referee={(match as any).referee ?? detail?.referee ?? null}
           refereeCountry={(match as any).referee_country ?? detail?.refereeCountry ?? null}
