@@ -561,12 +561,28 @@ type MatchVideo = {
 };
 
 function VideoPlayer({ video }: { video: MatchVideo }) {
-  const [mode, setMode] = useState<"thumb" | "embed" | "external">("thumb");
+  const [mode, setMode] = useState<"thumb" | "embed" | "blocked">("thumb");
 
   const thumbUrl = video.thumbnail_url ?? `https://i.ytimg.com/vi/${video.youtube_video_id}/hqdefault.jpg`;
-  const embedUrl = `https://www.youtube.com/embed/${video.youtube_video_id}?autoplay=1&rel=0`;
+  const embedUrl = `https://www.youtube.com/embed/${video.youtube_video_id}?autoplay=1&rel=0&enablejsapi=1`;
   const watchUrl = `https://www.youtube.com/watch?v=${video.youtube_video_id}`;
   const label = video.type === "highlights" ? "Ver Match Highlights" : "Ver Match Preview";
+
+  // YouTube IFrame API sends postMessage errors: 100=not found, 101/150=geo-blocked/embed disabled
+  useEffect(() => {
+    if (mode !== "embed") return;
+    const handler = (e: MessageEvent) => {
+      if (e.origin !== "https://www.youtube.com") return;
+      try {
+        const data = JSON.parse(e.data as string);
+        if (data.event === "onError" && [100, 101, 150].includes(data.info)) {
+          setMode("blocked");
+        }
+      } catch {}
+    };
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  }, [mode]);
 
   const formatDuration = (s: number) => {
     const m = Math.floor(s / 60);
@@ -574,33 +590,73 @@ function VideoPlayer({ video }: { video: MatchVideo }) {
     return `${m}:${sec.toString().padStart(2, "0")}`;
   };
 
+  const badges = (
+    <div className="flex items-center gap-2">
+      <span className={cn(
+        "text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded",
+        video.type === "highlights"
+          ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20"
+          : "bg-blue-500/15 text-blue-400 border border-blue-500/20"
+      )}>
+        {video.type === "highlights" ? "Match Highlights" : "Match Preview"}
+      </span>
+      {video.channel_source && (
+        <span className="text-[9px] text-muted-foreground/50 font-medium">{video.channel_source}</span>
+      )}
+    </div>
+  );
+
   return (
     <div className="space-y-2.5">
       {/* Type badge + channel source */}
-      <div className="flex items-center gap-2">
-        <span className={cn(
-          "text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded",
-          video.type === "highlights"
-            ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20"
-            : "bg-blue-500/15 text-blue-400 border border-blue-500/20"
-        )}>
-          {video.type === "highlights" ? "Match Highlights" : "Match Preview"}
-        </span>
-        {video.channel_source && (
-          <span className="text-[9px] text-muted-foreground/50 font-medium">{video.channel_source}</span>
-        )}
-      </div>
+      {badges}
 
-      {/* Embed or thumbnail */}
-      {mode === "embed" ? (
-        <div className="relative w-full rounded-xl overflow-hidden" style={{ paddingBottom: "56.25%" }}>
-          <iframe
-            className="absolute inset-0 w-full h-full"
-            src={embedUrl}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            onError={() => setMode("external")}
-          />
+      {/* Blocked / geo-restricted fallback */}
+      {mode === "blocked" ? (
+        <div className="relative w-full rounded-xl overflow-hidden aspect-video">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={thumbUrl} alt={video.title} className="w-full h-full object-cover opacity-30" />
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/70">
+            <svg className="h-8 w-8 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+            </svg>
+            <p className="text-white/70 text-xs text-center px-6 leading-relaxed">
+              Este video no está disponible en tu región.<br />Ábrelo directamente en YouTube.
+            </p>
+            <a
+              href={watchUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-5 py-2 rounded-full transition-colors"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              Ver en YouTube
+            </a>
+            <button
+              onClick={() => setMode("thumb")}
+              className="text-[10px] text-white/30 hover:text-white/60 transition-colors mt-1"
+            >
+              Intentar de nuevo
+            </button>
+          </div>
+        </div>
+      ) : mode === "embed" ? (
+        <div className="space-y-1.5">
+          <div className="relative w-full rounded-xl overflow-hidden" style={{ paddingBottom: "56.25%" }}>
+            <iframe
+              className="absolute inset-0 w-full h-full"
+              src={embedUrl}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+          {/* Manual fallback hint — always visible when embedded */}
+          <button
+            onClick={() => setMode("blocked")}
+            className="text-[10px] text-muted-foreground/40 hover:text-muted-foreground transition-colors w-full text-center"
+          >
+            ¿Video bloqueado en tu región? → Ver en YouTube
+          </button>
         </div>
       ) : (
         <button
