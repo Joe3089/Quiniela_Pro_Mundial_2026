@@ -14,12 +14,18 @@ export const BROADCAST_CHANNELS = [
   { id: "UCjZ7QPKb89R-4SxzBoceyOg", name: "Telemundo Deportes", priority: 1 },
   { id: "UCwNqHDsnBCKT-olwJwIFyfg", name: "FOX Soccer",         priority: 2 },
   { id: "UC--i2rV5NCxiEIPefr3l-zQ", name: "TSN Sports",         priority: 3 },
+  { id: "UCpcTrCXblq78GZrTUTLWeBw", name: "FIFA World Cup",     priority: 4 },
 ];
 
 const SCORE_RE = /\(\d+\)\d+-\d+\(\d+\)|\d+-\d+/;
 
+// Patterns that indicate an individual goal clip or short clip — never "highlights"
+const GOAL_CLIP_RE = /^(gol de |golazo de |tremendo gol|¡gol|¡golazo|\bgoal:\s)/i;
+
 export function detectVideoType(title: string): VideoType | null {
   const t = title.toLowerCase();
+  // Reject individual goal clips before any other check
+  if (GOAL_CLIP_RE.test(title)) return null;
   if (
     SCORE_RE.test(title) ||
     t.includes("highlight") ||

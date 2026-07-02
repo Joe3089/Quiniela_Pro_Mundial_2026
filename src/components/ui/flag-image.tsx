@@ -26,6 +26,9 @@ const FIFA_TO_ISO: Record<string, string> = {
   NZL: "nz",
   // Other
   IDN: "id", ZAF: "za",
+  // Historical WC hosts (new codes only — no duplicates)
+  RUS: "ru", GEO: "ge", MNE: "me", MKD: "mk", KAZ: "kz",
+  UKR: "ua", ISR: "il", ISL: "is", IRL: "ie", SVN: "si",
 };
 
 interface FlagImageProps {
