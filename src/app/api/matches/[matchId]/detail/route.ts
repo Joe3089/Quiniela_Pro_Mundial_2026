@@ -54,7 +54,7 @@ export async function GET(
 
   const { data: match } = await supabase
     .from("matches")
-    .select("id, api_football_fixture_id, home_team_id, away_team_id")
+    .select("id, api_football_fixture_id, home_team_id, away_team_id, referee, referee_country")
     .eq("id", matchId)
     .single();
 
@@ -62,11 +62,11 @@ export async function GET(
 
   const fixtureId = match.api_football_fixture_id as number | null;
 
-  // ── Referee: from fixtures API ─────────────────────────────────────────────
-  let referee: string | null = null;
-  let refereeCountry: string | null = null;
+  // ── Referee: from Supabase first, then API fallback ────────────────────────
+  let referee: string | null = (match as any).referee ?? null;
+  let refereeCountry: string | null = (match as any).referee_country ?? null;
 
-  if (fixtureId) {
+  if ((!referee || !refereeCountry) && fixtureId) {
     try {
       const apiKey = process.env.API_FOOTBALL_KEY;
       const res = await fetch(
@@ -76,10 +76,13 @@ export async function GET(
       const json = await res.json() as { response?: Array<{ fixture: { referee?: string } }> };
       const refRaw = json.response?.[0]?.fixture?.referee ?? null;
       if (refRaw) {
-        // "Firstname Lastname, Country"
         const parts = refRaw.split(",").map((s: string) => s.trim());
-        referee = parts[0] ?? refRaw;
-        refereeCountry = parts[1] ?? null;
+        if (!referee) referee = parts[0] ?? refRaw;
+        if (!refereeCountry) refereeCountry = parts[1] ?? null;
+        // Persist to Supabase for future calls
+        if (referee || refereeCountry) {
+          void supabase.from("matches").update({ referee, referee_country: refereeCountry }).eq("id", matchId);
+        }
       }
     } catch { /* non-fatal */ }
   }

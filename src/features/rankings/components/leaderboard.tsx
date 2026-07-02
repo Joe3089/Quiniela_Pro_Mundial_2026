@@ -349,7 +349,7 @@ function DetallesModal({ entry, onClose }: { entry: LeaderboardEntry; onClose: (
                             {predWinner === "away" && <span className="text-blue-400 font-semibold">{awayShort}</span>}
                             {predWinner === "draw" && predDrawTeam && (
                               <span className="text-amber-400 font-semibold">
-                                {predOutcome === "penalties" ? "PEN " : predOutcome === "extra_time" ? "ET " : ""}
+                                {predOutcome === "penalties" ? "PEN " : predOutcome === "extra_time" ? "Prórroga " : ""}
                                 {predDrawTeam === "home" ? homeShort : awayShort}
                               </span>
                             )}
@@ -373,7 +373,7 @@ function DetallesModal({ entry, onClose }: { entry: LeaderboardEntry; onClose: (
                             {realWinner === "away" && <span className="text-emerald-400 font-semibold">{awayShort}</span>}
                             {realWinner === "draw" && realDrawTeam && (
                               <span className="text-emerald-400 font-semibold">
-                                {isPen ? "PEN " : isAET ? "ET " : ""}
+                                {isPen ? "PEN " : isAET ? "Prórroga " : ""}
                                 {realDrawTeam === "home" ? homeShort : awayShort}
                               </span>
                             )}

@@ -699,73 +699,159 @@ function Mundial2026Tab() {
 }
 
 /* ── RÉCORDS TAB ────────────────────────────────────────────── */
+type BrokenRecord = {
+  record_key: string; category: string; record_name: string;
+  previous_holder: string; previous_value: string;
+  new_holder: string; new_value: string;
+  match_info: string | null; date_broken: string | null;
+  tournament: string;
+};
+
 function RecordsTab() {
+  const { data: recordsData, isLoading } = useQuery({
+    queryKey: ["broken-records"],
+    queryFn: () => fetch("/api/stats/records").then(r => r.json()) as Promise<{ broken: BrokenRecord[]; attendanceBroken: boolean }>,
+    staleTime: 300_000,
+  });
+
+  const brokenKeys = new Set((recordsData?.broken ?? []).map(r => r.record_key));
+
+  // Which static records are already confirmed broken
+  const BROKEN_KEY_MAP: Record<string, string> = {
+    "Más goles en Copas del Mundo": "max_goals_scorer",
+    "2º máximo goleador histórico de todos los tiempos": "max_goals_scorer_2nd",
+    "Más Mundiales jugados (jugador)": "most_wc_appearances",
+    "Mayor asistencia en un Mundial": "attendance_wc2026",
+  };
+
+  const isBroken = (rec: { record: string }) => brokenKeys.has(BROKEN_KEY_MAP[rec.record] ?? "");
+  const brokenFromStatic = RECORDS_2026.filter(r => isBroken(r));
+  const stillVulnerable = RECORDS_2026.filter(r => r.vulnerable && !isBroken(r));
+  const stable = RECORDS_2026.filter(r => !r.vulnerable && !isBroken(r));
+
   return (
     <div className="space-y-6">
-      <div>
-        <SectionTitle icon={AlertTriangle} title="Récords vulnerables en 2026" color="#ef4444" />
-        <p className="text-xs text-muted-foreground mb-4">Récords históricos que podrían romperse o igualarse en el Mundial 2026</p>
-        <div className="space-y-3">
-          {RECORDS_2026.filter(r => r.vulnerable).map((rec, i) => (
-            <motion.div
-              key={rec.record}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.06 }}
-              className="glass rounded-xl border border-red-500/20 bg-red-500/5 p-4"
-            >
-              <div className="flex items-start justify-between gap-3 mb-2">
-                <div>
-                  <span className="text-[10px] font-bold text-red-400 uppercase tracking-wider">{rec.category}</span>
-                  <p className="text-sm font-bold text-white mt-0.5">{rec.record}</p>
-                </div>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30 shrink-0 whitespace-nowrap">
-                  En riesgo
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-2 mb-2">
-                <div>
-                  <p className="text-[10px] text-muted-foreground">Actual</p>
-                  <p className="text-xs font-semibold text-white">{rec.holder}</p>
-                  <p className="text-xs text-[hsl(var(--brand-gold))]">{rec.value}</p>
-                </div>
-                {rec.challengedBy && (
+      {/* Confirmed broken records */}
+      {(recordsData?.broken ?? []).length > 0 && (
+        <div>
+          <SectionTitle icon={Trophy} title="🏆 Récords rotos en 2026" color="#22c55e" />
+          <p className="text-xs text-muted-foreground mb-4">Récords históricos superados durante el Mundial 2026</p>
+          <div className="space-y-3">
+            {(recordsData?.broken ?? []).map((rec, i) => (
+              <motion.div
+                key={rec.record_key}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.06 }}
+                className="glass rounded-xl border border-emerald-500/30 bg-emerald-500/8 p-4"
+              >
+                <div className="flex items-start justify-between gap-3 mb-2">
                   <div>
-                    <p className="text-[10px] text-muted-foreground">Candidato a romperlo</p>
-                    <p className="text-xs font-semibold text-red-400">{rec.challengedBy}</p>
+                    <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">{rec.category}</span>
+                    <p className="text-sm font-bold text-white mt-0.5">{rec.record_name}</p>
                   </div>
-                )}
-              </div>
-              {rec.context && (
-                <p className="text-[11px] text-muted-foreground italic">{rec.context}</p>
-              )}
-            </motion.div>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <SectionTitle icon={Trophy} title="Récords históricos sólidos" color="#F5A500" />
-        <div className="space-y-2">
-          {RECORDS_2026.filter(r => !r.vulnerable).map((rec, i) => (
-            <div key={rec.record} className="glass rounded-xl border border-white/5 p-3">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <span className="text-[10px] font-bold text-[hsl(var(--brand-gold))] uppercase tracking-wider">{rec.category}</span>
-                  <p className="text-xs font-bold text-white mt-0.5">{rec.record}</p>
-                  <p className="text-xs text-muted-foreground">{rec.holder} — <span className="text-white">{rec.value}</span></p>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0 whitespace-nowrap">
+                    ✓ Nuevo récord
+                  </span>
                 </div>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/5 text-muted-foreground border border-white/10 shrink-0 whitespace-nowrap">
-                  Sólido
-                </span>
-              </div>
-              {rec.context && (
-                <p className="text-[11px] text-muted-foreground italic mt-1.5">{rec.context}</p>
-              )}
-            </div>
-          ))}
+                <div className="grid grid-cols-2 gap-3 mb-2">
+                  <div className="bg-white/5 rounded-lg p-2">
+                    <p className="text-[10px] text-muted-foreground mb-0.5">Récord anterior</p>
+                    <p className="text-xs font-semibold text-white/70">{rec.previous_holder}</p>
+                    <p className="text-xs text-muted-foreground">{rec.previous_value}</p>
+                  </div>
+                  <div className="bg-emerald-500/10 rounded-lg p-2 border border-emerald-500/20">
+                    <p className="text-[10px] text-emerald-400 mb-0.5">Nuevo récord</p>
+                    <p className="text-xs font-bold text-white">{rec.new_holder}</p>
+                    <p className="text-xs text-emerald-300">{rec.new_value}</p>
+                  </div>
+                </div>
+                {rec.match_info && (
+                  <p className="text-[11px] text-muted-foreground italic">{rec.match_info}</p>
+                )}
+                {rec.date_broken && (
+                  <p className="text-[10px] text-muted-foreground/60 mt-1">
+                    {rec.tournament} · {new Date(rec.date_broken).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" })}
+                  </p>
+                )}
+              </motion.div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
+
+      {isLoading && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground py-4">
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          Verificando récords...
+        </div>
+      )}
+
+      {/* Still vulnerable */}
+      {stillVulnerable.length > 0 && (
+        <div>
+          <SectionTitle icon={AlertTriangle} title="Récords aún en riesgo" color="#ef4444" />
+          <div className="space-y-3">
+            {stillVulnerable.map((rec, i) => (
+              <motion.div
+                key={rec.record}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.06 }}
+                className="glass rounded-xl border border-red-500/20 bg-red-500/5 p-4"
+              >
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <div>
+                    <span className="text-[10px] font-bold text-red-400 uppercase tracking-wider">{rec.category}</span>
+                    <p className="text-sm font-bold text-white mt-0.5">{rec.record}</p>
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30 shrink-0 whitespace-nowrap">
+                    En riesgo
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 mb-2">
+                  <div>
+                    <p className="text-[10px] text-muted-foreground">Actual</p>
+                    <p className="text-xs font-semibold text-white">{rec.holder}</p>
+                    <p className="text-xs text-[hsl(var(--brand-gold))]">{rec.value}</p>
+                  </div>
+                  {rec.challengedBy && (
+                    <div>
+                      <p className="text-[10px] text-muted-foreground">Candidato a romperlo</p>
+                      <p className="text-xs font-semibold text-red-400">{rec.challengedBy}</p>
+                    </div>
+                  )}
+                </div>
+                {rec.context && <p className="text-[11px] text-muted-foreground italic">{rec.context}</p>}
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Stable records */}
+      {stable.length > 0 && (
+        <div>
+          <SectionTitle icon={Trophy} title="Récords históricos sólidos" color="#F5A500" />
+          <div className="space-y-2">
+            {stable.map((rec) => (
+              <div key={rec.record} className="glass rounded-xl border border-white/5 p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <span className="text-[10px] font-bold text-[hsl(var(--brand-gold))] uppercase tracking-wider">{rec.category}</span>
+                    <p className="text-xs font-bold text-white mt-0.5">{rec.record}</p>
+                    <p className="text-xs text-muted-foreground">{rec.holder} — <span className="text-white">{rec.value}</span></p>
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/5 text-muted-foreground border border-white/10 shrink-0 whitespace-nowrap">
+                    Sólido
+                  </span>
+                </div>
+                {rec.context && <p className="text-[11px] text-muted-foreground italic mt-1.5">{rec.context}</p>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

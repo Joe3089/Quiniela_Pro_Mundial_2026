@@ -84,13 +84,20 @@ function CountdownBadge({ matchDate, hasPrediction }: { matchDate: string; hasPr
   );
 }
 
+/* ── Shared prediction type ───────────────────────────────── */
+type FullPrediction = {
+  home: number; away: number;
+  outcome_prediction?: "90min" | "extra_time" | "penalties" | null;
+  qualifier_team_id?: string | null;
+};
+
 /* ── Prediction Match Row ─────────────────────────────────── */
 function PredictionMatchRow({
   match,
   prediction,
 }: {
   match: Match;
-  prediction?: { home: number; away: number } | null;
+  prediction?: FullPrediction | null;
 }) {
   const [expanded, setExpanded] = useState(false);
   const { isLocked, isLocking } = useCountdown(match.match_date);
@@ -359,7 +366,7 @@ function FinishedPredictionCard({
   prediction,
 }: {
   match: Match;
-  prediction?: { home: number; away: number } | null;
+  prediction?: FullPrediction | null;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [detail, setDetail] = useState<MatchDetail | null>(null);
@@ -446,6 +453,22 @@ function FinishedPredictionCard({
                         </span>
                       )}
                     </div>
+                    {prediction.home === prediction.away && prediction.outcome_prediction && prediction.outcome_prediction !== "90min" && (
+                      <div className="mt-1.5 flex items-center gap-2 text-xs">
+                        <span className={cn("font-bold px-2 py-0.5 rounded", prediction.outcome_prediction === "extra_time" ? "bg-blue-500/15 text-blue-400" : "bg-amber-500/15 text-amber-400")}>
+                          {prediction.outcome_prediction === "extra_time" ? "Prórroga" : "Penales"}
+                        </span>
+                        {prediction.qualifier_team_id && (
+                          <span className="text-muted-foreground">
+                            Clasifica: <span className="text-white font-semibold">
+                              {prediction.qualifier_team_id === match.home_team?.id
+                                ? (match.home_team?.short_name ?? match.home_team?.name)
+                                : (match.away_team?.short_name ?? match.away_team?.name)}
+                            </span>
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -570,7 +593,12 @@ export function PredictionsView() {
   const predictionMap = new Map(
     predictions?.map((p) => [
       p.match_id,
-      { home: p.home_score_prediction, away: p.away_score_prediction },
+      {
+        home: p.home_score_prediction,
+        away: p.away_score_prediction,
+        outcome_prediction: p.outcome_prediction,
+        qualifier_team_id: p.qualifier_team_id,
+      },
     ])
   );
 

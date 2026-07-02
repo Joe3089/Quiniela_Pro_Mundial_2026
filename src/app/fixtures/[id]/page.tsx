@@ -286,25 +286,7 @@ function LineupCol({
 // ── Country flag by name ───────────────────────────────────────────────────────
 function CountryFlag({ country }: { country: string | null }) {
   if (!country) return <div className="h-4 w-6 rounded bg-white/10 border border-white/10" />;
-
-  const CODE_MAP: Record<string, string> = {
-    England: "ENG", Germany: "GER", France: "FRA", Spain: "ESP", Italy: "ITA",
-    Argentina: "ARG", Brazil: "BRA", Netherlands: "NED", Portugal: "POR",
-    "United States": "USA", Mexico: "MEX", Australia: "AUS", Japan: "JPN",
-    Morocco: "MAR", Sweden: "SWE", Uruguay: "URU", Colombia: "COL",
-    Senegal: "SEN", Norway: "NOR", "South Africa": "RSA", Canada: "CAN",
-    Switzerland: "SUI", Belgium: "BEL", Turkey: "TUR", Austria: "AUT",
-    Croatia: "CRO", Ghana: "GHA", Panama: "PAN", Ecuador: "ECU",
-    "Saudi Arabia": "KSA", Iran: "IRN", Czechia: "CZE", Poland: "POL",
-    "South Korea": "KOR", Serbia: "SRB", Ukraine: "UKR", "New Zealand": "NZL",
-  };
-  const code = CODE_MAP[country] ?? null;
-
-  return code ? (
-    <FlagImage fifaCode={code} fallbackEmoji="🏳️" size="sm" className="rounded" />
-  ) : (
-    <span className="text-[10px] text-muted-foreground">{country.substring(0, 3).toUpperCase()}</span>
-  );
+  return <FlagImage countryName={country} fallbackEmoji="🏳️" size="sm" className="rounded" />;
 }
 
 // ── Terna Arbitral ─────────────────────────────────────────────────────────────
@@ -559,8 +541,8 @@ export default function MatchDetailPage({ params }: { params: Promise<{ id: stri
       {/* ── Terna Arbitral ─────────────────────────────────────────────────── */}
       {(isFinished || isLive) && (
         <TernaArbitral
-          referee={detail?.referee ?? null}
-          refereeCountry={detail?.refereeCountry ?? null}
+          referee={(match as any).referee ?? detail?.referee ?? null}
+          refereeCountry={(match as any).referee_country ?? detail?.refereeCountry ?? null}
         />
       )}
 
