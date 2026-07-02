@@ -14,7 +14,7 @@ export const BROADCAST_CHANNELS = [
   { id: "UCjZ7QPKb89R-4SxzBoceyOg", name: "Telemundo Deportes", priority: 1 },
   { id: "UCwNqHDsnBCKT-olwJwIFyfg", name: "FOX Soccer",         priority: 2 },
   { id: "UC--i2rV5NCxiEIPefr3l-zQ", name: "TSN Sports",         priority: 3 },
-  { id: "UCpcTrCXblq78GZrTUTLWeBw", name: "FIFA World Cup",     priority: 4 },
+  // FIFA channel excluded per content policy
 ];
 
 const SCORE_RE = /\(\d+\)\d+-\d+\(\d+\)|\d+-\d+/;

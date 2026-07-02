@@ -24,14 +24,11 @@ interface YTSearchItem {
   };
 }
 
-// Authorized channel names as they appear in YouTube API responses
+// Authorized channel names as they appear in YouTube API responses (no FIFA)
 const YT_CHANNELS_SCHEDULED = [
   "Telemundo Deportes",
   "FOX Soccer",
   "TSN Sports",
-  "FIFA World Cup",
-  "FIFAWorldCup",
-  "FIFA",
   "FOX Sports",
 ];
 

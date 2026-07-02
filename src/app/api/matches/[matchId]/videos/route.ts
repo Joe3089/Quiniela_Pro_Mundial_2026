@@ -44,15 +44,30 @@ export async function GET(
     filtered = videos.filter((v) => v.type === "preview");
   }
 
-  // Deduplicate: best video per type (lowest channel_priority wins)
+  // Smart dedup: keep one "full" highlight + one "penalties" highlight + one preview
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const byType: Record<string, any> = {};
+  const isPenaltiesVideo = (v: any) => {
+    const t = (v.title ?? "").toLowerCase();
+    return t.includes("tanda") || t.includes("penalty") || t.includes("penalties") || t.includes("penales") || t.includes("shootout");
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let bestFull: any = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let bestPen: any = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let bestPreview: any = null;
+
   for (const v of filtered) {
-    if (!byType[v.type]) byType[v.type] = v;
+    if (v.type === "preview" && !bestPreview) { bestPreview = v; continue; }
+    if (v.type === "highlights") {
+      if (isPenaltiesVideo(v) && !bestPen) { bestPen = v; continue; }
+      if (!isPenaltiesVideo(v) && !bestFull) { bestFull = v; continue; }
+    }
   }
 
-  // highlights first, then preview — never duplicates
-  const result = [byType["highlights"], byType["preview"]].filter(Boolean);
+  // Order: full highlights → penalties → preview
+  const result = [bestFull, bestPen, bestPreview].filter(Boolean);
 
   return NextResponse.json(result);
 }
