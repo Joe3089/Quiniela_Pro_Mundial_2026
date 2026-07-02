@@ -7,6 +7,8 @@ import { ThemeProvider } from "./theme-provider";
 import { AuthProvider } from "./auth-provider";
 import { TimezoneProvider } from "./timezone-provider";
 import { TournamentProvider } from "./tournament-provider";
+import { SessionWatchdog } from "./session-watchdog";
+import { RouteGuard } from "./route-guard";
 import { Toaster } from "sonner";
 
 function ServiceWorkerRegistrar() {
@@ -24,10 +26,13 @@ export function Providers({ children }: { children: ReactNode }) {
       <TimezoneProvider>
       <QueryProvider>
         <AuthProvider>
+          <RouteGuard />
+          <SessionWatchdog>
           <TournamentProvider>
             <ServiceWorkerRegistrar />
             {children}
           </TournamentProvider>
+          </SessionWatchdog>
           <Toaster
             position="top-right"
             richColors

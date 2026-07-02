@@ -47,16 +47,10 @@ export async function updateSession(request: NextRequest) {
   const authRoutes = ["/auth/login", "/auth/register"];
   const pathname = request.nextUrl.pathname;
 
-  // Accept ANY sb-*-auth-token cookie (chunked or not) as proof of a prior
-  // authenticated session. Also accept any sb-* cookie as a broader signal.
-  const allCookies = request.cookies.getAll();
-  const hasAuthCookie = allCookies.some(
-    (c) => c.name.startsWith("sb-") && (c.name.includes("auth-token") || c.name.includes("auth"))
-  );
-
   // For RSC navigations the client is responsible for auth — skip redirects.
+  // The client's auth store + RouteGuard handles protection for RSC navigations.
   if (!isRSCNavigation) {
-    if (!user && !hasAuthCookie && protectedRoutes.some((r) => pathname.startsWith(r))) {
+    if (!user && protectedRoutes.some((r) => pathname.startsWith(r))) {
       const url = request.nextUrl.clone();
       url.pathname = "/auth/login";
       url.searchParams.set("redirectTo", pathname);

@@ -138,17 +138,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else if (event === "SIGNED_OUT") {
         const explicit = wasExplicitSignOut();
         clearExplicitSignOut();
-        // Delay clearing user so TOKEN_REFRESHED can follow without a flash.
+        // Delay 600 ms so TOKEN_REFRESHED can follow without a flash.
+        // If no TOKEN_REFRESHED arrives the session is genuinely expired.
         signedOutTimer = setTimeout(() => {
           setUser(null);
           setLoading(false);
           signedOutTimer = null;
           if (!explicit) {
-            toast.warning("Tu sesión expiró", {
-              description: "Por favor inicia sesión nuevamente para continuar.",
-              duration: 8000,
-              action: { label: "Iniciar sesión", onClick: () => { window.location.href = "/auth/login"; } },
-            });
+            const PROTECTED = [
+              "/dashboard", "/fixtures", "/predictions", "/rankings",
+              "/selecciones", "/estadisticas", "/profile", "/admin",
+              "/en-vivo", "/noticias",
+            ];
+            const pathname = window.location.pathname;
+            if (PROTECTED.some((p) => pathname.startsWith(p))) {
+              // Hard navigation — bypasses RSC cache and forces middleware check.
+              window.location.replace(
+                `/auth/login?redirectTo=${encodeURIComponent(pathname)}&reason=session_expired`
+              );
+            } else {
+              toast.warning("Tu sesión expiró", {
+                description: "Por favor inicia sesión nuevamente para continuar.",
+                duration: 8000,
+                action: { label: "Iniciar sesión", onClick: () => { window.location.href = "/auth/login"; } },
+              });
+            }
           }
         }, 600);
       } else {
