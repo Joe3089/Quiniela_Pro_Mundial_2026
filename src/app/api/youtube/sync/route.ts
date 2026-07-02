@@ -198,6 +198,7 @@ export async function syncVideosForMatch(
         if (t.includes("gol de ") || (t.includes("best moments") && t.includes("matchday"))) continue;
         if (detectVideoType(video.title) !== "highlights") continue;
         if (!videoMatchesTeams(video.title, homeNames, awayNames)) continue;
+        if (video.channelPriority > 4) continue; // only authorized channels
 
         const { error } = await supabase.from("match_videos").upsert(
           {
@@ -392,6 +393,7 @@ export async function GET(request: NextRequest) {
         ];
 
         if (!videoMatchesTeams(video.title, homeNames, awayNames)) continue;
+        if (video.channelPriority > 4) continue; // only authorized channels
 
         const existingBest = bestPriority[key] ?? 99;
         if (video.channelPriority >= existingBest) continue;
