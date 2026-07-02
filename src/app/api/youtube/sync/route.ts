@@ -24,10 +24,15 @@ interface YTSearchItem {
   };
 }
 
+// Authorized channel names as they appear in YouTube API responses
 const YT_CHANNELS_SCHEDULED = [
   "Telemundo Deportes",
   "FOX Soccer",
   "TSN Sports",
+  "FIFA World Cup",
+  "FIFAWorldCup",
+  "FIFA",
+  "FOX Sports",
 ];
 
 const YT_CHANNEL_IDS: Record<string, string> = {
@@ -198,7 +203,7 @@ export async function syncVideosForMatch(
         if (t.includes("gol de ") || (t.includes("best moments") && t.includes("matchday"))) continue;
         if (detectVideoType(video.title) !== "highlights") continue;
         if (!videoMatchesTeams(video.title, homeNames, awayNames)) continue;
-        if (video.channelPriority > 4) continue; // only authorized channels
+        if (video.channelPriority > 7) continue; // only authorized channels
 
         const { error } = await supabase.from("match_videos").upsert(
           {
@@ -393,7 +398,7 @@ export async function GET(request: NextRequest) {
         ];
 
         if (!videoMatchesTeams(video.title, homeNames, awayNames)) continue;
-        if (video.channelPriority > 4) continue; // only authorized channels
+        if (video.channelPriority > 7) continue; // only authorized channels
 
         const existingBest = bestPriority[key] ?? 99;
         if (video.channelPriority >= existingBest) continue;
