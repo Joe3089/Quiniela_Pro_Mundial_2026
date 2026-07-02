@@ -36,12 +36,14 @@ const YT_CHANNEL_IDS: Record<string, string> = {
   "Telemundo Deportes": "UCjZ7QPKb89R-4SxzBoceyOg",
   "FOX Soccer": "UCwNqHDsnBCKT-olwJwIFyfg",
   "TSN Sports": "UC--i2rV5NCxiEIPefr3l-zQ",
+  "FOX Sports": "UCwNqHDsnBCKT-olwJwIFyfg",
 };
 
 async function searchYouTube(
   query: string,
   apiKey: string,
-  maxResults = 5
+  maxResults = 5,
+  channelId?: string
 ): Promise<YoutubeVideo[]> {
   try {
     const url = new URL("https://www.googleapis.com/youtube/v3/search");
@@ -51,6 +53,7 @@ async function searchYouTube(
     url.searchParams.set("maxResults", String(maxResults));
     url.searchParams.set("order", "relevance");
     url.searchParams.set("key", apiKey);
+    if (channelId) url.searchParams.set("channelId", channelId);
 
     const res = await fetch(url.toString(), { signal: AbortSignal.timeout(8000) });
     if (!res.ok) return [];
@@ -74,6 +77,24 @@ async function searchYouTube(
   } catch {
     return [];
   }
+}
+
+// Search across all authorized channels in priority order, return first match
+async function searchAuthorizedChannels(
+  query: string,
+  apiKey: string,
+  validateFn: (title: string) => boolean
+): Promise<YoutubeVideo | null> {
+  for (const [name, chId] of Object.entries(YT_CHANNEL_IDS)) {
+    const results = await searchYouTube(query, apiKey, 3, chId);
+    const priority = YT_CHANNELS_SCHEDULED.indexOf(name) + 1;
+    for (const v of results) {
+      if (validateFn(v.title)) {
+        return { ...v, channelSource: name, channelPriority: priority };
+      }
+    }
+  }
+  return null;
 }
 
 // Build search query for a match based on status
@@ -190,57 +211,57 @@ export async function syncVideosForMatch(
         ? `${homeEn} vs ${awayEn} highlights tanda penales World Cup 2026`
         : `${homeEn} vs ${awayEn} extended highlights World Cup 2026`;
 
-      const ytVideos = await searchYouTube(query, ytApiKey, 5);
       const homeNames = [homeTeamName, homeTeamCode, ...(homeTeamCode ? (FIFA_CODE_ENGLISH[homeTeamCode] ?? []) : [])];
       const awayNames = [awayTeamName, awayTeamCode, ...(awayTeamCode ? (FIFA_CODE_ENGLISH[awayTeamCode] ?? []) : [])];
 
-      for (const video of ytVideos) {
-        const t = video.title.toLowerCase();
-        // Filter individual goals and multi-match compilations
-        if (t.includes("gol de ") || (t.includes("best moments") && t.includes("matchday"))) continue;
-        if (detectVideoType(video.title) !== "highlights") continue;
-        if (!videoMatchesTeams(video.title, homeNames, awayNames)) continue;
-        if (video.channelPriority > 7) continue; // only authorized channels
+      const isHighlight = (title: string) => {
+        const t = title.toLowerCase();
+        if (t.includes("gol de ") || (t.includes("best moments") && t.includes("matchday"))) return false;
+        return detectVideoType(title) === "highlights" && videoMatchesTeams(title, homeNames, awayNames);
+      };
 
+      const foundHighlight = await searchAuthorizedChannels(query, ytApiKey, isHighlight);
+      if (foundHighlight) {
         const { error } = await supabase.from("match_videos").upsert(
           {
             match_id: matchId,
-            youtube_video_id: video.videoId,
-            title: video.title,
+            youtube_video_id: foundHighlight.videoId,
+            title: foundHighlight.title,
             type: "highlights",
-            thumbnail_url: video.thumbnailUrl,
-            published_at: video.publishedAt,
-            channel_source: video.channelSource,
-            channel_priority: video.channelPriority,
+            thumbnail_url: foundHighlight.thumbnailUrl,
+            published_at: foundHighlight.publishedAt,
+            channel_source: foundHighlight.channelSource,
+            channel_priority: foundHighlight.channelPriority,
           },
           { onConflict: "match_id,youtube_video_id" }
         );
         if (!error) added++;
-        break;
       }
 
       // Penalty shootout video
       if (hasPenalties) {
         const penQuery = `${homeEn} vs ${awayEn} penalty shootout tanda penales World Cup 2026`;
-        const penVideos = await searchYouTube(penQuery, ytApiKey, 3);
-        for (const video of penVideos) {
-          const t = video.title.toLowerCase();
-          if (!t.includes("tanda") && !t.includes("penalty") && !t.includes("penalties") && !t.includes("penales")) continue;
+        const isPenVideo = (title: string) => {
+          const t = title.toLowerCase();
+          return (t.includes("tanda") || t.includes("penalty") || t.includes("penalties") || t.includes("penales")) &&
+            videoMatchesTeams(title, homeNames, awayNames);
+        };
+        const foundPen = await searchAuthorizedChannels(penQuery, ytApiKey, isPenVideo);
+        if (foundPen) {
           const { error } = await supabase.from("match_videos").upsert(
             {
               match_id: matchId,
-              youtube_video_id: video.videoId,
-              title: video.title,
+              youtube_video_id: foundPen.videoId,
+              title: foundPen.title,
               type: "highlights",
-              thumbnail_url: video.thumbnailUrl,
-              published_at: video.publishedAt,
-              channel_source: video.channelSource,
-              channel_priority: video.channelPriority,
+              thumbnail_url: foundPen.thumbnailUrl,
+              published_at: foundPen.publishedAt,
+              channel_source: foundPen.channelSource,
+              channel_priority: foundPen.channelPriority,
             },
             { onConflict: "match_id,youtube_video_id" }
           );
           if (!error) added++;
-          break;
         }
       }
     }
@@ -379,46 +400,54 @@ export async function GET(request: NextRequest) {
       if ((bestPriority[key] ?? 99) <= 1) continue;
 
       ytSearched++;
-      const ytVideos = await searchYouTube(query, ytApiKey, 5);
 
-      for (const video of ytVideos) {
-        const detectedType = detectVideoType(video.title);
-        if (detectedType !== videoType) continue;
+      const homeNames = [
+        home?.name, home?.short_name, home?.fifa_code,
+        ...(home?.fifa_code ? (FIFA_CODE_ENGLISH[home.fifa_code] ?? []) : []),
+      ];
+      const awayNames = [
+        away?.name, away?.short_name, away?.fifa_code,
+        ...(away?.fifa_code ? (FIFA_CODE_ENGLISH[away.fifa_code] ?? []) : []),
+      ];
 
-        const homeNames = [
-          home?.name, home?.short_name, home?.fifa_code,
-          ...(home?.fifa_code ? (FIFA_CODE_ENGLISH[home.fifa_code] ?? []) : []),
-        ];
-        const awayNames = [
-          away?.name, away?.short_name, away?.fifa_code,
-          ...(away?.fifa_code ? (FIFA_CODE_ENGLISH[away.fifa_code] ?? []) : []),
-        ];
+      // Search within authorized channels first (channel-scoped), then fall back to general
+      const matchesTeams = (title: string) =>
+        detectVideoType(title) === videoType && videoMatchesTeams(title, homeNames, awayNames);
 
-        if (!videoMatchesTeams(video.title, homeNames, awayNames)) continue;
-        if (video.channelPriority > 7) continue; // only authorized channels
+      let foundVideo: YoutubeVideo | null = await searchAuthorizedChannels(query, ytApiKey, matchesTeams);
 
-        const existingBest = bestPriority[key] ?? 99;
-        if (video.channelPriority >= existingBest) continue;
-
-        const { error } = await supabase.from("match_videos").upsert(
-          {
-            match_id: match.id,
-            youtube_video_id: video.videoId,
-            title: video.title,
-            type: videoType,
-            thumbnail_url: video.thumbnailUrl,
-            published_at: video.publishedAt,
-            channel_source: video.channelSource,
-            channel_priority: video.channelPriority,
-          },
-          { onConflict: "match_id,youtube_video_id" }
-        );
-
-        if (!error) {
-          synced++;
-          bestPriority[key] = video.channelPriority;
+      // Fallback: general search filtered to authorized channels
+      if (!foundVideo) {
+        const ytVideos = await searchYouTube(query, ytApiKey, 5);
+        for (const video of ytVideos) {
+          if (!matchesTeams(video.title)) continue;
+          if (video.channelPriority > 7) continue;
+          foundVideo = video;
+          break;
         }
-        break;
+      }
+
+      if (foundVideo) {
+        const existingBest = bestPriority[key] ?? 99;
+        if (foundVideo.channelPriority < existingBest) {
+          const { error } = await supabase.from("match_videos").upsert(
+            {
+              match_id: match.id,
+              youtube_video_id: foundVideo.videoId,
+              title: foundVideo.title,
+              type: videoType,
+              thumbnail_url: foundVideo.thumbnailUrl,
+              published_at: foundVideo.publishedAt,
+              channel_source: foundVideo.channelSource,
+              channel_priority: foundVideo.channelPriority,
+            },
+            { onConflict: "match_id,youtube_video_id" }
+          );
+          if (!error) {
+            synced++;
+            bestPriority[key] = foundVideo.channelPriority;
+          }
+        }
       }
 
       // Penalty-specific search for finished matches with shootout
