@@ -117,12 +117,12 @@ export async function fetchBroadcastVideos(): Promise<YoutubeVideo[]> {
       try {
         const res = await fetch(
           `https://www.youtube.com/feeds/videos.xml?channel_id=${ch.id}`,
-          { cache: "no-store" }
+          { cache: "no-store", signal: AbortSignal.timeout(10000) }
         );
         if (!res.ok) return;
         const xml = await res.text();
         all.push(...parseRss(xml, ch.name, ch.priority));
-      } catch { /* ignore individual channel failures */ }
+      } catch { /* ignore individual channel failures or timeouts */ }
     })
   );
   return all;
