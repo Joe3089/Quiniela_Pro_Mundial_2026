@@ -91,7 +91,7 @@ export function FlagImage({ fifaCode, countryName, fallbackEmoji, size = "md", c
   return (
     <Image
       src={`https://flagcdn.com/w${w}/${iso}.png`}
-      alt={fifaCode}
+      alt={fifaCode ?? countryName ?? "flag"}
       width={w}
       height={h}
       className={`object-cover rounded-sm shadow-sm ${cls} ${className}`}
