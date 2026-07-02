@@ -311,36 +311,37 @@ function HistorialTab() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.02 }}
-            className="glass rounded-xl border border-white/5 p-3 hover:border-white/10 transition-colors"
+            className="glass rounded-xl border border-white/5 hover:border-white/10 transition-colors overflow-hidden"
           >
-            <div className="flex items-start gap-3">
-              <div className="shrink-0 text-center w-12">
-                <div className="text-base font-black text-white">{ed.year}</div>
-                <div className="text-[9px] text-muted-foreground">
+            {/* Main 3-column row: Year+Host | Champion | Runner-up */}
+            <div className="grid grid-cols-3 gap-3 items-center p-3">
+              {/* Col 1: Year + Host */}
+              <div>
+                <div className="text-lg font-black text-white leading-none">{ed.year}</div>
+                <div className="mt-1 text-[10px] text-muted-foreground">
                   <CountryWithFlag name={ed.host} />
                 </div>
               </div>
-              <div className="flex-1 min-w-0 grid grid-cols-2 md:grid-cols-4 gap-2">
-                <div>
-                  <p className="text-[10px] text-muted-foreground">Campeón</p>
-                  <p className="text-xs font-bold text-[hsl(var(--brand-gold))]">
-                    <CountryWithFlag name={ed.champion} />
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[10px] text-muted-foreground">Subcampeón</p>
-                  <p className="text-xs font-semibold text-white">
-                    <CountryWithFlag name={ed.runnerUp} />
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[10px] text-muted-foreground">Goleador</p>
-                  <p className="text-xs text-white truncate">{ed.topScorer.name} ({ed.topScorer.goals}⚽)</p>
-                </div>
-                <div>
-                  <p className="text-[10px] text-muted-foreground">Partidos / Goles</p>
-                  <p className="text-xs text-white">{ed.matches} / {ed.totalGoals}</p>
-                </div>
+              {/* Col 2: Champion */}
+              <div>
+                <div className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1">Campeón</div>
+                <CountryWithFlag name={ed.champion} className="text-xs font-bold text-[hsl(var(--brand-gold))]" />
+              </div>
+              {/* Col 3: Runner-up */}
+              <div>
+                <div className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1">Subcampeón</div>
+                <CountryWithFlag name={ed.runnerUp} className="text-xs font-semibold text-slate-200" />
+              </div>
+            </div>
+            {/* Secondary row: Goleador + Partidos/Goles */}
+            <div className="grid grid-cols-2 gap-2 px-3 pb-2.5 border-t border-white/5 pt-2">
+              <div>
+                <span className="text-[9px] text-muted-foreground/50">Goleador: </span>
+                <span className="text-[10px] text-white/70">{ed.topScorer.name} ({ed.topScorer.goals}⚽)</span>
+              </div>
+              <div className="text-right">
+                <span className="text-[9px] text-muted-foreground/50">Partidos/Goles: </span>
+                <span className="text-[10px] text-white/70">{ed.matches}/{ed.totalGoals}</span>
               </div>
             </div>
           </motion.div>
