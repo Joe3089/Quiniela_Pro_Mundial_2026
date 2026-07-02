@@ -70,6 +70,7 @@ export interface AFFixture {
   fixture: {
     id: number;
     date: string;
+    referee?: string | null;
     status: { short: string; elapsed: number | null };
     venue: { name: string; city: string };
   };

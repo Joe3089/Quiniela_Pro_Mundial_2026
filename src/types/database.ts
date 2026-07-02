@@ -148,6 +148,8 @@ export interface MatchRow {
   venue: string | null;
   city: string | null;
   status: MatchStatus;
+  referee: string | null;
+  referee_country: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useFormatDate } from "@/hooks/use-format-date";
 import { TeamCrest } from "@/components/ui/team-crest";
+import { FlagImage } from "@/components/ui/flag-image";
 import { MATCH_STATUS_LABELS } from "@/constants";
 import type { Match } from "@/types/fixtures";
 
@@ -107,6 +108,16 @@ export function MatchCard({ match, showPrediction, prediction, onClick, compact 
         <div className="flex items-center justify-center gap-1 mt-2 text-xs text-muted-foreground">
           <MapPin className="h-3 w-3" />
           <span>{match.city}</span>
+        </div>
+      )}
+
+      {/* Referee */}
+      {!compact && (match as any).referee && (
+        <div className="flex items-center justify-center gap-1.5 mt-1 text-[10px] text-muted-foreground/70">
+          {(match as any).referee_country && (
+            <FlagImage countryName={(match as any).referee_country} size="sm" className="opacity-80" />
+          )}
+          <span>Árb: {(match as any).referee}</span>
         </div>
       )}
 

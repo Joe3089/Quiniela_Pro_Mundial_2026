@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, type ReactNode } from "react";
+import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { useAuthStore } from "@/store/auth.store";
+import { wasExplicitSignOut, clearExplicitSignOut } from "@/lib/auth-flags";
 import type { AuthUser } from "@/types/auth";
 
 // Emails that always receive admin rights regardless of DB state
@@ -134,11 +136,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false);
         resolveUser(db, session, setUser);
       } else if (event === "SIGNED_OUT") {
+        const explicit = wasExplicitSignOut();
+        clearExplicitSignOut();
         // Delay clearing user so TOKEN_REFRESHED can follow without a flash.
         signedOutTimer = setTimeout(() => {
           setUser(null);
           setLoading(false);
           signedOutTimer = null;
+          if (!explicit) {
+            toast.warning("Tu sesión expiró", {
+              description: "Por favor inicia sesión nuevamente para continuar.",
+              duration: 8000,
+              action: { label: "Iniciar sesión", onClick: () => { window.location.href = "/auth/login"; } },
+            });
+          }
         }, 600);
       } else {
         setUser(null);

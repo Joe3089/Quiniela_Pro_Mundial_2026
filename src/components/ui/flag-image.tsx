@@ -2,6 +2,34 @@
 
 import Image from "next/image";
 
+// Maps country names (as returned by football APIs) → ISO codes
+export const COUNTRY_NAME_TO_ISO: Record<string, string> = {
+  "Argentina": "ar", "Brazil": "br", "France": "fr", "Germany": "de",
+  "England": "gb-eng", "Spain": "es", "Italy": "it", "Portugal": "pt",
+  "Netherlands": "nl", "Belgium": "be", "Japan": "jp", "South Korea": "kr",
+  "Korea Republic": "kr", "United States": "us", "USA": "us", "Mexico": "mx",
+  "Colombia": "co", "Uruguay": "uy", "Chile": "cl", "Peru": "pe",
+  "Ecuador": "ec", "Paraguay": "py", "Bolivia": "bo", "Venezuela": "ve",
+  "Morocco": "ma", "Senegal": "sn", "Nigeria": "ng", "Ghana": "gh",
+  "Egypt": "eg", "Cameroon": "cm", "Tunisia": "tn", "Algeria": "dz",
+  "DR Congo": "cd", "Ivory Coast": "ci", "South Africa": "za",
+  "Cape Verde": "cv", "Mali": "ml", "Tanzania": "tz",
+  "Saudi Arabia": "sa", "Iran": "ir", "Qatar": "qa", "Iraq": "iq",
+  "Jordan": "jo", "UAE": "ae", "Israel": "il",
+  "Australia": "au", "New Zealand": "nz", "Indonesia": "id",
+  "China": "cn", "Thailand": "th", "Kazakhstan": "kz", "Uzbekistan": "uz",
+  "Turkey": "tr", "Serbia": "rs", "Croatia": "hr", "Poland": "pl",
+  "Switzerland": "ch", "Denmark": "dk", "Sweden": "se", "Norway": "no",
+  "Austria": "at", "Czech Republic": "cz", "Czechia": "cz", "Slovakia": "sk",
+  "Hungary": "hu", "Romania": "ro", "Ukraine": "ua", "Greece": "gr",
+  "Scotland": "gb-sct", "Wales": "gb-wls", "Northern Ireland": "gb-nir",
+  "Republic of Ireland": "ie", "Ireland": "ie", "Slovenia": "si",
+  "North Macedonia": "mk", "Montenegro": "me", "Georgia": "ge",
+  "Canada": "ca", "Panama": "pa", "Jamaica": "jm", "Costa Rica": "cr",
+  "Honduras": "hn", "Haiti": "ht", "Curacao": "cw", "Curaçao": "cw",
+  "Russia": "ru", "Iceland": "is",
+};
+
 // Maps FIFA 3-letter codes → ISO 2-letter codes for flagcdn.com
 const FIFA_TO_ISO: Record<string, string> = {
   // CONCACAF
@@ -32,7 +60,8 @@ const FIFA_TO_ISO: Record<string, string> = {
 };
 
 interface FlagImageProps {
-  fifaCode: string;
+  fifaCode?: string;
+  countryName?: string;
   fallbackEmoji?: string;
   size?: "sm" | "md" | "lg" | "xl";
   className?: string;
@@ -47,13 +76,15 @@ const SIZES = {
   xl:  { w: 80,  h: 54,  cls: "w-20 h-[54px]" },
 };
 
-export function FlagImage({ fifaCode, fallbackEmoji, size = "md", className = "" }: FlagImageProps) {
-  const iso = FIFA_TO_ISO[fifaCode?.toUpperCase() ?? ""];
+export function FlagImage({ fifaCode, countryName, fallbackEmoji, size = "md", className = "" }: FlagImageProps) {
+  const iso =
+    (countryName ? COUNTRY_NAME_TO_ISO[countryName] : null) ??
+    (fifaCode ? FIFA_TO_ISO[fifaCode.toUpperCase()] : null);
   const { w, h, cls } = SIZES[size];
 
   if (!iso) {
     return (
-      <span className={`text-xl leading-none ${className}`}>{fallbackEmoji ?? fifaCode}</span>
+      <span className={`text-xl leading-none ${className}`}>{fallbackEmoji ?? countryName ?? fifaCode}</span>
     );
   }
 

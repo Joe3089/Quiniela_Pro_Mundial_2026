@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { markExplicitSignOut } from "@/lib/auth-flags";
 import type { LoginCredentials, RegisterCredentials } from "@/types/auth";
 
 export const authService = {
@@ -36,6 +37,7 @@ export const authService = {
 
   async signOut() {
     const supabase = createClient();
+    markExplicitSignOut();
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
   },

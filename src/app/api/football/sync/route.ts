@@ -408,6 +408,8 @@ async function findExistingMatch(
 }
 
 function toMatchRow(fixture: AFFixture, homeTeamId: string, awayTeamId: string, groupId: string | null = null) {
+  const refRaw = fixture.fixture.referee ?? null;
+  const refParts = refRaw ? refRaw.split(",").map((s) => s.trim()) : [];
   return {
     tournament_id: TOURNAMENT_ID,
     group_id: groupId,
@@ -427,6 +429,8 @@ function toMatchRow(fixture: AFFixture, homeTeamId: string, awayTeamId: string, 
     venue: fixture.fixture.venue.name,
     city: fixture.fixture.venue.city,
     status: mapStatus(fixture.fixture.status.short),
+    referee: refParts[0] ?? null,
+    referee_country: refParts[1] ?? null,
   };
 }
 
