@@ -1,4 +1,4 @@
-const CACHE_NAME = "quiniela-wc26-v3";
+const CACHE_NAME = "quiniela-wc26-v4";
 const OFFLINE_URL = "/offline";
 
 const STATIC_ASSETS = [
@@ -46,12 +46,15 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Cache-first for static assets
+  // Cache-first for same-origin static assets only (never intercept external CDN like flagcdn.com)
   if (
-    url.pathname.startsWith("/_next/static/") ||
-    url.pathname.startsWith("/icons/") ||
-    url.pathname.endsWith(".png") ||
-    url.pathname.endsWith(".svg")
+    url.hostname === self.location.hostname &&
+    (
+      url.pathname.startsWith("/_next/static/") ||
+      url.pathname.startsWith("/icons/") ||
+      url.pathname.endsWith(".png") ||
+      url.pathname.endsWith(".svg")
+    )
   ) {
     event.respondWith(
       caches.match(request).then(

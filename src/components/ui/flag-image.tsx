@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { useState } from "react";
 
 // Maps country names (as returned by football APIs) → ISO codes
 export const COUNTRY_NAME_TO_ISO: Record<string, string> = {
@@ -104,21 +104,24 @@ export function FlagImage({ fifaCode, countryName, fallbackEmoji, size = "md", c
     (countryName ? COUNTRY_NAME_TO_ISO[countryName] : null) ??
     (fifaCode ? FIFA_TO_ISO[fifaCode.toUpperCase()] : null);
   const { w, h, cls } = SIZES[size];
+  const [failed, setFailed] = useState(false);
 
-  if (!iso) {
+  if (!iso || failed) {
     return (
       <span className={`text-xl leading-none ${className}`}>{fallbackEmoji ?? countryName ?? fifaCode}</span>
     );
   }
 
   return (
-    <Image
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
       src={`https://flagcdn.com/w${w}/${iso}.png`}
-      alt={fifaCode ?? countryName ?? "flag"}
+      alt={countryName ?? fifaCode ?? "flag"}
       width={w}
       height={h}
       className={`object-cover rounded-sm shadow-sm ${cls} ${className}`}
-      unoptimized
+      loading="lazy"
+      onError={() => setFailed(true)}
     />
   );
 }
