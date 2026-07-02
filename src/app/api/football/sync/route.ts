@@ -5,6 +5,7 @@ import {
   getWCFixtures,
   getWCTeams,
   getFixtureEvents,
+  getFixture,
   type AFFixture,
   type AFTeam,
 } from "@/services/api-football";
@@ -88,6 +89,7 @@ export async function GET(request: NextRequest) {
         results.records = await checkAndNotifyBrokenRecords(supabase);
         results.scoring = await scoreFinishedMatches(supabase);
         results.bracket = await runBracketSync().catch(() => ({ status: "error" }));
+        results.referees = await syncReferees(supabase);
 
         // Trigger video sync for matches that just became finished
         if (scoresResult.justFinished?.length) {
@@ -149,6 +151,7 @@ export async function POST(request: NextRequest) {
       results.records = await checkAndNotifyBrokenRecords(supabase);
       results.scoring = await scoreFinishedMatches(supabase);
       results.bracket = await runBracketSync().catch(() => ({ status: "error" }));
+      results.referees = await syncReferees(supabase);
 
       // Trigger video sync for matches that just became finished
       if (scoresResult.justFinished?.length) {
@@ -480,6 +483,37 @@ async function syncEvents(supabase: SupabaseClient) {
   }
 
   return { synced, skipped: alreadySynced.size };
+}
+
+// ── Referee backfill ──────────────────────────────────────────────────────────
+// Fetches individual fixture details for finished matches missing referee data.
+// Capped at 20/run to avoid API quota exhaustion.
+async function syncReferees(supabase: SupabaseClient) {
+  const { data: missing } = await supabase
+    .from("matches")
+    .select("id, api_football_fixture_id")
+    .eq("tournament_id", TOURNAMENT_ID)
+    .not("api_football_fixture_id", "is", null)
+    .is("referee", null)
+    .limit(20);
+
+  if (!missing?.length) return { updated: 0 };
+
+  let updated = 0;
+  for (const row of missing) {
+    try {
+      const fixtures = await getFixture(row.api_football_fixture_id as number);
+      const refRaw = fixtures[0]?.fixture?.referee ?? null;
+      if (!refRaw) continue;
+      const parts = refRaw.split(",").map((s: string) => s.trim());
+      await supabase.from("matches").update({
+        referee: parts[0] ?? null,
+        referee_country: parts[1] ?? null,
+      }).eq("id", row.id);
+      updated++;
+    } catch { /* skip */ }
+  }
+  return { updated };
 }
 
 // ── Record-broken auto-notifications ─────────────────────────────────────────

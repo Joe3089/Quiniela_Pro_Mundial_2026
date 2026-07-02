@@ -299,32 +299,98 @@ function DetallesModal({ entry, onClose }: { entry: LeaderboardEntry; onClose: (
                 const isFinished = m.status === "finished";
                 const isLive = m.status === "live";
                 const hasPrediction = pred.home_score_prediction != null && pred.away_score_prediction != null;
+                const homeShort = m.home_team?.short_name ?? m.home_team?.name ?? "?";
+                const awayShort = m.away_team?.short_name ?? m.away_team?.name ?? "?";
+
+                // Predicted winner
+                const pH = pred.home_score_prediction ?? 0;
+                const pA = pred.away_score_prediction ?? 0;
+                const predWinner: "home" | "away" | "draw" = pH > pA ? "home" : pH < pA ? "away" : "draw";
+                const predDrawTeam = predWinner === "draw" && pred.qualifier_team_id
+                  ? (pred.qualifier_team_id === m.home_team?.id ? "home" : "away")
+                  : null;
+                const predOutcome = pred.outcome_prediction;
+
+                // Actual winner
+                const rH = m.home_score ?? 0;
+                const rA = m.away_score ?? 0;
+                const realWinner: "home" | "away" | "draw" =
+                  isFinished ? (rH > rA ? "home" : rH < rA ? "away" : "draw") : "draw";
+                const realDrawTeam = realWinner === "draw" && isFinished
+                  ? ((m.home_score_penalties ?? 0) > (m.away_score_penalties ?? 0) ? "home" : "away")
+                  : null;
+                const isPen = (m as any).api_football_status === "PEN";
+                const isAET = (m as any).api_football_status === "AET";
+
                 return (
                   <div
                     key={pred.id}
                     className={cn(
-                      "grid grid-cols-[1fr_auto_auto_auto] gap-x-3 items-center px-3 py-2 rounded-lg text-xs",
+                      "grid grid-cols-[1fr_auto_auto_auto] gap-x-3 items-start px-3 py-2 rounded-lg text-xs",
                       isFinished && (pred.points_earned ?? 0) > 0
                         ? "bg-emerald-500/8 border border-emerald-500/15"
                         : "bg-white/3 border border-border/20"
                     )}
                   >
-                    <span className="truncate text-foreground/90 font-medium">
+                    {/* Match name */}
+                    <span className="truncate text-foreground/90 font-medium pt-0.5">
                       {m.home_team?.name ?? "?"} vs {m.away_team?.name ?? "?"}
                     </span>
-                    <span className="w-14 text-center font-mono font-bold text-blue-300">
-                      {hasPrediction ? `${pred.home_score_prediction}-${pred.away_score_prediction}` : <span className="text-muted-foreground text-[10px]">—</span>}
-                    </span>
-                    <span className="w-14 text-center">
+
+                    {/* Prediction score + winner */}
+                    <div className="w-14 text-center">
+                      {hasPrediction ? (
+                        <>
+                          <div className="font-mono font-bold text-blue-300">
+                            {pH}-{pA}
+                          </div>
+                          <div className="text-[9px] leading-tight mt-0.5">
+                            {predWinner === "home" && <span className="text-blue-400 font-semibold">{homeShort}</span>}
+                            {predWinner === "away" && <span className="text-blue-400 font-semibold">{awayShort}</span>}
+                            {predWinner === "draw" && predDrawTeam && (
+                              <span className="text-amber-400 font-semibold">
+                                {predOutcome === "penalties" ? "PEN " : predOutcome === "extra_time" ? "ET " : ""}
+                                {predDrawTeam === "home" ? homeShort : awayShort}
+                              </span>
+                            )}
+                            {predWinner === "draw" && !predDrawTeam && (
+                              <span className="text-muted-foreground">Empate</span>
+                            )}
+                          </div>
+                        </>
+                      ) : (
+                        <span className="text-muted-foreground text-[10px]">—</span>
+                      )}
+                    </div>
+
+                    {/* Real score + winner */}
+                    <div className="w-14 text-center">
                       {isFinished ? (
-                        <span className="font-mono font-bold text-foreground">{m.home_score ?? 0}-{m.away_score ?? 0}</span>
+                        <>
+                          <div className="font-mono font-bold text-foreground">{rH}-{rA}</div>
+                          <div className="text-[9px] leading-tight mt-0.5">
+                            {realWinner === "home" && <span className="text-emerald-400 font-semibold">{homeShort}</span>}
+                            {realWinner === "away" && <span className="text-emerald-400 font-semibold">{awayShort}</span>}
+                            {realWinner === "draw" && realDrawTeam && (
+                              <span className="text-emerald-400 font-semibold">
+                                {isPen ? "PEN " : isAET ? "ET " : ""}
+                                {realDrawTeam === "home" ? homeShort : awayShort}
+                              </span>
+                            )}
+                            {realWinner === "draw" && !realDrawTeam && (
+                              <span className="text-muted-foreground">Empate</span>
+                            )}
+                          </div>
+                        </>
                       ) : isLive ? (
                         <Badge className="text-[9px] px-1.5 py-0 bg-red-500/20 text-red-400 border-red-500/30 font-bold">EN VIVO</Badge>
                       ) : (
                         <Badge className="text-[9px] px-1.5 py-0 bg-yellow-500/15 text-yellow-400 border-yellow-500/25">PROG.</Badge>
                       )}
-                    </span>
-                    <span className="w-10 text-right">
+                    </div>
+
+                    {/* Points */}
+                    <span className="w-10 text-right pt-0.5">
                       {isFinished ? (
                         <span className={cn("font-bold tabular-nums", pred.points_earned === 5 ? "text-yellow-400" : (pred.points_earned ?? 0) > 0 ? "text-emerald-400" : "text-muted-foreground")}>
                           {pred.points_earned ?? 0}
