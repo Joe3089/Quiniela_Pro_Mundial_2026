@@ -410,9 +410,66 @@ async function findExistingMatch(
   return byTeams;
 }
 
+// Static country map so sync never overwrites with null when API omits nationality
+const REFEREE_COUNTRY: Record<string, string> = {
+  "A. Faghani": "Australia", "Faghani": "Australia",
+  "M. Ghorbal": "Algeria", "Ghorbal": "Algeria",
+  "D. Beida": "Algeria", "Beida": "Algeria",
+  "S. Marciniak": "Poland", "Marciniak": "Poland",
+  "S. Vincic": "Slovenia", "Vincic": "Slovenia",
+  "F. Zwayer": "Germany", "Zwayer": "Germany",
+  "A. Taylor": "England", "Taylor": "England",
+  "D. Makkelie": "Netherlands", "Makkelie": "Netherlands",
+  "M. Oliver": "England", "Oliver": "England",
+  "F. Letexier": "France", "Letexier": "France",
+  "C. Turpin": "France", "Turpin": "France",
+  "I. Barton": "El Salvador", "Barton": "El Salvador",
+  "I. Elfath": "United States", "Elfath": "United States",
+  "J. Valenzuela": "Venezuela", "Valenzuela": "Venezuela",
+  "J. Benitez": "Venezuela", "Benitez": "Venezuela",
+  "W. Sampaio": "Brazil", "Sampaio": "Brazil",
+  "Raphael Claus": "Brazil", "R. Claus": "Brazil", "Claus": "Brazil",
+  "T. Penso": "Brazil", "Penso": "Brazil",
+  "R. Abatti": "Brazil", "Abatti": "Brazil",
+  "I. Kovacs": "Romania", "Kovacs": "Romania",
+  "A. Al Jassim": "Qatar", "Al Jassim": "Qatar",
+  "I. Tantashev": "Uzbekistan", "Tantashev": "Uzbekistan",
+  "Ma Ning": "China",
+  "Glenn Nyberg": "Sweden", "G. Nyberg": "Sweden", "Nyberg": "Sweden",
+  "E. Eskas": "Norway", "Eskas": "Norway",
+  "G. Tejera": "Uruguay", "Tejera": "Uruguay",
+  "D. Fischer": "Denmark", "Fischer": "Denmark",
+  "Y. Perez": "Argentina", "Perez": "Argentina",
+  "S. Martinez": "Argentina", "Martinez": "Argentina",
+  "J. Pinheiro": "Portugal", "Pinheiro": "Portugal",
+  "C. A. Ramos": "Mexico", "Ramos": "Mexico",
+  "A. Hernandez": "Mexico", "Hernandez": "Mexico",
+  "K. I. Garcia Mendoza": "Mexico", "Garcia Mendoza": "Mexico",
+  "A. Makhadmeh": "Jordan", "Makhadmeh": "Jordan",
+  "J. Jayed": "Morocco", "Jayed": "Morocco",
+  "P. Atcho": "Ivory Coast", "Atcho": "Ivory Coast",
+  "M. Mariani": "Italy", "Mariani": "Italy",
+  "O. Alali": "Saudi Arabia", "Alali": "Saudi Arabia",
+  "A. Omar": "Egypt", "Omar": "Egypt",
+  "D. Herrera": "Colombia", "Herrera": "Colombia",
+  "C. Garay": "Ecuador", "Garay": "Ecuador",
+  "F. Tello": "Spain", "Tello": "Spain",
+};
+
+function resolveRefereeCountry(refName: string | null, apiCountry: string | null): string | null {
+  if (apiCountry) return apiCountry;
+  if (!refName) return null;
+  if (REFEREE_COUNTRY[refName]) return REFEREE_COUNTRY[refName];
+  // Partial match by last name
+  const lastName = refName.split(/[\s.]+/).filter(Boolean).pop() ?? "";
+  return REFEREE_COUNTRY[lastName] ?? null;
+}
+
 function toMatchRow(fixture: AFFixture, homeTeamId: string, awayTeamId: string, groupId: string | null = null) {
   const refRaw = fixture.fixture.referee ?? null;
   const refParts = refRaw ? refRaw.split(",").map((s) => s.trim()) : [];
+  const refName = refParts[0] ?? null;
+  const refCountry = resolveRefereeCountry(refName, refParts[1] ?? null);
   return {
     tournament_id: TOURNAMENT_ID,
     group_id: groupId,
@@ -432,8 +489,8 @@ function toMatchRow(fixture: AFFixture, homeTeamId: string, awayTeamId: string, 
     venue: fixture.fixture.venue.name,
     city: fixture.fixture.venue.city,
     status: mapStatus(fixture.fixture.status.short),
-    referee: refParts[0] ?? null,
-    referee_country: refParts[1] ?? null,
+    referee: refName,
+    referee_country: refCountry,
   };
 }
 
@@ -506,9 +563,10 @@ async function syncReferees(supabase: SupabaseClient) {
       const refRaw = fixtures[0]?.fixture?.referee ?? null;
       if (!refRaw) continue;
       const parts = refRaw.split(",").map((s: string) => s.trim());
+      const refName = parts[0] ?? null;
       await supabase.from("matches").update({
-        referee: parts[0] ?? null,
-        referee_country: parts[1] ?? null,
+        referee: refName,
+        referee_country: resolveRefereeCountry(refName, parts[1] ?? null),
       }).eq("id", row.id);
       updated++;
     } catch { /* skip */ }
