@@ -89,6 +89,8 @@ function mapPartido(m: any, teamsById: Record<string, any>, groupsById: Record<s
     status:               (STATUS_MAP[m.status]    ?? "scheduled") as never,
     created_at:           m.created_at ?? new Date().toISOString(),
     updated_at:           m.updated_at ?? m.created_at ?? new Date().toISOString(),
+    referee:              m.referee              ?? null,
+    referee_country:      m.referee_country      ?? null,
     home_team: teamsById[m.home_team_id]            ?? teamsById[m.equipo_1_id] ?? null,
     away_team: teamsById[m.away_team_id]            ?? teamsById[m.equipo_2_id] ?? null,
     group:     groupObj,
