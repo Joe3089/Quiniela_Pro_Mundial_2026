@@ -36,7 +36,6 @@ const YT_CHANNEL_IDS: Record<string, string> = {
   "Telemundo Deportes": "UCjZ7QPKb89R-4SxzBoceyOg",
   "FOX Soccer": "UCwNqHDsnBCKT-olwJwIFyfg",
   "TSN Sports": "UC--i2rV5NCxiEIPefr3l-zQ",
-  "FOX Sports": "UCwNqHDsnBCKT-olwJwIFyfg",
 };
 
 async function searchYouTube(
@@ -370,6 +369,9 @@ export async function GET(request: NextRequest) {
   }
 
   // ── Phase 2: YouTube Data API search by match status ──────────────────────
+  // Limit to 8 searches/run to stay within YouTube API quota (10k units/day, 100 units/search)
+  const MAX_YT_SEARCHES = 8;
+
   if (ytApiKey) {
     // Only search for finished (highlights) or scheduled (previews) matches
     const actionableMatches = matches.filter(
@@ -395,9 +397,10 @@ export async function GET(request: NextRequest) {
       const videoType: "highlights" | "preview" =
         match.status === "finished" ? "highlights" : "preview";
 
-      // Don't re-search if we already have a priority 1 video for this type
+      // Only search matches with NO video at all (saves API quota)
       const key = `${match.id}|${videoType}`;
-      if ((bestPriority[key] ?? 99) <= 1) continue;
+      if (bestPriority[key] !== undefined) continue;
+      if (ytSearched >= MAX_YT_SEARCHES) break;
 
       ytSearched++;
 
