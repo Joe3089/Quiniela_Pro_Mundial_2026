@@ -76,6 +76,8 @@ function mapPartido(m: any, teamsById: Record<string, any>, groupsById: Record<s
     away_team_id:         m.away_team_id          ?? m.equipo_2_id ?? null,
     home_score:           homeScore,
     away_score:           awayScore,
+    home_score_extra_time: m.home_score_extra_time ?? null,
+    away_score_extra_time: m.away_score_extra_time ?? null,
     home_score_penalties: m.home_score_penalties   ?? null,
     away_score_penalties: m.away_score_penalties   ?? null,
     api_football_fixture_id: m.api_football_fixture_id ?? null,

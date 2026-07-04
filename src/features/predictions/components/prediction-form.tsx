@@ -59,33 +59,102 @@ function ScoreInput({
   );
 }
 
+function PhaseScoreRow({
+  label,
+  homeScore,
+  awayScore,
+  homeName,
+  awayName,
+  onHomeChange,
+  onAwayChange,
+  disabled,
+}: {
+  label: string;
+  homeScore: number;
+  awayScore: number;
+  homeName?: string;
+  awayName?: string;
+  onHomeChange: (v: number) => void;
+  onAwayChange: (v: number) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div className="glass rounded-lg p-3 space-y-2">
+      <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{label}</span>
+      <div className="flex items-center justify-center gap-4">
+        <div className="flex flex-col items-center gap-1 flex-1">
+          {homeName && <span className="text-[10px] text-muted-foreground truncate">{homeName}</span>}
+          <ScoreInput value={homeScore} onChange={onHomeChange} disabled={disabled} />
+        </div>
+        <span className="text-lg text-muted-foreground font-bold">—</span>
+        <div className="flex flex-col items-center gap-1 flex-1">
+          {awayName && <span className="text-[10px] text-muted-foreground truncate">{awayName}</span>}
+          <ScoreInput value={awayScore} onChange={onAwayChange} disabled={disabled} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function PredictionForm({ match, existingPrediction, onSuccess }: PredictionFormProps) {
   const save = useSavePrediction();
   const isLocked = match.status !== "scheduled";
   const knockout = isKnockout(match.phase);
 
+  const pred = existingPrediction as (Prediction & {
+    outcome_prediction?: PredictionInput["outcome_prediction"];
+    qualifier_team_id?: string | null;
+    extra_time_home_prediction?: number | null;
+    extra_time_away_prediction?: number | null;
+    penalties_home_prediction?: number | null;
+    penalties_away_prediction?: number | null;
+  }) | null | undefined;
+
   const { watch, setValue, handleSubmit } = useForm<PredictionInput>({
     resolver: zodResolver(predictionSchema),
     defaultValues: {
-      home_score_prediction: existingPrediction?.home_score_prediction ?? 0,
-      away_score_prediction: existingPrediction?.away_score_prediction ?? 0,
-      outcome_prediction: (existingPrediction as { outcome_prediction?: PredictionInput["outcome_prediction"] })?.outcome_prediction ?? "90min",
-      qualifier_team_id: (existingPrediction as { qualifier_team_id?: string | null })?.qualifier_team_id ?? null,
+      home_score_prediction: pred?.home_score_prediction ?? 0,
+      away_score_prediction: pred?.away_score_prediction ?? 0,
+      outcome_prediction: pred?.outcome_prediction ?? "90min",
+      qualifier_team_id: pred?.qualifier_team_id ?? null,
+      extra_time_home_prediction: pred?.extra_time_home_prediction ?? null,
+      extra_time_away_prediction: pred?.extra_time_away_prediction ?? null,
+      penalties_home_prediction: pred?.penalties_home_prediction ?? null,
+      penalties_away_prediction: pred?.penalties_away_prediction ?? null,
     },
   });
 
-  const homeScore = watch("home_score_prediction");
-  const awayScore = watch("away_score_prediction");
-  const outcome   = watch("outcome_prediction");
-  const qualifier = watch("qualifier_team_id");
+  const homeScore  = watch("home_score_prediction");
+  const awayScore  = watch("away_score_prediction");
+  const outcome    = watch("outcome_prediction");
+  const qualifier  = watch("qualifier_team_id");
+  const etHome     = watch("extra_time_home_prediction") ?? 0;
+  const etAway     = watch("extra_time_away_prediction") ?? 0;
+  const penHome    = watch("penalties_home_prediction") ?? 0;
+  const penAway    = watch("penalties_away_prediction") ?? 0;
+
+  const handleOutcomeChange = (val: PredictionInput["outcome_prediction"]) => {
+    setValue("outcome_prediction", val);
+    // Clear phase-specific scores when switching outcome
+    if (val !== "extra_time") {
+      setValue("extra_time_home_prediction", null);
+      setValue("extra_time_away_prediction", null);
+    }
+    if (val !== "penalties") {
+      setValue("penalties_home_prediction", null);
+      setValue("penalties_away_prediction", null);
+    }
+  };
 
   const onSubmit = (data: PredictionInput) => {
     if (isLocked) return;
     save.mutate({ matchId: match.id, data }, { onSuccess });
   };
 
-  const homeId = match.home_team?.id ?? "";
-  const awayId = match.away_team?.id ?? "";
+  const homeId   = match.home_team?.id ?? "";
+  const awayId   = match.away_team?.id ?? "";
+  const homeName = match.home_team?.short_name ?? "Local";
+  const awayName = match.away_team?.short_name ?? "Visita";
 
   return (
     <motion.form
@@ -94,26 +163,31 @@ export function PredictionForm({ match, existingPrediction, onSuccess }: Predict
       onSubmit={handleSubmit(onSubmit)}
       className="space-y-4"
     >
-      {/* Score row */}
-      <div className="flex items-center justify-center gap-6">
-        {/* Home */}
-        <div className="flex flex-col items-center gap-2 flex-1">
-          {match.home_team?.flag_url && (
-            <Image src={match.home_team.flag_url} alt={match.home_team.name} width={40} height={28} className="rounded-md object-cover" />
-          )}
-          <span className="text-sm font-semibold">{match.home_team?.short_name ?? "TBD"}</span>
-          <ScoreInput value={homeScore} onChange={(v) => setValue("home_score_prediction", v)} disabled={isLocked} />
-        </div>
-        <div className="flex flex-col items-center">
-          <span className="text-2xl text-muted-foreground font-bold">—</span>
-        </div>
-        {/* Away */}
-        <div className="flex flex-col items-center gap-2 flex-1">
-          {match.away_team?.flag_url && (
-            <Image src={match.away_team.flag_url} alt={match.away_team.name} width={40} height={28} className="rounded-md object-cover" />
-          )}
-          <span className="text-sm font-semibold">{match.away_team?.short_name ?? "TBD"}</span>
-          <ScoreInput value={awayScore} onChange={(v) => setValue("away_score_prediction", v)} disabled={isLocked} />
+      {/* 90-min score row */}
+      <div className="space-y-1">
+        {knockout && (
+          <p className="text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+            Resultado a 90 min
+          </p>
+        )}
+        <div className="flex items-center justify-center gap-6">
+          <div className="flex flex-col items-center gap-2 flex-1">
+            {match.home_team?.flag_url && (
+              <Image src={match.home_team.flag_url} alt={homeName} width={40} height={28} className="rounded-md object-cover" />
+            )}
+            <span className="text-sm font-semibold">{homeName}</span>
+            <ScoreInput value={homeScore} onChange={(v) => setValue("home_score_prediction", v)} disabled={isLocked} />
+          </div>
+          <div className="flex flex-col items-center">
+            <span className="text-2xl text-muted-foreground font-bold">—</span>
+          </div>
+          <div className="flex flex-col items-center gap-2 flex-1">
+            {match.away_team?.flag_url && (
+              <Image src={match.away_team.flag_url} alt={awayName} width={40} height={28} className="rounded-md object-cover" />
+            )}
+            <span className="text-sm font-semibold">{awayName}</span>
+            <ScoreInput value={awayScore} onChange={(v) => setValue("away_score_prediction", v)} disabled={isLocked} />
+          </div>
         </div>
       </div>
 
@@ -136,7 +210,7 @@ export function PredictionForm({ match, existingPrediction, onSuccess }: Predict
                       key={opt.value}
                       type="button"
                       disabled={isLocked}
-                      onClick={() => setValue("outcome_prediction", opt.value)}
+                      onClick={() => handleOutcomeChange(opt.value)}
                       className={cn(
                         "relative flex flex-col items-center gap-0.5 rounded-lg px-2 py-2.5 text-center border-2 transition-all active:scale-95",
                         sel
@@ -153,6 +227,48 @@ export function PredictionForm({ match, existingPrediction, onSuccess }: Predict
                 })}
               </div>
             </div>
+
+            {/* Extra time score (optional bonus) */}
+            <AnimatePresence>
+              {outcome === "extra_time" && (
+                <motion.div
+                  key="et-score"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                >
+                  <PhaseScoreRow
+                    label="Resultado en Prórroga (acumulado)"
+                    homeScore={etHome}
+                    awayScore={etAway}
+                    homeName={homeName}
+                    awayName={awayName}
+                    onHomeChange={(v) => setValue("extra_time_home_prediction", v)}
+                    onAwayChange={(v) => setValue("extra_time_away_prediction", v)}
+                    disabled={isLocked}
+                  />
+                </motion.div>
+              )}
+              {outcome === "penalties" && (
+                <motion.div
+                  key="pen-score"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                >
+                  <PhaseScoreRow
+                    label="Resultado en Penales"
+                    homeScore={penHome}
+                    awayScore={penAway}
+                    homeName={homeName}
+                    awayName={awayName}
+                    onHomeChange={(v) => setValue("penalties_home_prediction", v)}
+                    onAwayChange={(v) => setValue("penalties_away_prediction", v)}
+                    disabled={isLocked}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Qualifier selector */}
             {(match.home_team || match.away_team) && (
@@ -199,12 +315,17 @@ export function PredictionForm({ match, existingPrediction, onSuccess }: Predict
       <div className="glass rounded-lg p-3 flex items-center justify-between">
         <span className="text-xs text-muted-foreground">Puntos posibles:</span>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">Exacto:</span>
-          <span className="text-xs font-bold text-primary">5 pts</span>
-          {knockout && (
+          {knockout ? (
             <>
-              <span className="text-xs text-muted-foreground">Penales+:</span>
+              <span className="text-xs text-muted-foreground">90+fase:</span>
+              <span className="text-xs font-bold text-primary">5 pts</span>
+              <span className="text-xs text-muted-foreground">Fase:</span>
               <span className="text-xs font-bold text-accent">4 pts</span>
+            </>
+          ) : (
+            <>
+              <span className="text-xs text-muted-foreground">Exacto:</span>
+              <span className="text-xs font-bold text-primary">5 pts</span>
             </>
           )}
           <span className="text-xs text-muted-foreground">Ganador:</span>
@@ -221,7 +342,12 @@ export function PredictionForm({ match, existingPrediction, onSuccess }: Predict
             className="flex items-center gap-2 text-xs text-green-400"
           >
             <CheckCircle2 className="h-3.5 w-3.5" />
-            <span>Guardado: {existingPrediction.home_score_prediction} - {existingPrediction.away_score_prediction}</span>
+            <span>
+              Guardado: {existingPrediction.home_score_prediction} - {existingPrediction.away_score_prediction}
+              {pred?.outcome_prediction && pred.outcome_prediction !== "90min" && (
+                <> · {pred.outcome_prediction === "extra_time" ? "Prórroga" : "Penales"}</>
+              )}
+            </span>
           </motion.div>
         )}
       </AnimatePresence>

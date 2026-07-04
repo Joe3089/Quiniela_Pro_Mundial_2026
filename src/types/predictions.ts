@@ -10,6 +10,10 @@ export interface PredictionFormData {
   away_score_prediction: number;
   outcome_prediction?: "90min" | "extra_time" | "penalties" | null;
   qualifier_team_id?: string | null;
+  extra_time_home_prediction?: number | null;
+  extra_time_away_prediction?: number | null;
+  penalties_home_prediction?: number | null;
+  penalties_away_prediction?: number | null;
 }
 
 export interface PredictionWithPoints extends Prediction {

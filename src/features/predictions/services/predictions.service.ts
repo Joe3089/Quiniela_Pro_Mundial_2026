@@ -34,6 +34,10 @@ export const predictionsService = {
     const playoffExtra = {
       ...(data.outcome_prediction != null && { outcome_prediction: data.outcome_prediction }),
       ...(data.qualifier_team_id != null && { qualifier_team_id: data.qualifier_team_id }),
+      extra_time_home_prediction: data.extra_time_home_prediction ?? null,
+      extra_time_away_prediction: data.extra_time_away_prediction ?? null,
+      penalties_home_prediction: data.penalties_home_prediction ?? null,
+      penalties_away_prediction: data.penalties_away_prediction ?? null,
     };
     const hasPlayoff = Object.keys(playoffExtra).length > 0;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

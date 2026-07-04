@@ -137,6 +137,8 @@ export interface MatchRow {
   away_team_id: string | null;
   home_score: number | null;
   away_score: number | null;
+  home_score_extra_time: number | null;
+  away_score_extra_time: number | null;
   home_score_penalties: number | null;
   away_score_penalties: number | null;
   api_football_fixture_id: number | null;
@@ -163,6 +165,10 @@ export interface PredictionRow {
   away_score_prediction: number;
   outcome_prediction: "90min" | "extra_time" | "penalties" | null;
   qualifier_team_id: string | null;
+  extra_time_home_prediction: number | null;
+  extra_time_away_prediction: number | null;
+  penalties_home_prediction: number | null;
+  penalties_away_prediction: number | null;
   points_earned: number | null;
   status: PredictionStatus;
   created_at: string;
