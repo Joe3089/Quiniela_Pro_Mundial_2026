@@ -188,6 +188,9 @@ function MatchesPanel() {
     if (!error) {
       setDone((d) => ({ ...d, [matchId]: true }));
       setMatches((prev) => prev.filter((m) => m.id !== matchId));
+      // Knockout advancement (winner -> next round, loser -> 3rd place) is not
+      // covered by the DB trigger that scores predictions, so trigger it here.
+      fetch("/api/football/bracket/sync", { method: "POST" }).catch(() => {});
     }
   };
 
