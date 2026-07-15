@@ -290,37 +290,52 @@ function DetallesModal({ entry, onClose }: { entry: LeaderboardEntry; onClose: (
             <div className="space-y-1.5">
               <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-3 text-[10px] font-bold uppercase tracking-wide text-muted-foreground px-3 pb-1">
                 <span>Partido</span>
-                <span className="text-center w-14">Pred.</span>
-                <span className="text-center w-14">Real</span>
+                <span className="text-center w-24">Pred.</span>
+                <span className="text-center w-24">Real</span>
                 <span className="text-right w-10">Pts</span>
               </div>
               {sorted.map((pred) => {
                 const m = pred.match;
                 const isFinished = m.status === "finished";
                 const isLive = m.status === "live";
+                const isKnockout = m.phase !== "group";
                 const hasPrediction = pred.home_score_prediction != null && pred.away_score_prediction != null;
                 const homeShort = m.home_team?.short_name ?? m.home_team?.name ?? "?";
                 const awayShort = m.away_team?.short_name ?? m.away_team?.name ?? "?";
 
-                // Predicted winner
+                // ── Prediction breakdown ──────────────────────────
                 const pH = pred.home_score_prediction ?? 0;
                 const pA = pred.away_score_prediction ?? 0;
-                const predWinner: "home" | "away" | "draw" = pH > pA ? "home" : pH < pA ? "away" : "draw";
-                const predDrawTeam = predWinner === "draw" && pred.qualifier_team_id
+                const pred90Winner: "home" | "away" | "draw" = pH > pA ? "home" : pH < pA ? "away" : "draw";
+                const predWentET = pred.extra_time_home_prediction != null || pred.extra_time_away_prediction != null;
+                const predWentPens = pred.penalties_home_prediction != null || pred.penalties_away_prediction != null;
+                const predQualifier = pred.qualifier_team_id
                   ? (pred.qualifier_team_id === m.home_team?.id ? "home" : "away")
                   : null;
-                const predOutcome = pred.outcome_prediction;
+                // Who the user says advances: qualifier pick if they went to ET/pens, otherwise the 90' winner
+                const predAdvances: "home" | "away" | null =
+                  isKnockout ? ((predWentET || predWentPens) ? predQualifier : (pred90Winner === "draw" ? null : pred90Winner)) : null;
 
-                // Actual winner
+                // ── Real result breakdown ─────────────────────────
                 const rH = m.home_score ?? 0;
                 const rA = m.away_score ?? 0;
-                const realWinner: "home" | "away" | "draw" =
-                  isFinished ? (rH > rA ? "home" : rH < rA ? "away" : "draw") : "draw";
-                const realDrawTeam = realWinner === "draw" && isFinished
-                  ? ((m.home_score_penalties ?? 0) > (m.away_score_penalties ?? 0) ? "home" : "away")
-                  : null;
-                const isPen = (m as any).api_football_status === "PEN";
-                const isAET = (m as any).api_football_status === "AET";
+                const rETH = (m as any).home_score_extra_time as number | null;
+                const rETA = (m as any).away_score_extra_time as number | null;
+                const rPenH = (m as any).home_score_penalties as number | null;
+                const rPenA = (m as any).away_score_penalties as number | null;
+                const realWentET = rETH != null || rETA != null;
+                const realWentPens = rPenH != null || rPenA != null;
+                const real90H = isFinished ? rH - (rETH ?? 0) : null;
+                const real90A = isFinished ? rA - (rETA ?? 0) : null;
+                const realAdvances: "home" | "away" | null = !isFinished
+                  ? null
+                  : realWentPens
+                    ? ((rPenH ?? 0) > (rPenA ?? 0) ? "home" : "away")
+                    : rH === rA
+                      ? null // draw stands (group stage) — no qualifier
+                      : rH > rA ? "home" : "away";
+
+                const teamCode = (side: "home" | "away") => (side === "home" ? homeShort : awayShort);
 
                 return (
                   <div
@@ -337,51 +352,69 @@ function DetallesModal({ entry, onClose }: { entry: LeaderboardEntry; onClose: (
                       {m.home_team?.name ?? "?"} vs {m.away_team?.name ?? "?"}
                     </span>
 
-                    {/* Prediction score + winner */}
-                    <div className="w-14 text-center">
+                    {/* Prediction breakdown */}
+                    <div className="w-24 text-center">
                       {hasPrediction ? (
-                        <>
-                          <div className="font-mono font-bold text-blue-300">
+                        <div className="space-y-0.5">
+                          <div className="font-mono font-bold text-blue-300 leading-tight">
+                            {(predWentET || predWentPens) && <span className="text-[8px] font-sans text-muted-foreground mr-0.5">90&apos;</span>}
                             {pH}-{pA}
                           </div>
+                          {predWentET && (
+                            <div className="font-mono text-[10px] text-blue-300/80 leading-tight">
+                              <span className="text-[8px] font-sans text-muted-foreground mr-0.5">Prórr.</span>
+                              {pred.extra_time_home_prediction}-{pred.extra_time_away_prediction}
+                            </div>
+                          )}
+                          {predWentPens && (
+                            <div className="font-mono text-[10px] text-blue-300/80 leading-tight">
+                              <span className="text-[8px] font-sans text-muted-foreground mr-0.5">Pen.</span>
+                              {pred.penalties_home_prediction}-{pred.penalties_away_prediction}
+                            </div>
+                          )}
                           <div className="text-[9px] leading-tight mt-0.5">
-                            {predWinner === "home" && <span className="text-blue-400 font-semibold">{homeShort}</span>}
-                            {predWinner === "away" && <span className="text-blue-400 font-semibold">{awayShort}</span>}
-                            {predWinner === "draw" && predDrawTeam && (
-                              <span className="text-amber-400 font-semibold">
-                                {predOutcome === "penalties" ? "PEN " : predOutcome === "extra_time" ? "Prórroga " : ""}
-                                {predDrawTeam === "home" ? homeShort : awayShort}
-                              </span>
-                            )}
-                            {predWinner === "draw" && !predDrawTeam && (
+                            {predAdvances ? (
+                              <span className="text-amber-400 font-semibold">↗ {teamCode(predAdvances)}</span>
+                            ) : pred90Winner === "draw" ? (
                               <span className="text-muted-foreground">Empate</span>
+                            ) : (
+                              <span className="text-blue-400 font-semibold">{teamCode(pred90Winner)}</span>
                             )}
                           </div>
-                        </>
+                        </div>
                       ) : (
                         <span className="text-muted-foreground text-[10px]">—</span>
                       )}
                     </div>
 
-                    {/* Real score + winner */}
-                    <div className="w-14 text-center">
+                    {/* Real result breakdown */}
+                    <div className="w-24 text-center">
                       {isFinished ? (
-                        <>
-                          <div className="font-mono font-bold text-foreground">{rH}-{rA}</div>
+                        <div className="space-y-0.5">
+                          <div className="font-mono font-bold text-foreground leading-tight">
+                            {(realWentET || realWentPens) && <span className="text-[8px] font-sans text-muted-foreground mr-0.5">90&apos;</span>}
+                            {real90H}-{real90A}
+                          </div>
+                          {realWentET && (
+                            <div className="font-mono text-[10px] text-foreground/80 leading-tight">
+                              <span className="text-[8px] font-sans text-muted-foreground mr-0.5">Prórr.</span>
+                              {rH}-{rA}
+                            </div>
+                          )}
+                          {realWentPens && (
+                            <div className="font-mono text-[10px] text-foreground/80 leading-tight">
+                              <span className="text-[8px] font-sans text-muted-foreground mr-0.5">Pen.</span>
+                              {rPenH}-{rPenA}
+                            </div>
+                          )}
                           <div className="text-[9px] leading-tight mt-0.5">
-                            {realWinner === "home" && <span className="text-emerald-400 font-semibold">{homeShort}</span>}
-                            {realWinner === "away" && <span className="text-emerald-400 font-semibold">{awayShort}</span>}
-                            {realWinner === "draw" && realDrawTeam && (
-                              <span className="text-emerald-400 font-semibold">
-                                {isPen ? "PEN " : isAET ? "Prórroga " : ""}
-                                {realDrawTeam === "home" ? homeShort : awayShort}
-                              </span>
-                            )}
-                            {realWinner === "draw" && !realDrawTeam && (
+                            {realAdvances ? (
+                              <span className="text-emerald-400 font-semibold">↗ {teamCode(realAdvances)}</span>
+                            ) : (
                               <span className="text-muted-foreground">Empate</span>
                             )}
                           </div>
-                        </>
+                        </div>
                       ) : isLive ? (
                         <Badge className="text-[9px] px-1.5 py-0 bg-red-500/20 text-red-400 border-red-500/30 font-bold">EN VIVO</Badge>
                       ) : (
