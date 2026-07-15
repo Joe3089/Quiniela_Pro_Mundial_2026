@@ -526,21 +526,23 @@ function Mundial2026Tab() {
     refetchInterval: 120_000,
   });
 
-  const { data: scorers = [], isLoading: scorersLoading } = useQuery({
-    queryKey: ["top-scorers"],
-    queryFn: () => fetchTopScorers("scorers"),
+  // Sourced from Supabase match_events (goal/assist events entered by the admin) —
+  // API-Football's free plan doesn't have access to the WC2026 season, so its
+  // topscorers/topassists endpoints are always empty for this tournament.
+  const { data: wc2026Stats, isLoading: wc2026StatsLoading } = useQuery({
+    queryKey: ["wc2026-scorers-sb"],
+    queryFn: () => fetch("/api/stats/wc2026-scorers").then((r) => r.json()) as Promise<{
+      topScorers: { name: string; goals: number; team: { name: string; fifa_code: string | null; flag_url: string | null } | null }[];
+      topAssists: { name: string; assists: number; team: { name: string; fifa_code: string | null; flag_url: string | null } | null }[];
+    }>,
     staleTime: 60_000,
     refetchInterval: 300_000,
     refetchOnWindowFocus: true,
   });
-
-  const { data: assists = [], isLoading: assistsLoading } = useQuery({
-    queryKey: ["top-assists"],
-    queryFn: () => fetchTopScorers("assists"),
-    staleTime: 300_000,
-    refetchInterval: 900_000,
-    refetchOnWindowFocus: true,
-  });
+  const scorers = wc2026Stats?.topScorers ?? [];
+  const assists = wc2026Stats?.topAssists ?? [];
+  const scorersLoading = wc2026StatsLoading;
+  const assistsLoading = wc2026StatsLoading;
 
   const played = matchStats?.played ?? 0;
   const goals = matchStats?.goals ?? 0;
@@ -586,51 +588,43 @@ function Mundial2026Tab() {
         </div>
       </div>
 
-      {/* Top scorers from API-Football */}
+      {/* Top scorers — Supabase match_events (goals entered per match) */}
       <div>
         <SectionTitle icon={Star} title="Tabla de goleadores · WC 2026" color="#F5A500" />
         {scorersLoading ? (
           <div className="flex items-center justify-center py-8 gap-2 text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
-            <span className="text-sm">Cargando datos de API-Football…</span>
+            <span className="text-sm">Cargando goleadores…</span>
           </div>
         ) : scorers.length > 0 ? (
           <div className="space-y-2">
-            {scorers.slice(0, 10).map((entry, i) => {
-              const stat = entry.statistics[0];
-              const goals = stat?.goals?.total ?? 0;
-              const teamName = stat?.team?.name ?? "";
-              return (
-                <div key={entry.player.id} className="glass rounded-xl border border-white/5 p-3 flex items-center gap-3">
-                  <span className="text-xs font-bold text-muted-foreground w-4 text-right shrink-0">{i + 1}</span>
-                  <img
-                    src={entry.player.photo}
-                    alt={entry.player.name}
-                    width={40} height={40}
-                    className="h-10 w-10 rounded-full object-cover border border-white/15 shrink-0"
-                    loading="lazy"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(entry.player.name)}&background=1D4ED8&color=fff&size=80&format=svg`;
-                    }}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-white truncate">{entry.player.name}</p>
-                    <p className="text-[11px] text-muted-foreground truncate">{teamName}</p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <span className="text-2xl font-black text-[hsl(var(--brand-gold))]">{goals}</span>
-                    <p className="text-[9px] text-muted-foreground">goles</p>
-                  </div>
+            {scorers.slice(0, 10).map((entry, i) => (
+              <div key={entry.name} className="glass rounded-xl border border-white/5 p-3 flex items-center gap-3">
+                <span className="text-xs font-bold text-muted-foreground w-4 text-right shrink-0">{i + 1}</span>
+                <img
+                  src={`https://ui-avatars.com/api/?name=${encodeURIComponent(entry.name)}&background=1D4ED8&color=fff&size=80&format=svg`}
+                  alt={entry.name}
+                  width={40} height={40}
+                  className="h-10 w-10 rounded-full object-cover border border-white/15 shrink-0"
+                  loading="lazy"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-white truncate">{entry.name}</p>
+                  <p className="text-[11px] text-muted-foreground truncate">{entry.team?.name ?? ""}</p>
                 </div>
-              );
-            })}
+                <div className="text-right shrink-0">
+                  <span className="text-2xl font-black text-[hsl(var(--brand-gold))]">{entry.goals}</span>
+                  <p className="text-[9px] text-muted-foreground">goles</p>
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
           <p className="text-center text-sm text-muted-foreground py-6">Sin datos disponibles todavía. Los goleadores se actualizan a partir de los primeros partidos.</p>
         )}
       </div>
 
-      {/* Top assists from API-Football */}
+      {/* Top assists — Supabase match_events (assist_name entered per goal) */}
       <div>
         <SectionTitle icon={Users} title="Tabla de asistencias · WC 2026" color="#8b5cf6" />
         {assistsLoading ? (
@@ -640,34 +634,26 @@ function Mundial2026Tab() {
           </div>
         ) : assists.length > 0 ? (
           <div className="space-y-2">
-            {assists.slice(0, 10).map((entry, i) => {
-              const stat = entry.statistics[0];
-              const asst = stat?.goals?.assists ?? 0;
-              const teamName = stat?.team?.name ?? "";
-              return (
-                <div key={entry.player.id} className="glass rounded-xl border border-white/5 p-3 flex items-center gap-3">
-                  <span className="text-xs font-bold text-muted-foreground w-4 text-right shrink-0">{i + 1}</span>
-                  <img
-                    src={entry.player.photo}
-                    alt={entry.player.name}
-                    width={40} height={40}
-                    className="h-10 w-10 rounded-full object-cover border border-white/15 shrink-0"
-                    loading="lazy"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(entry.player.name)}&background=7C3AED&color=fff&size=80&format=svg`;
-                    }}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-white truncate">{entry.player.name}</p>
-                    <p className="text-[11px] text-muted-foreground truncate">{teamName}</p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <span className="text-2xl font-black text-violet-400">{asst}</span>
-                    <p className="text-[9px] text-muted-foreground">asistencias</p>
-                  </div>
+            {assists.slice(0, 10).map((entry, i) => (
+              <div key={entry.name} className="glass rounded-xl border border-white/5 p-3 flex items-center gap-3">
+                <span className="text-xs font-bold text-muted-foreground w-4 text-right shrink-0">{i + 1}</span>
+                <img
+                  src={`https://ui-avatars.com/api/?name=${encodeURIComponent(entry.name)}&background=7C3AED&color=fff&size=80&format=svg`}
+                  alt={entry.name}
+                  width={40} height={40}
+                  className="h-10 w-10 rounded-full object-cover border border-white/15 shrink-0"
+                  loading="lazy"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-white truncate">{entry.name}</p>
+                  <p className="text-[11px] text-muted-foreground truncate">{entry.team?.name ?? ""}</p>
                 </div>
-              );
-            })}
+                <div className="text-right shrink-0">
+                  <span className="text-2xl font-black text-violet-400">{entry.assists}</span>
+                  <p className="text-[9px] text-muted-foreground">asistencias</p>
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
           <p className="text-center text-sm text-muted-foreground py-6">Sin datos disponibles todavía.</p>
