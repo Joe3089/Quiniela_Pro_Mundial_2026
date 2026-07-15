@@ -4,6 +4,18 @@ import { TOURNAMENT_ID } from "@/constants";
 
 export const dynamic = "force-dynamic";
 
+// API-Football event names sometimes vary between abbreviated ("K. Mbappe") and
+// full ("Kylian Mbappé") forms across different fixtures — normalize known
+// aliases so the same player isn't split across two leaderboard rows.
+const NAME_ALIASES: Record<string, string> = {
+  "K. Mbappe": "Kylian Mbappé",
+  "K. Mbappé": "Kylian Mbappé",
+  "L. Messi": "Lionel Messi",
+  "H. Kane": "Harry Kane",
+  "C. Ronaldo": "Cristiano Ronaldo",
+};
+const canonicalName = (name: string) => NAME_ALIASES[name] ?? name;
+
 export async function GET() {
   const supabase = await createClient();
 
@@ -19,11 +31,16 @@ export async function GET() {
   const scorerTeam: Record<string, { name: string; fifa_code: string | null; flag_url: string | null }> = {};
   const assistCounts: Record<string, number> = {};
   for (const row of data ?? []) {
-    counts[row.player_name] = (counts[row.player_name] ?? 0) + 1;
+    const scorer = canonicalName(row.player_name);
+    counts[scorer] = (counts[scorer] ?? 0) + 1;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const team = (row as any).teams;
-    if (team && !scorerTeam[row.player_name]) scorerTeam[row.player_name] = team;
-    if (row.assist_name) assistCounts[row.assist_name] = (assistCounts[row.assist_name] ?? 0) + 1;
+    if (team && !scorerTeam[scorer]) scorerTeam[scorer] = team;
+    if (row.assist_name) {
+      const assister = canonicalName(row.assist_name);
+      assistCounts[assister] = (assistCounts[assister] ?? 0) + 1;
+      if (team && !scorerTeam[assister]) scorerTeam[assister] = team;
+    }
   }
 
   const topScorers = Object.entries(counts)
