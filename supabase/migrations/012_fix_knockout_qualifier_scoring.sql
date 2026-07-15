@@ -1,16 +1,30 @@
 -- ============================================================
 -- Migration 012 — Fix knockout qualifier-scoring bug
 -- ============================================================
--- Bug: for knockout matches decided in regulation (90 min), the scoring
+-- Bug 1: for knockout matches decided in regulation (90 min), the scoring
 -- function only compared the predicted winner derived from the raw
 -- home/away score prediction. Users who predicted a draw (expecting the
 -- match to go to extra time / penalties) but correctly picked the
 -- eventual qualifier via `qualifier_team_id` were scored 0 instead of the
 -- "correct winner" tier (3 pts), even though they picked the right team.
---
 -- Fix: in the "decided in 90 minutes" branch, fall back to
 -- qualifier_team_id when the raw scoreline comparison doesn't already
 -- award points, before defaulting to 0.
+--
+-- Bug 2: when a match went to extra time / penalties, the "exact score"
+-- (5 pt) check only compared the base 90-minute prediction fields
+-- (home_score_prediction/away_score_prediction) against the match's
+-- cumulative final score — never the phase-specific guess the user
+-- actually entered (extra_time_home/away_prediction for the AET-cumulative
+-- score, penalties_home/away_prediction for the shootout). A user who
+-- correctly predicted 1-1 after 90' and 1-2 after extra time (matching
+-- the real final score exactly) was scored 3 instead of 5 because their
+-- *base* fields (1-1) didn't match the cumulative total (1-2), even
+-- though their extra-time field did.
+-- Fix: when resolving the "final" predicted score for the exact-match
+-- check, prefer the deepest phase-specific field the user filled in
+-- (penalties_prediction if the real match went to penalties,
+-- extra_time_prediction if it went to AET) over the base 90' fields.
 -- ============================================================
 
 CREATE OR REPLACE FUNCTION calculate_prediction_points(prediction_id uuid)
@@ -95,6 +109,7 @@ BEGIN
     pred_qualifier text := NULL;
     went_penalties boolean;
     pred_outcome text;
+    exact_final boolean := false;
   BEGIN
     went_penalties := (m.home_score_penalties IS NOT NULL OR m.away_score_penalties IS NOT NULL);
 
@@ -115,7 +130,18 @@ BEGIN
 
     pred_outcome := COALESCE(p.outcome_prediction, '90min');
 
-    IF home_pred = home_real AND away_pred = away_real THEN
+    -- "Exact" check: prefer the deepest phase-specific field the user filled
+    -- in (FIX — previously only compared the base 90' fields to the
+    -- cumulative total, missing exact extra-time/penalty predictions).
+    IF went_penalties AND p.penalties_home_prediction IS NOT NULL AND p.penalties_away_prediction IS NOT NULL THEN
+      exact_final := (p.penalties_home_prediction = m.home_score_penalties AND p.penalties_away_prediction = m.away_score_penalties);
+    ELSIF p.extra_time_home_prediction IS NOT NULL AND p.extra_time_away_prediction IS NOT NULL THEN
+      exact_final := (p.extra_time_home_prediction = home_real AND p.extra_time_away_prediction = away_real);
+    ELSE
+      exact_final := (home_pred = home_real AND away_pred = away_real);
+    END IF;
+
+    IF exact_final THEN
       IF pred_qualifier = real_qualifier OR real_qualifier IS NULL THEN
         RETURN 5;
       ELSE
