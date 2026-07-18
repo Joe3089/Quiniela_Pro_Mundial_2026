@@ -83,6 +83,18 @@ function buildBracketRounds(matches: ReturnType<typeof useMatches>["data"]): Bra
     .filter((r) => r.matches.length > 0);
 }
 
+function getChampion(matches: ReturnType<typeof useMatches>["data"]) {
+  const final = matches?.find((m) => m.phase === "final");
+  if (!final || final.status !== "finished" || final.home_score == null || final.away_score == null) {
+    return null;
+  }
+  let homeWon = final.home_score > final.away_score;
+  if (final.home_score === final.away_score) {
+    homeWon = (final.home_score_penalties ?? 0) > (final.away_score_penalties ?? 0);
+  }
+  return homeWon ? final.home_team : final.away_team;
+}
+
 export function FixturesView() {
   const searchParams = useSearchParams();
   const initialTab = searchParams.get("tab") ?? "grupos";
@@ -93,6 +105,7 @@ export function FixturesView() {
 
   const groupMatches = matches?.filter((m) => m.phase === "group") ?? [];
   const bracketRounds = buildBracketRounds(matches);
+  const champion = getChampion(matches);
 
   const PHASE_LABELS: Record<string, string> = {
     group: "Fase de Grupos",
@@ -211,7 +224,7 @@ export function FixturesView() {
             <Skeleton className="h-96 w-full rounded-xl" />
           ) : bracketRounds.length > 0 ? (
             <div className="glass rounded-2xl border border-border/30 p-4">
-              <TournamentBracket rounds={bracketRounds} />
+              <TournamentBracket rounds={bracketRounds} champion={champion} />
             </div>
           ) : (
             <EmptyDbState />

@@ -2,9 +2,46 @@
 
 import dynamic from "next/dynamic";
 import Image from "next/image";
+import { Star } from "lucide-react";
 import { cn, formatDateShort } from "@/lib/utils";
 import { FlagImage } from "@/components/ui/flag-image";
+import { TeamCrest } from "@/components/ui/team-crest";
+import { WC_CHAMPIONS } from "@/data/wc-history";
 import type { BracketRound, BracketMatch } from "@/types/fixtures";
+import type { TeamRow } from "@/types/database";
+
+// ── World Cup title stars ────────────────────────────────────────────────────
+function titleCount(fifaCode?: string | null, justWon = false): number {
+  const base = WC_CHAMPIONS.find((c) => c.fifaCode === fifaCode)?.titles ?? 0;
+  return justWon ? base + 1 : base;
+}
+
+function StarRow({ count, size = 10 }: { count: number; size?: number }) {
+  if (count <= 0) return null;
+  return (
+    <div className="flex items-center justify-center gap-0.5">
+      {Array.from({ length: count }).map((_, i) => (
+        <Star key={i} style={{ width: size, height: size }} className="fill-yellow-400 text-yellow-400" />
+      ))}
+    </div>
+  );
+}
+
+// Winner/loser of the 3rd-place match → podium
+function getPodium(thirdMatch: BracketMatch | null): { third: TeamRow | null; fourth: TeamRow | null } {
+  if (!thirdMatch || thirdMatch.home_score == null || thirdMatch.away_score == null) {
+    return { third: null, fourth: null };
+  }
+  let homeWon = thirdMatch.home_score > thirdMatch.away_score;
+  if (thirdMatch.home_score === thirdMatch.away_score) {
+    const hp = thirdMatch.match?.home_score_penalties ?? 0;
+    const ap = thirdMatch.match?.away_score_penalties ?? 0;
+    homeWon = hp > ap;
+  }
+  return homeWon
+    ? { third: thirdMatch.home_team, fourth: thirdMatch.away_team }
+    : { third: thirdMatch.away_team, fourth: thirdMatch.home_team };
+}
 
 const WCTrophy = dynamic(() => import("@/components/ui/wc-trophy"), {
   ssr: false,
@@ -62,13 +99,23 @@ function MatchCard({ match, gold, slotIdx }: { match: BracketMatch | null; gold?
         (!isHome && (match!.away_score ?? 0) > (match!.home_score ?? 0)));
     return (
       <div className={cn("flex items-center gap-1.5 px-2 py-[5px]", won && "bg-primary/10", !team && "opacity-40")}>
-        {team?.fifa_code ? (
-          <FlagImage fifaCode={team.fifa_code} size="sm" className="shrink-0" />
-        ) : team?.flag_url ? (
-          <Image src={team.flag_url} alt={team.name ?? ""} width={18} height={12} className="rounded-sm object-cover shrink-0" unoptimized />
-        ) : (
-          <div className="w-[18px] h-3 rounded-sm bg-muted/40 shrink-0" />
-        )}
+        <div className="relative shrink-0">
+          {team?.fifa_code ? (
+            <FlagImage fifaCode={team.fifa_code} size="sm" className="shrink-0" />
+          ) : team?.flag_url ? (
+            <Image src={team.flag_url} alt={team.name ?? ""} width={18} height={12} className="rounded-sm object-cover shrink-0" unoptimized />
+          ) : (
+            <div className="w-[18px] h-3 rounded-sm bg-muted/40 shrink-0" />
+          )}
+          {team && (
+            <TeamCrest
+              team={team as any}
+              size="xs"
+              showCrest
+              className="w-2.5 h-2.5 absolute -bottom-1 -right-1 rounded-full ring-1 ring-black/50 bg-black/70"
+            />
+          )}
+        </div>
         <span className={cn("text-[11px] font-medium flex-1 truncate max-w-[68px]", won ? "text-foreground font-bold" : "text-muted-foreground", !team && "italic text-[10px]")}>
           {team?.short_name ?? (
             slotIdx !== undefined && R32_SEEDS[slotIdx]
@@ -172,15 +219,19 @@ function CenterSection({
 }: {
   finalMatch: BracketMatch | null;
   thirdMatch: BracketMatch | null;
-  champion?: { name: string; flag_url?: string | null } | null;
+  champion?: TeamRow | null;
 }) {
   const centerW = EXT_W + CARD_W + EXT_W;
   const ym = TOTAL_H / 2;
   const trophyTop = ym - FINAL_CARD_H / 2 - TROPHY_SIZE - 14;
   const cardTop = ym - FINAL_CARD_H / 2;
-  // 3rd place: positioned in lower quarter of bracket
-  const thirdLabelTop = cardTop + FINAL_CARD_H + 28;
+  // Champion crest + stars sit right under the Final card
+  const championTop = cardTop + FINAL_CARD_H + 8;
+  // 3rd place: positioned below the champion block
+  const thirdLabelTop = championTop + 70;
   const thirdCardTop = thirdLabelTop + 16;
+  const resultsTop = thirdCardTop + FINAL_CARD_H + 14;
+  const { third, fourth } = getPodium(thirdMatch);
 
   return (
     <div className="relative shrink-0" style={{ width: centerW, height: TOTAL_H }}>
@@ -208,12 +259,17 @@ function CenterSection({
         <MatchCard match={finalMatch} gold />
       </div>
 
-      {/* Champion label */}
+      {/* Champion: crest + title stars + label */}
       {champion && (
-        <div className="absolute flex items-center justify-center" style={{ left: EXT_W, top: cardTop + FINAL_CARD_H + 6, width: CARD_W }}>
-          <div className="glass rounded-lg px-3 py-1 border border-yellow-500/30">
-            <span className="text-[10px] font-bold text-yellow-400">🏆 {champion.name}</span>
-          </div>
+        <div className="absolute flex flex-col items-center gap-1" style={{ left: EXT_W, top: championTop, width: CARD_W }}>
+          <StarRow count={titleCount(champion.fifa_code, true)} />
+          <TeamCrest
+            team={champion as any}
+            size="md"
+            showCrest
+            className="drop-shadow-[0_0_10px_rgba(234,179,8,0.4)]"
+          />
+          <span className="text-[10px] font-black text-yellow-400 uppercase tracking-widest">Campeón</span>
         </div>
       )}
 
@@ -229,6 +285,35 @@ function CenterSection({
             <MatchCard match={thirdMatch} />
           </div>
         </>
+      )}
+
+      {/* Resultados Finales: 3rd/4th place podium */}
+      {(third || fourth) && (
+        <div className="absolute" style={{ left: 0, top: resultsTop, width: centerW }}>
+          <div className="glass rounded-lg border border-border/30 px-2 py-2">
+            <div className="text-center text-[7px] font-black text-muted-foreground/70 uppercase tracking-widest mb-1.5">
+              Resultados Finales
+            </div>
+            <div className="flex items-center justify-center gap-4">
+              <div className="flex flex-col items-center gap-0.5">
+                <StarRow count={titleCount(third?.fifa_code)} size={7} />
+                <TeamCrest team={third as any} size="sm" showCrest />
+                <span className="text-[7px] font-bold text-amber-400 uppercase tracking-wide">3er Lugar</span>
+                <span className="text-[8px] font-semibold text-foreground truncate max-w-[80px]">
+                  {third?.short_name ?? third?.name}
+                </span>
+              </div>
+              <div className="flex flex-col items-center gap-0.5">
+                <StarRow count={titleCount(fourth?.fifa_code)} size={7} />
+                <TeamCrest team={fourth as any} size="sm" showCrest />
+                <span className="text-[7px] font-bold text-muted-foreground uppercase tracking-wide">4to Lugar</span>
+                <span className="text-[8px] font-semibold text-foreground truncate max-w-[80px]">
+                  {fourth?.short_name ?? fourth?.name}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -255,7 +340,7 @@ function padTo(arr: BracketMatch[], n: number): (BracketMatch | null)[] {
 // ── Main component ────────────────────────────────────────────────────────────
 interface TournamentBracketProps {
   rounds: BracketRound[];
-  champion?: { name: string; flag_url?: string | null } | null;
+  champion?: TeamRow | null;
 }
 
 export function TournamentBracket({ rounds, champion }: TournamentBracketProps) {
