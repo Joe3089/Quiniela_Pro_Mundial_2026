@@ -3,10 +3,8 @@
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useState } from "react";
-import { Star } from "lucide-react";
 import { Celebration } from "@/components/ui/celebration";
 import { cn, formatDateShort } from "@/lib/utils";
-import { WC_CHAMPIONS } from "@/data/wc-history";
 import { localCrestUrl, podiumCrestUrl, championCrestUrl } from "@/data/team-crests";
 import type { BracketRound, BracketMatch } from "@/types/fixtures";
 import type { TeamRow } from "@/types/database";
@@ -46,23 +44,6 @@ function Crest({
       className={cn("object-contain shrink-0", className)}
       onError={() => setFailed(true)}
     />
-  );
-}
-
-// ── World Cup title stars ────────────────────────────────────────────────────
-function titleCount(fifaCode?: string | null, justWon = false): number {
-  const base = WC_CHAMPIONS.find((c) => c.fifaCode === fifaCode)?.titles ?? 0;
-  return justWon ? base + 1 : base;
-}
-
-function StarRow({ count, size = 10 }: { count: number; size?: number }) {
-  if (count <= 0) return null;
-  return (
-    <div className="flex items-center justify-center gap-0.5">
-      {Array.from({ length: count }).map((_, i) => (
-        <Star key={i} style={{ width: size, height: size }} className="fill-yellow-400 text-yellow-400" />
-      ))}
-    </div>
   );
 }
 
@@ -289,15 +270,14 @@ function CenterSection({
         <MatchCard match={finalMatch} gold />
       </div>
 
-      {/* Champion: crest + title stars + label + celebration */}
+      {/* Champion: official crest (original stars are part of the artwork) + label + celebration */}
       {champion && (
         <div className="absolute flex flex-col items-center gap-1" style={{ left: EXT_W, top: championTop, width: CARD_W }}>
           <Celebration w={CARD_W} h={160} />
-          <StarRow count={titleCount(champion.fifa_code, true)} />
           <Crest
             fifaCode={champion.fifa_code}
             name={champion.name}
-            size={44}
+            size={56}
             resolver={championCrestUrl}
             className="animate-[spin_6s_linear_infinite] drop-shadow-[0_0_12px_rgba(234,179,8,0.5)]"
           />
@@ -328,16 +308,14 @@ function CenterSection({
             </div>
             <div className="flex items-center justify-center gap-4">
               <div className="flex flex-col items-center gap-0.5">
-                <StarRow count={titleCount(third?.fifa_code)} size={7} />
-                <Crest fifaCode={third?.fifa_code} name={third?.name} size={28} resolver={podiumCrestUrl} />
+                <Crest fifaCode={third?.fifa_code} name={third?.name} size={42} resolver={podiumCrestUrl} />
                 <span className="text-[7px] font-bold text-amber-400 uppercase tracking-wide">3er Lugar</span>
                 <span className="text-[8px] font-semibold text-foreground truncate max-w-[80px]">
                   {third?.short_name ?? third?.name}
                 </span>
               </div>
               <div className="flex flex-col items-center gap-0.5">
-                <StarRow count={titleCount(fourth?.fifa_code)} size={7} />
-                <Crest fifaCode={fourth?.fifa_code} name={fourth?.name} size={28} resolver={podiumCrestUrl} />
+                <Crest fifaCode={fourth?.fifa_code} name={fourth?.name} size={42} resolver={podiumCrestUrl} />
                 <span className="text-[7px] font-bold text-muted-foreground uppercase tracking-wide">4to Lugar</span>
                 <span className="text-[8px] font-semibold text-foreground truncate max-w-[80px]">
                   {fourth?.short_name ?? fourth?.name}

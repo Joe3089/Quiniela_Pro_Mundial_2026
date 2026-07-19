@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { RefreshCw, Trophy, Users, Calendar, Activity, Shield, Zap, CheckCircle2, AlertCircle, Loader2, Bell, Mail, MessageCircle, Edit2, Eye } from "lucide-react";
+import { RefreshCw, Trophy, Users, Calendar, Activity, Shield, Zap, CheckCircle2, AlertCircle, Loader2, Bell, Mail, MessageCircle, Edit2, Eye, Star, ThumbsUp, ThumbsDown, ClipboardList, Search } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -507,6 +507,189 @@ function ApiFootballPanel() {
   );
 }
 
+// ── SurveyPanel — read-only view of post-tournament survey responses ──────────
+
+interface SurveyResponse {
+  id: string;
+  rating: number | null;
+  improve: string | null;
+  addFeature: string | null;
+  removeFeature: string | null;
+  wouldRecommend: boolean | null;
+  recommendReason: string | null;
+  nextVersionWishes: string | null;
+  createdAt: string;
+  userId: string | null;
+  userName: string;
+  userEmail: string | null;
+}
+
+function Stars({ n }: { n: number | null }) {
+  return (
+    <div className="flex gap-0.5">
+      {[1, 2, 3, 4, 5].map((i) => (
+        <Star
+          key={i}
+          className={`h-3.5 w-3.5 ${i <= (n ?? 0) ? "fill-yellow-400 text-yellow-400" : "text-white/15"}`}
+        />
+      ))}
+    </div>
+  );
+}
+
+function SurveyField({ label, value }: { label: string; value: string | null }) {
+  if (!value) return null;
+  return (
+    <div>
+      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">{label}</p>
+      <p className="text-[13px] text-white/90 whitespace-pre-wrap">{value}</p>
+    </div>
+  );
+}
+
+function SurveyPanel() {
+  const [responses, setResponses] = useState<SurveyResponse[]>([]);
+  const [stats, setStats] = useState<{ total: number; avgRating: number; recommendYes: number }>({ total: 0, avgRating: 0, recommendYes: 0 });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Filters
+  const [userQuery, setUserQuery] = useState("");
+  const [ratingFilter, setRatingFilter] = useState<number | "all">("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+
+  useEffect(() => {
+    fetch("/api/admin/surveys")
+      .then(async (r) => {
+        if (!r.ok) throw new Error((await r.json()).error ?? "Error");
+        return r.json();
+      })
+      .then((d) => {
+        setResponses(d.responses ?? []);
+        setStats({ total: d.total ?? 0, avgRating: d.avgRating ?? 0, recommendYes: d.recommendYes ?? 0 });
+        setLoading(false);
+      })
+      .catch((e) => {
+        setError(String(e.message ?? e));
+        setLoading(false);
+      });
+  }, []);
+
+  const filtered = responses.filter((r) => {
+    if (userQuery.trim()) {
+      const q = userQuery.trim().toLowerCase();
+      if (!(r.userName.toLowerCase().includes(q) || (r.userEmail ?? "").toLowerCase().includes(q))) return false;
+    }
+    if (ratingFilter !== "all" && r.rating !== ratingFilter) return false;
+    if (dateFrom && new Date(r.createdAt) < new Date(dateFrom + "T00:00:00")) return false;
+    if (dateTo && new Date(r.createdAt) > new Date(dateTo + "T23:59:59")) return false;
+    return true;
+  });
+
+  if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
+  if (error) return <div className="text-center py-12 text-red-400 text-sm flex flex-col items-center gap-2"><AlertCircle className="h-6 w-6" />{error}</div>;
+
+  return (
+    <div className="space-y-4">
+      {/* Summary */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="glass rounded-xl border border-border/40 p-3 text-center">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Respuestas</p>
+          <p className="text-2xl font-black text-white">{stats.total}</p>
+        </div>
+        <div className="glass rounded-xl border border-border/40 p-3 text-center">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Calificación media</p>
+          <p className="text-2xl font-black text-yellow-400">{stats.avgRating || "—"}</p>
+        </div>
+        <div className="glass rounded-xl border border-border/40 p-3 text-center">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Recomiendan</p>
+          <p className="text-2xl font-black text-emerald-400">{stats.recommendYes}<span className="text-sm text-muted-foreground">/{stats.total}</span></p>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="glass rounded-xl border border-border/30 p-3 space-y-3">
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="relative flex-1 min-w-[180px]">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <input
+              value={userQuery}
+              onChange={(e) => setUserQuery(e.target.value)}
+              placeholder="Buscar por usuario o email…"
+              className="w-full rounded-lg bg-white/5 border border-white/10 pl-8 pr-3 py-1.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-primary"
+            />
+          </div>
+          <select
+            value={ratingFilter}
+            onChange={(e) => setRatingFilter(e.target.value === "all" ? "all" : Number(e.target.value))}
+            className="rounded-lg bg-white/5 border border-white/10 px-3 py-1.5 text-sm text-white focus:outline-none focus:border-primary"
+          >
+            <option value="all">Toda calificación</option>
+            {[5, 4, 3, 2, 1].map((n) => (
+              <option key={n} value={n}>{n} estrella{n !== 1 ? "s" : ""}</option>
+            ))}
+          </select>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <label className="text-[11px] text-muted-foreground">Desde</label>
+          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
+            className="rounded-lg bg-white/5 border border-white/10 px-2 py-1 text-sm text-white focus:outline-none focus:border-primary" />
+          <label className="text-[11px] text-muted-foreground">Hasta</label>
+          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
+            className="rounded-lg bg-white/5 border border-white/10 px-2 py-1 text-sm text-white focus:outline-none focus:border-primary" />
+          {(userQuery || ratingFilter !== "all" || dateFrom || dateTo) && (
+            <Button variant="ghost" size="sm" className="ml-auto text-[11px]"
+              onClick={() => { setUserQuery(""); setRatingFilter("all"); setDateFrom(""); setDateTo(""); }}>
+              Limpiar filtros
+            </Button>
+          )}
+          <span className="text-[11px] text-muted-foreground ml-auto">{filtered.length} de {responses.length}</span>
+        </div>
+      </div>
+
+      {/* Responses */}
+      {filtered.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground">
+          <ClipboardList className="h-12 w-12 mx-auto mb-3 opacity-20" />
+          <p className="text-sm">{responses.length === 0 ? "Aún no hay respuestas de la encuesta" : "Ningún resultado con estos filtros"}</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filtered.map((r) => (
+            <div key={r.id} className="glass rounded-xl border border-border/30 p-4 space-y-3">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-white truncate">{r.userName}</p>
+                  {r.userEmail && <p className="text-[11px] text-muted-foreground truncate">{r.userEmail}</p>}
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <Stars n={r.rating} />
+                  {r.wouldRecommend === true ? (
+                    <span className="text-[11px] font-semibold text-emerald-400 flex items-center gap-1"><ThumbsUp className="h-3.5 w-3.5" />Recomienda</span>
+                  ) : r.wouldRecommend === false ? (
+                    <span className="text-[11px] font-semibold text-red-400 flex items-center gap-1"><ThumbsDown className="h-3.5 w-3.5" />No recomienda</span>
+                  ) : null}
+                </div>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <SurveyField label="¿Qué debe mejorar?" value={r.improve} />
+                <SurveyField label="¿Qué le agregarías?" value={r.addFeature} />
+                <SurveyField label="¿Qué le quitarías?" value={r.removeFeature} />
+                <SurveyField label="¿Por qué (no) la recomienda?" value={r.recommendReason} />
+                <SurveyField label="Deseos para la próxima versión" value={r.nextVersionWishes} />
+              </div>
+              <p className="text-[10px] text-muted-foreground/60 text-right">
+                {new Date(r.createdAt).toLocaleString("es-VE", { timeZone: "America/Caracas", day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function AdminView() {
   const { user, isLoading, isInitialized } = useAuthStore();
   const router = useRouter();
@@ -572,6 +755,7 @@ export function AdminView() {
       <Tabs defaultValue="predictions">
         <TabsList className="glass border border-border/30 mb-6 flex-wrap">
           <TabsTrigger value="predictions"><Eye className="h-3.5 w-3.5 mr-1" />Pronósticos</TabsTrigger>
+          <TabsTrigger value="surveys"><ClipboardList className="h-3.5 w-3.5 mr-1" />Encuestas</TabsTrigger>
           <TabsTrigger value="api">API-Football</TabsTrigger>
           <TabsTrigger value="notify">Notificaciones</TabsTrigger>
           <TabsTrigger value="matches">Partidos</TabsTrigger>
@@ -589,6 +773,20 @@ export function AdminView() {
             </CardHeader>
             <CardContent>
               <PredictionsPanel />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="surveys">
+          <Card className="glass border-border/40">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <ClipboardList className="h-4 w-4 text-primary" />
+                Respuestas de la encuesta
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <SurveyPanel />
             </CardContent>
           </Card>
         </TabsContent>

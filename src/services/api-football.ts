@@ -121,13 +121,56 @@ export async function getTeamPlayers(teamId: number, page = 1): Promise<AFPlayer
  *  Tries the WC 2026 squad list first; many players aren't registered
  *  under that competition entry yet, so fall back to an unscoped name
  *  search (any team/season) purely to resolve id + photo. */
-export async function searchPlayer(name: string): Promise<AFPlayer[]> {
-  const wc = await get<AFPlayer[]>(
-    `/players?search=${encodeURIComponent(name)}&league=${FIFA_WC_LEAGUE}&season=${SEASON}`,
+// The API-Football /players search field rejects non-alphanumeric characters
+// (so "K. Mbappe" errors) and matches best on a bare surname. Event feeds store
+// abbreviated names ("K. Mbappe", "M. Ødegaard"), so reduce to a searchable
+// surname before querying.
+export function searchTermForPlayer(name: string): string {
+  const cleaned = name
+    .replace(/^\s*\p{L}\.\s*/u, "") // drop leading initial ("K. Mbappe" -> "Mbappe")
+    .replace(/[^\p{L}\s]/gu, " ") // strip punctuation the API rejects
+    .replace(/\s+/g, " ")
+    .trim();
+  const tokens = cleaned.split(" ").filter((t) => t.length > 1);
+  return tokens.length ? tokens[tokens.length - 1] : cleaned || name;
+}
+
+/** Search player by name. Tries the WC 2026 squad list first (exact tournament
+ *  player), then the global player-profiles index which always carries id+photo
+ *  and, unlike /players, does not require a league/team filter. */
+export async function searchPlayer(name: string, teamApiId?: number | null): Promise<AFPlayer[]> {
+  const term = searchTermForPlayer(name);
+
+  // 1) Team-scoped WC squad — most precise when we know the player's team.
+  if (teamApiId) {
+    try {
+      const t = await get<AFPlayer[]>(
+        `/players?search=${encodeURIComponent(term)}&team=${teamApiId}&season=${SEASON}`,
+        { revalidate: 0 }
+      );
+      if (t.length > 0) return t;
+    } catch {
+      // fall through
+    }
+  }
+
+  // 2) WC 2026 league search.
+  try {
+    const wc = await get<AFPlayer[]>(
+      `/players?search=${encodeURIComponent(term)}&league=${FIFA_WC_LEAGUE}&season=${SEASON}`,
+      { revalidate: 0 }
+    );
+    if (wc.length > 0) return wc;
+  } catch {
+    // fall through
+  }
+
+  // 3) Global profiles index — no league/team required; always has id + photo.
+  const profiles = await get<Array<{ player: AFPlayer["player"] }>>(
+    `/players/profiles?search=${encodeURIComponent(term)}`,
     { revalidate: 0 }
   );
-  if (wc.length > 0) return wc;
-  return get<AFPlayer[]>(`/players?search=${encodeURIComponent(name)}&season=${PLAYER_SEASON}`, { revalidate: 0 });
+  return profiles as AFPlayer[];
 }
 
 /** All fixtures for WC 2026 */
