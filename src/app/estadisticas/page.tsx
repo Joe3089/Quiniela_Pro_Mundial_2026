@@ -532,8 +532,8 @@ function Mundial2026Tab() {
   const { data: wc2026Stats, isLoading: wc2026StatsLoading } = useQuery({
     queryKey: ["wc2026-scorers-sb"],
     queryFn: () => fetch("/api/stats/wc2026-scorers").then((r) => r.json()) as Promise<{
-      topScorers: { name: string; goals: number; team: { name: string; fifa_code: string | null; flag_url: string | null } | null }[];
-      topAssists: { name: string; assists: number; team: { name: string; fifa_code: string | null; flag_url: string | null } | null }[];
+      topScorers: { name: string; goals: number; photoUrl: string | null; team: { name: string; fifa_code: string | null; flag_url: string | null } | null }[];
+      topAssists: { name: string; assists: number; photoUrl: string | null; team: { name: string; fifa_code: string | null; flag_url: string | null } | null }[];
     }>,
     staleTime: 60_000,
     refetchInterval: 300_000,
@@ -602,11 +602,12 @@ function Mundial2026Tab() {
               <div key={entry.name} className="glass rounded-xl border border-white/5 p-3 flex items-center gap-3">
                 <span className="text-xs font-bold text-muted-foreground w-4 text-right shrink-0">{i + 1}</span>
                 <img
-                  src={`https://ui-avatars.com/api/?name=${encodeURIComponent(entry.name)}&background=1D4ED8&color=fff&size=80&format=svg`}
+                  src={entry.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(entry.name)}&background=1D4ED8&color=fff&size=80&format=svg`}
                   alt={entry.name}
                   width={40} height={40}
                   className="h-10 w-10 rounded-full object-cover border border-white/15 shrink-0"
                   loading="lazy"
+                  onError={(e) => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(entry.name)}&background=1D4ED8&color=fff&size=80&format=svg`; }}
                 />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-white truncate">{entry.name}</p>
@@ -638,11 +639,12 @@ function Mundial2026Tab() {
               <div key={entry.name} className="glass rounded-xl border border-white/5 p-3 flex items-center gap-3">
                 <span className="text-xs font-bold text-muted-foreground w-4 text-right shrink-0">{i + 1}</span>
                 <img
-                  src={`https://ui-avatars.com/api/?name=${encodeURIComponent(entry.name)}&background=7C3AED&color=fff&size=80&format=svg`}
+                  src={entry.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(entry.name)}&background=7C3AED&color=fff&size=80&format=svg`}
                   alt={entry.name}
                   width={40} height={40}
                   className="h-10 w-10 rounded-full object-cover border border-white/15 shrink-0"
                   loading="lazy"
+                  onError={(e) => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(entry.name)}&background=7C3AED&color=fff&size=80&format=svg`; }}
                 />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-white truncate">{entry.name}</p>

@@ -28,14 +28,12 @@ interface YTSearchItem {
 const YT_CHANNELS_SCHEDULED = [
   "Telemundo Deportes",
   "FOX Soccer",
-  "TSN Sports",
   "FOX Sports",
 ];
 
 const YT_CHANNEL_IDS: Record<string, string> = {
   "Telemundo Deportes": "UCjZ7QPKb89R-4SxzBoceyOg",
   "FOX Soccer": "UCwNqHDsnBCKT-olwJwIFyfg",
-  "TSN Sports": "UC--i2rV5NCxiEIPefr3l-zQ",
 };
 
 async function searchYouTube(

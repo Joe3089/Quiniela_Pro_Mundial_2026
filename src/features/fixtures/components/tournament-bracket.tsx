@@ -2,13 +2,52 @@
 
 import dynamic from "next/dynamic";
 import Image from "next/image";
+import { useState } from "react";
 import { Star } from "lucide-react";
+import { Celebration } from "@/components/ui/celebration";
 import { cn, formatDateShort } from "@/lib/utils";
-import { FlagImage } from "@/components/ui/flag-image";
-import { TeamCrest } from "@/components/ui/team-crest";
 import { WC_CHAMPIONS } from "@/data/wc-history";
+import { localCrestUrl, podiumCrestUrl, championCrestUrl } from "@/data/team-crests";
 import type { BracketRound, BracketMatch } from "@/types/fixtures";
 import type { TeamRow } from "@/types/database";
+
+// ── Local-only crest image (never falls back to an API/flag source) ──────────
+function Crest({
+  fifaCode,
+  name,
+  size = 20,
+  resolver = localCrestUrl,
+  className,
+}: {
+  fifaCode?: string | null;
+  name?: string | null;
+  size?: number;
+  resolver?: (code?: string | null) => string | null;
+  className?: string;
+}) {
+  const [failed, setFailed] = useState(false);
+  const src = resolver(fifaCode);
+  if (!src || failed) {
+    return (
+      <div
+        className={cn("rounded bg-white/10 border border-white/10 flex items-center justify-center shrink-0", className)}
+        style={{ width: size, height: size }}
+      >
+        <span className="text-[7px] font-black text-white/60 uppercase">{fifaCode?.slice(0, 3) ?? "?"}</span>
+      </div>
+    );
+  }
+  return (
+    <Image
+      src={src}
+      alt={name ?? fifaCode ?? ""}
+      width={size}
+      height={size}
+      className={cn("object-contain shrink-0", className)}
+      onError={() => setFailed(true)}
+    />
+  );
+}
 
 // ── World Cup title stars ────────────────────────────────────────────────────
 function titleCount(fifaCode?: string | null, justWon = false): number {
@@ -99,23 +138,11 @@ function MatchCard({ match, gold, slotIdx }: { match: BracketMatch | null; gold?
         (!isHome && (match!.away_score ?? 0) > (match!.home_score ?? 0)));
     return (
       <div className={cn("flex items-center gap-1.5 px-2 py-[5px]", won && "bg-primary/10", !team && "opacity-40")}>
-        <div className="relative shrink-0">
-          {team?.fifa_code ? (
-            <FlagImage fifaCode={team.fifa_code} size="sm" className="shrink-0" />
-          ) : team?.flag_url ? (
-            <Image src={team.flag_url} alt={team.name ?? ""} width={18} height={12} className="rounded-sm object-cover shrink-0" unoptimized />
-          ) : (
-            <div className="w-[18px] h-3 rounded-sm bg-muted/40 shrink-0" />
-          )}
-          {team && (
-            <TeamCrest
-              team={team as any}
-              size="xs"
-              showCrest
-              className="w-2.5 h-2.5 absolute -bottom-1 -right-1 rounded-full ring-1 ring-black/50 bg-black/70"
-            />
-          )}
-        </div>
+        {team ? (
+          <Crest fifaCode={team.fifa_code} name={team.name} size={20} />
+        ) : (
+          <div className="w-5 h-5 rounded bg-muted/40 shrink-0" />
+        )}
         <span className={cn("text-[11px] font-medium flex-1 truncate max-w-[68px]", won ? "text-foreground font-bold" : "text-muted-foreground", !team && "italic text-[10px]")}>
           {team?.short_name ?? (
             slotIdx !== undefined && R32_SEEDS[slotIdx]
@@ -249,8 +276,11 @@ function CenterSection({
         )}
       </svg>
 
-      {/* Trophy */}
-      <div className="absolute" style={{ left: EXT_W + (CARD_W - TROPHY_SIZE) / 2 - 8, top: trophyTop }}>
+      {/* Trophy — spins continuously once a champion is crowned */}
+      <div
+        className={cn("absolute", champion && "animate-[spin_6s_linear_infinite]")}
+        style={{ left: EXT_W + (CARD_W - TROPHY_SIZE) / 2 - 8, top: trophyTop }}
+      >
         <WCTrophy size={TROPHY_SIZE} />
       </div>
 
@@ -259,15 +289,17 @@ function CenterSection({
         <MatchCard match={finalMatch} gold />
       </div>
 
-      {/* Champion: crest + title stars + label */}
+      {/* Champion: crest + title stars + label + celebration */}
       {champion && (
         <div className="absolute flex flex-col items-center gap-1" style={{ left: EXT_W, top: championTop, width: CARD_W }}>
+          <Celebration w={CARD_W} h={160} />
           <StarRow count={titleCount(champion.fifa_code, true)} />
-          <TeamCrest
-            team={champion as any}
-            size="md"
-            showCrest
-            className="drop-shadow-[0_0_10px_rgba(234,179,8,0.4)]"
+          <Crest
+            fifaCode={champion.fifa_code}
+            name={champion.name}
+            size={44}
+            resolver={championCrestUrl}
+            className="animate-[spin_6s_linear_infinite] drop-shadow-[0_0_12px_rgba(234,179,8,0.5)]"
           />
           <span className="text-[10px] font-black text-yellow-400 uppercase tracking-widest">Campeón</span>
         </div>
@@ -297,7 +329,7 @@ function CenterSection({
             <div className="flex items-center justify-center gap-4">
               <div className="flex flex-col items-center gap-0.5">
                 <StarRow count={titleCount(third?.fifa_code)} size={7} />
-                <TeamCrest team={third as any} size="sm" showCrest />
+                <Crest fifaCode={third?.fifa_code} name={third?.name} size={28} resolver={podiumCrestUrl} />
                 <span className="text-[7px] font-bold text-amber-400 uppercase tracking-wide">3er Lugar</span>
                 <span className="text-[8px] font-semibold text-foreground truncate max-w-[80px]">
                   {third?.short_name ?? third?.name}
@@ -305,7 +337,7 @@ function CenterSection({
               </div>
               <div className="flex flex-col items-center gap-0.5">
                 <StarRow count={titleCount(fourth?.fifa_code)} size={7} />
-                <TeamCrest team={fourth as any} size="sm" showCrest />
+                <Crest fifaCode={fourth?.fifa_code} name={fourth?.name} size={28} resolver={podiumCrestUrl} />
                 <span className="text-[7px] font-bold text-muted-foreground uppercase tracking-wide">4to Lugar</span>
                 <span className="text-[8px] font-semibold text-foreground truncate max-w-[80px]">
                   {fourth?.short_name ?? fourth?.name}

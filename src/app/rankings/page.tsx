@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Leaderboard } from "@/features/rankings/components/leaderboard";
+import { PodiumReveal } from "@/features/rankings/components/podium-reveal";
 import { BarChart3 } from "lucide-react";
 
 export const metadata: Metadata = { title: "Ranking" };
@@ -20,6 +21,7 @@ export default function RankingsPage() {
         </p>
       </div>
       <Leaderboard />
+      <PodiumReveal />
     </div>
   );
 }
