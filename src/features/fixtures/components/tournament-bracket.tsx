@@ -97,6 +97,12 @@ const CONN_W = 22;              // connector SVG width between rounds
 const EXT_W = 38;               // connector extension on each side of Final card
 const TROPHY_SIZE = 106;        // trophy render size
 const FINAL_CARD_H = 76;        // approximate height of a match card
+const CHAMPION_CREST_SIZE = 92; // champion crest, sits beside the trophy
+const CHAMPION_ROW_GAP = 12;    // gap between trophy and champion crest
+const CHAMPION_ROW_W = TROPHY_SIZE + CHAMPION_ROW_GAP + CHAMPION_CREST_SIZE;
+const CHAMPION_ROW_H = Math.max(TROPHY_SIZE, CHAMPION_CREST_SIZE);
+const CHAMPION_LABEL_H = 20;    // "Campeón" label height
+const CHAMPION_BLOCK_H = CHAMPION_ROW_H + 6 + CHAMPION_LABEL_H;
 
 const STROKE = "rgba(255,255,255,0.18)";
 
@@ -231,12 +237,14 @@ function CenterSection({
 }) {
   const centerW = EXT_W + CARD_W + EXT_W;
   const ym = TOTAL_H / 2;
-  const trophyTop = ym - FINAL_CARD_H / 2 - TROPHY_SIZE - 14;
   const cardTop = ym - FINAL_CARD_H / 2;
-  // Champion crest + stars sit right under the Final card
-  const championTop = cardTop + FINAL_CARD_H + 8;
-  // 3rd place: positioned below the champion block
-  const thirdLabelTop = championTop + 70;
+  // Trophy alone, centered above the Final card, while the tournament is undecided
+  const trophyTop = cardTop - TROPHY_SIZE - 14;
+  // Once there's a champion, the trophy + crest sit side by side, right above the Final card
+  const champBlockTop = cardTop - 14 - CHAMPION_BLOCK_H;
+  const champRowLeft = (centerW - CHAMPION_ROW_W) / 2;
+  // 3rd place sits right below the Final card
+  const thirdLabelTop = cardTop + FINAL_CARD_H + 20;
   const thirdCardTop = thirdLabelTop + 16;
   const resultsTop = thirdCardTop + FINAL_CARD_H + 14;
   const { third, fourth } = getPodium(thirdMatch);
@@ -257,33 +265,37 @@ function CenterSection({
         )}
       </svg>
 
-      {/* Trophy — spins continuously once a champion is crowned */}
-      <div
-        className={cn("absolute", champion && "animate-[spin_6s_linear_infinite]")}
-        style={{ left: EXT_W + (CARD_W - TROPHY_SIZE) / 2 - 8, top: trophyTop }}
-      >
-        <WCTrophy size={TROPHY_SIZE} />
-      </div>
+      {/* Trophy + champion crest, side by side, above the Final card — both spin
+          continuously on their own vertical axis (WCTrophy internally, the crest
+          via .trophy-spin-photo) once a champion is crowned */}
+      {champion ? (
+        <div
+          className="absolute flex flex-col items-center"
+          style={{ left: champRowLeft, top: champBlockTop, width: CHAMPION_ROW_W }}
+        >
+          <div className="relative flex items-center justify-center" style={{ gap: CHAMPION_ROW_GAP, height: CHAMPION_ROW_H, width: CHAMPION_ROW_W }}>
+            <Celebration w={CHAMPION_ROW_W + 50} h={CHAMPION_BLOCK_H + 40} />
+            <WCTrophy size={TROPHY_SIZE} />
+            <Crest
+              fifaCode={champion.fifa_code}
+              name={champion.name}
+              size={CHAMPION_CREST_SIZE}
+              resolver={championCrestUrl}
+              className="trophy-spin-photo"
+            />
+          </div>
+          <span className="text-[11px] font-black text-yellow-400 uppercase tracking-widest mt-1.5">Campeón</span>
+        </div>
+      ) : (
+        <div className="absolute" style={{ left: EXT_W + (CARD_W - TROPHY_SIZE) / 2 - 8, top: trophyTop }}>
+          <WCTrophy size={TROPHY_SIZE} />
+        </div>
+      )}
 
       {/* Final match card */}
       <div className="absolute" style={{ left: EXT_W, top: cardTop, width: CARD_W }}>
         <MatchCard match={finalMatch} gold />
       </div>
-
-      {/* Champion: official crest (original stars are part of the artwork) + label + celebration */}
-      {champion && (
-        <div className="absolute flex flex-col items-center gap-1" style={{ left: EXT_W, top: championTop, width: CARD_W }}>
-          <Celebration w={CARD_W} h={160} />
-          <Crest
-            fifaCode={champion.fifa_code}
-            name={champion.name}
-            size={56}
-            resolver={championCrestUrl}
-            className="animate-[spin_6s_linear_infinite] drop-shadow-[0_0_12px_rgba(234,179,8,0.5)]"
-          />
-          <span className="text-[10px] font-black text-yellow-400 uppercase tracking-widest">Campeón</span>
-        </div>
-      )}
 
       {/* 3rd place label + card */}
       {thirdMatch && (
