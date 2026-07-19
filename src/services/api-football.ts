@@ -117,9 +117,17 @@ export async function getTeamPlayers(teamId: number, page = 1): Promise<AFPlayer
   return get<AFPlayer[]>(`/players?team=${teamId}&season=${PLAYER_SEASON}&page=${page}`);
 }
 
-/** Search player by name to get their API-Football ID and photo */
+/** Search player by name to get their API-Football ID and photo.
+ *  Tries the WC 2026 squad list first; many players aren't registered
+ *  under that competition entry yet, so fall back to an unscoped name
+ *  search (any team/season) purely to resolve id + photo. */
 export async function searchPlayer(name: string): Promise<AFPlayer[]> {
-  return get<AFPlayer[]>(`/players?search=${encodeURIComponent(name)}&league=${FIFA_WC_LEAGUE}&season=${SEASON}`);
+  const wc = await get<AFPlayer[]>(
+    `/players?search=${encodeURIComponent(name)}&league=${FIFA_WC_LEAGUE}&season=${SEASON}`,
+    { revalidate: 0 }
+  );
+  if (wc.length > 0) return wc;
+  return get<AFPlayer[]>(`/players?search=${encodeURIComponent(name)}&season=${PLAYER_SEASON}`, { revalidate: 0 });
 }
 
 /** All fixtures for WC 2026 */

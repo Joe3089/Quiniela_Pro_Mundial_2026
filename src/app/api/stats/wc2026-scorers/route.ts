@@ -4,6 +4,7 @@ import { TOURNAMENT_ID } from "@/constants";
 import { searchPlayer } from "@/services/api-football";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 45;
 
 // API-Football event names sometimes vary between abbreviated ("K. Mbappe") and
 // full ("Kylian Mbappé") forms across different fixtures — normalize known
@@ -36,20 +37,22 @@ async function resolvePhotos(names: string[]): Promise<Record<string, string>> {
   }
 
   const missing = names.filter((n) => !cachedNames.has(n));
-  for (const name of missing) {
-    try {
-      const results = await searchPlayer(name);
-      const match = results[0]?.player;
-      const photoUrl = match?.photo ?? null;
-      await admin.from("player_photos").upsert(
-        { name, api_football_id: match?.id ?? null, photo_url: photoUrl, updated_at: new Date().toISOString() },
-        { onConflict: "name" }
-      );
-      if (photoUrl) photos[name] = photoUrl;
-    } catch {
-      // API unavailable / player not found — leave uncached photo, frontend falls back to initials avatar
-    }
-  }
+  await Promise.allSettled(
+    missing.map(async (name) => {
+      try {
+        const results = await searchPlayer(name);
+        const match = results[0]?.player;
+        const photoUrl = match?.photo ?? null;
+        await admin.from("player_photos").upsert(
+          { name, api_football_id: match?.id ?? null, photo_url: photoUrl, updated_at: new Date().toISOString() },
+          { onConflict: "name" }
+        );
+        if (photoUrl) photos[name] = photoUrl;
+      } catch {
+        // API unavailable / player not found — leave uncached photo, frontend falls back to initials avatar
+      }
+    })
+  );
 
   return photos;
 }
