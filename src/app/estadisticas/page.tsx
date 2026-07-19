@@ -249,11 +249,25 @@ const HIST_FLAGS: Record<string, string> = {
   "Sudáfrica": "RSA", "Corea/Japón": "KOR", "EE.UU.": "USA",
 };
 
+// Editions hosted by more than one country show one flag per host
+const HIST_MULTI_HOST_FLAGS: Record<string, string[]> = {
+  "EE.UU. · Canadá · México": ["USA", "CAN", "MEX"],
+};
+
 function CountryWithFlag({ name, className }: { name: string; className?: string }) {
+  const multiCodes = HIST_MULTI_HOST_FLAGS[name];
   const code = HIST_FLAGS[name];
   return (
     <span className={cn("inline-flex items-center gap-1", className)}>
-      {code && <FlagImage fifaCode={code} size="sm" className="w-4 h-3 shrink-0" />}
+      {multiCodes ? (
+        <span className="inline-flex items-center -space-x-1 shrink-0">
+          {multiCodes.map((c) => (
+            <FlagImage key={c} fifaCode={c} size="sm" className="w-4 h-3 rounded-[2px] ring-1 ring-black/40" />
+          ))}
+        </span>
+      ) : (
+        code && <FlagImage fifaCode={code} size="sm" className="w-4 h-3 shrink-0" />
+      )}
       {name}
     </span>
   );
