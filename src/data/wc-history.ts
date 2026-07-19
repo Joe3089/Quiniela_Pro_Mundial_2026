@@ -72,17 +72,18 @@ export const WC_EDITIONS: WCEdition[] = [
   { year: 2014, host: "Brasil",        hostContinent: "América del Sur",   champion: "Alemania",  runnerUp: "Argentina",  third: "Holanda",     fourth: "Brasil",     topScorer: { name: "James Rodríguez",country: "COL", goals: 6  }, totalGoals: 171, teams: 32, matches: 64, attendance: 3_429_873 },
   { year: 2018, host: "Rusia",         hostContinent: "Europa",             champion: "Francia",   runnerUp: "Croacia",    third: "Bélgica",     fourth: "Inglaterra", topScorer: { name: "Harry Kane",      country: "ENG", goals: 6  }, totalGoals: 169, teams: 32, matches: 64, attendance: 3_031_768 },
   { year: 2022, host: "Qatar",         hostContinent: "Asia",               champion: "Argentina", runnerUp: "Francia",    third: "Croacia",     fourth: "Marruecos",  topScorer: { name: "Kylian Mbappé",   country: "FRA", goals: 8  }, totalGoals: 172, teams: 32, matches: 64, attendance: 3_404_252 },
+  { year: 2026, host: "EE.UU. · Canadá · México", hostContinent: "América del Norte", champion: "España", runnerUp: "Argentina", third: "Inglaterra", fourth: "Francia", topScorer: { name: "Kylian Mbappé", country: "FRA", goals: 10 }, totalGoals: 308, teams: 48, matches: 104, attendance: 0 },
 ];
 
 export const WC_CHAMPIONS: WCChampion[] = [
   { country: "Brasil",      flag: "🇧🇷", fifaCode: "BRA", titles: 5, years: [1958, 1962, 1970, 1994, 2002], runnerUp: 2, runnerUpYears: [1950, 1998], thirdPlace: 2, confederation: "CONMEBOL" },
   { country: "Alemania",    flag: "🇩🇪", fifaCode: "GER", titles: 4, years: [1954, 1974, 1990, 2014], runnerUp: 4, runnerUpYears: [1966, 1982, 1986, 2002], thirdPlace: 4, confederation: "UEFA" },
   { country: "Italia",      flag: "🇮🇹", fifaCode: "ITA", titles: 4, years: [1934, 1938, 1982, 2006], runnerUp: 2, runnerUpYears: [1970, 1994], thirdPlace: 1, confederation: "UEFA" },
-  { country: "Argentina",   flag: "🇦🇷", fifaCode: "ARG", titles: 3, years: [1978, 1986, 2022], runnerUp: 3, runnerUpYears: [1930, 1990, 2014], thirdPlace: 0, confederation: "CONMEBOL" },
+  { country: "Argentina",   flag: "🇦🇷", fifaCode: "ARG", titles: 3, years: [1978, 1986, 2022], runnerUp: 4, runnerUpYears: [1930, 1990, 2014, 2026], thirdPlace: 0, confederation: "CONMEBOL" },
   { country: "Francia",     flag: "🇫🇷", fifaCode: "FRA", titles: 2, years: [1998, 2018], runnerUp: 2, runnerUpYears: [2006, 2022], thirdPlace: 2, confederation: "UEFA" },
   { country: "Uruguay",     flag: "🇺🇾", fifaCode: "URU", titles: 2, years: [1930, 1950], runnerUp: 0, runnerUpYears: [], thirdPlace: 0, confederation: "CONMEBOL" },
-  { country: "Inglaterra",  flag: "󠁧󠁢󠁥󠁮󠁧󠁿🏴󠁧󠁢󠁥󠁮󠁧󠁿", fifaCode: "ENG", titles: 1, years: [1966], runnerUp: 0, runnerUpYears: [], thirdPlace: 1, confederation: "UEFA" },
-  { country: "España",      flag: "🇪🇸", fifaCode: "ESP", titles: 1, years: [2010], runnerUp: 0, runnerUpYears: [], thirdPlace: 0, confederation: "UEFA" },
+  { country: "España",      flag: "🇪🇸", fifaCode: "ESP", titles: 2, years: [2010, 2026], runnerUp: 0, runnerUpYears: [], thirdPlace: 0, confederation: "UEFA" },
+  { country: "Inglaterra",  flag: "󠁧󠁢󠁥󠁮󠁧󠁿🏴󠁧󠁢󠁥󠁮󠁧󠁿", fifaCode: "ENG", titles: 1, years: [1966], runnerUp: 0, runnerUpYears: [], thirdPlace: 2, confederation: "UEFA" },
 ];
 
 // goals = pre-2026 historical ONLY; WC2026 goals merged live from API-Football (PLAYER_API_IDS in estadisticas/page.tsx)
@@ -109,22 +110,22 @@ export const RECORDS_2026: WCRecord[] = [
   {
     category: "Goleador histórico",
     record: "Más goles en Copas del Mundo",
-    holder: "Lionel Messi (Argentina) 🏆",
-    value: "19+ goles (2006–2026) — NUEVO RÉCORD",
+    holder: "Kylian Mbappé (Francia) 🏆",
+    value: "22 goles (2018–2026) — NUEVO RÉCORD",
     year: 2026,
     vulnerable: false,
-    challengedBy: "Kylian Mbappé (Francia) – 18 goles",
-    context: "Messi superó a Klose (16) y es el máximo goleador histórico con 19 goles en 6 Mundiales. Mbappé alcanza 18 en 3 ediciones."
+    challengedBy: "Lionel Messi (Argentina) – 21 goles",
+    context: "Mbappé cerró el Mundial 2026 con 10 goles (máximo goleador del torneo) y llegó a 22 en su carrera mundialista, superando a Messi (21) y a Klose (16, ahora 3º)."
   },
   {
     category: "Goleador histórico",
     record: "2º máximo goleador histórico de todos los tiempos",
-    holder: "Kylian Mbappé (Francia) 🏆",
-    value: "18 goles (2018–2026) — NUEVO RÉCORD",
+    holder: "Lionel Messi (Argentina)",
+    value: "21 goles (2006–2026)",
     year: 2026,
     vulnerable: false,
-    challengedBy: "Miroslav Klose – 16 goles (record anterior)",
-    context: "Mbappé superó a Klose (16) en solo 3 Mundiales. El alemán baja al 3er puesto con 16 goles en 4 ediciones."
+    challengedBy: "Miroslav Klose – 16 goles (3er lugar)",
+    context: "Messi sumó 8 goles más en 2026 y terminó con 21 en su carrera, en el 2º lugar histórico por detrás de Mbappé (22)."
   },
   {
     category: "Goles en un torneo",
@@ -141,15 +142,15 @@ export const RECORDS_2026: WCRecord[] = [
     holder: "Lionel Messi / Cristiano Ronaldo",
     value: "6 Mundiales (2026) — NUEVO RÉCORD",
     vulnerable: false,
-    context: "Tanto Messi como CR7 están disputando su 6to Mundial en 2026, estableciendo un nuevo récord histórico de participaciones."
+    context: "Tanto Messi como CR7 disputaron su 6to Mundial en 2026, estableciendo un nuevo récord histórico de participaciones."
   },
   {
     category: "Participaciones selección",
     record: "País con más Mundiales",
     holder: "Brasil",
-    value: "22 participaciones (todas)",
+    value: "23 participaciones (todas)",
     vulnerable: false,
-    context: "Brasil es el único país en haber participado en todos los 22 Mundiales. En 2026 serán 23."
+    context: "Brasil es el único país en haber participado en los 23 Mundiales disputados hasta 2026."
   },
   {
     category: "Campeones consecutivos",
@@ -157,8 +158,7 @@ export const RECORDS_2026: WCRecord[] = [
     holder: "Italia",
     value: "2 títulos consecutivos (1934–1938)",
     vulnerable: false,
-    challengedBy: "Argentina (campeón 2022)",
-    context: "Argentina podría igualar el récord si gana en 2026."
+    context: "Argentina (campeón 2022) buscaba igualarlo, pero cayó en la final de 2026 ante España. El récord de Italia sigue en pie."
   },
   {
     category: "Portería imbatida",
@@ -167,7 +167,7 @@ export const RECORDS_2026: WCRecord[] = [
     value: "517 minutos (1990)",
     vulnerable: true,
     challengedBy: "Emiliano Martínez (Argentina)",
-    context: "Con una defensa sólida, Martínez podría amenazar este récord en 2026."
+    context: "Argentina, con Martínez en el arco, llegó a la final de 2026. No hay datos suficientes en la app para confirmar si superó este récord."
   },
   {
     category: "Asistencias",
@@ -176,7 +176,7 @@ export const RECORDS_2026: WCRecord[] = [
     value: "10 asistencias",
     vulnerable: true,
     challengedBy: "Lionel Messi (Argentina) – 8 asistencias",
-    context: "Messi puede convertirse en el máximo asistente de la historia del torneo."
+    context: "Messi terminó su carrera mundialista cerca del récord, pero la app no lleva un conteo histórico completo de asistencias previas a 2026 para confirmarlo."
   },
   {
     category: "Sede",
@@ -185,7 +185,7 @@ export const RECORDS_2026: WCRecord[] = [
     value: "3,587,538 espectadores",
     vulnerable: true,
     challengedBy: "Mundial 2026 (48 equipos, 104 partidos)",
-    context: "Con 40 partidos más que en 1994, el récord podría batirse fácilmente."
+    context: "El Mundial 2026 tuvo 40 partidos más que 1994. Es probable que el récord se haya superado, pero la app aún no cuenta con datos oficiales de asistencia para confirmarlo."
   },
   {
     category: "Goles en un partido",
@@ -201,15 +201,14 @@ export const RECORDS_2026: WCRecord[] = [
     holder: "Brasil",
     value: "11 partidos sin perder (1970–1974)",
     vulnerable: true,
-    challengedBy: "Argentina (actual campeón)",
-    context: "Argentina podría igualar o superar este récord con una buena campaña en 2026."
+    context: "Argentina llegó a la final de 2026 pero cayó ante España, cortando su racha. El récord de Brasil sigue en pie."
   },
 ];
 
 export const CONTINENT_STATS = [
-  { continent: "Europa",        titles: 12, participations: 256, hostTimes: 11, color: "#3b82f6" },
+  { continent: "Europa",        titles: 13, participations: 256, hostTimes: 11, color: "#3b82f6" },
   { continent: "América del Sur", titles: 9, participations: 128, hostTimes: 5, color: "#f59e0b" },
-  { continent: "América del Norte", titles: 0, participations: 64, hostTimes: 3, color: "#10b981" },
+  { continent: "América del Norte", titles: 0, participations: 64, hostTimes: 4, color: "#10b981" },
   { continent: "Asia",           titles: 0, participations: 48, hostTimes: 2, color: "#ef4444" },
   { continent: "África",         titles: 0, participations: 40, hostTimes: 1, color: "#f97316" },
   { continent: "Oceanía",        titles: 0, participations: 8, hostTimes: 0, color: "#06b6d4" },

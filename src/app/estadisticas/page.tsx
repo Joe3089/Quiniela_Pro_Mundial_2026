@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { TrendingUp, Trophy, Clock, Star, AlertTriangle, Globe2, Users, Zap, Loader2 } from "lucide-react";
@@ -16,7 +16,9 @@ import {
 } from "@/data/wc-history";
 import { FlagImage } from "@/components/ui/flag-image";
 import { ConfederationBadge } from "@/components/ui/confederation-badge";
+import { championCrestUrl } from "@/data/team-crests";
 import { cn, getPlayerPhotoUrl } from "@/lib/utils";
+import { TOURNAMENT_ID } from "@/constants";
 
 // Verified API-Football national team IDs → federation crest URLs
 const FEDERATION_CRESTS: Record<string, string> = {
@@ -265,10 +267,13 @@ function HistorialTab() {
     staleTime: 60_000,
   });
 
-  // Historical totals from all past editions (1930–2022)
-  const histGoals   = WC_EDITIONS.reduce((s, e) => s + e.totalGoals, 0);
-  const histMatches = WC_EDITIONS.reduce((s, e) => s + e.matches,    0);
-  const histEditions = WC_EDITIONS.length;
+  // Historical totals from all past editions (1930–2022) — WC2026 is tracked
+  // live below and must be excluded here, or its goals/matches would be
+  // double-counted (it's already a row in WC_EDITIONS with real final numbers).
+  const pastEditions = WC_EDITIONS.filter((e) => e.year < 2026);
+  const histGoals   = pastEditions.reduce((s, e) => s + e.totalGoals, 0);
+  const histMatches = pastEditions.reduce((s, e) => s + e.matches,    0);
+  const histEditions = pastEditions.length;
 
   // Live WC 2026 additions
   const liveGoals   = matchStats?.goals   ?? 0;
@@ -285,7 +290,7 @@ function HistorialTab() {
         <div className="flex items-center gap-2 mb-3">
           <Zap className="h-4 w-4 text-[hsl(var(--brand-gold))]" />
           <span className="text-xs font-bold text-[hsl(var(--brand-gold))] uppercase tracking-wider">
-            Acumulado histórico · 1930–2026 (en curso)
+            Acumulado histórico · 1930–2026
           </span>
         </div>
         <div className="grid grid-cols-3 gap-3">
@@ -517,6 +522,67 @@ async function fetchTopScorers(type = "scorers"): Promise<import("@/services/api
   return res.json();
 }
 
+interface Champion2026 {
+  championName: string;
+  championCode: string | null;
+  runnerUpName: string;
+  runnerUpCode: string | null;
+}
+
+// Reads the actual Final result from Supabase — winner determined from the
+// stored score (already inclusive of extra time) with penalties as tiebreaker.
+async function fetchChampion(): Promise<Champion2026 | null> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const supabase = createClient() as any;
+  const { data } = await supabase
+    .from("matches")
+    .select(
+      `status, home_score, away_score, home_score_penalties, away_score_penalties,
+       home_team:teams!matches_home_team_id_fkey(name, fifa_code),
+       away_team:teams!matches_away_team_id_fkey(name, fifa_code)`
+    )
+    .eq("tournament_id", TOURNAMENT_ID)
+    .eq("phase", "final")
+    .maybeSingle();
+
+  if (!data || data.status !== "finished" || data.home_score == null || data.away_score == null) return null;
+
+  const homeWon =
+    data.home_score !== data.away_score
+      ? data.home_score > data.away_score
+      : (data.home_score_penalties ?? 0) > (data.away_score_penalties ?? 0);
+
+  const champion = homeWon ? data.home_team : data.away_team;
+  const runnerUp = homeWon ? data.away_team : data.home_team;
+
+  return {
+    championName: champion?.name ?? "?",
+    championCode: champion?.fifa_code ?? null,
+    runnerUpName: runnerUp?.name ?? "?",
+    runnerUpCode: runnerUp?.fifa_code ?? null,
+  };
+}
+
+function ChampionCrest({ fifaCode, name, size = 64 }: { fifaCode: string | null; name: string; size?: number }) {
+  const [failed, setFailed] = useState(false);
+  const src = championCrestUrl(fifaCode);
+  if (!src || failed) {
+    return <FlagImage fifaCode={fifaCode ?? ""} size="lg" className="shrink-0" />;
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt={name}
+      width={size}
+      height={size}
+      style={{ width: size, height: size }}
+      className="object-contain shrink-0 drop-shadow-[0_0_16px_rgba(234,179,8,0.5)]"
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
 /* ── MUNDIAL 2026 TAB ───────────────────────────────────────── */
 function Mundial2026Tab() {
   const { data: matchStats } = useQuery({
@@ -524,6 +590,13 @@ function Mundial2026Tab() {
     queryFn: fetchMatchStats,
     staleTime: 60_000,
     refetchInterval: 120_000,
+  });
+
+  const { data: champion } = useQuery({
+    queryKey: ["wc2026-champion"],
+    queryFn: fetchChampion,
+    staleTime: 300_000,
+    refetchInterval: 300_000,
   });
 
   // Sourced from Supabase match_events (goal/assist events entered by the admin) —
@@ -557,14 +630,31 @@ function Mundial2026Tab() {
   return (
     <div className="space-y-8">
       {/* Banner */}
-      <div className="glass-card rounded-2xl border border-[hsl(var(--brand-blue)/0.3)] p-5 text-center relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--brand-blue)/0.08)] to-transparent pointer-events-none" />
-        <div className="inline-flex items-center gap-2 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 px-3 py-1 rounded-full mb-3">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          EN CURSO · DESDE EL 11 DE JUNIO 2026
-        </div>
-        <p className="text-2xl font-black text-white mb-1">Mundial FIFA 2026</p>
-        <p className="text-sm text-muted-foreground">EE.UU. · Canadá · México · 48 equipos · 104 partidos</p>
+      <div className="glass-card rounded-2xl border border-[hsl(var(--brand-gold)/0.35)] p-5 text-center relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--brand-gold)/0.08)] to-transparent pointer-events-none" />
+        {champion ? (
+          <>
+            <div className="inline-flex items-center gap-2 text-[10px] font-bold text-[hsl(var(--brand-gold))] bg-[hsl(var(--brand-gold)/0.12)] border border-[hsl(var(--brand-gold)/0.35)] px-3 py-1 rounded-full mb-3">
+              <Trophy className="h-3 w-3" />
+              TORNEO FINALIZADO · 19 DE JULIO 2026
+            </div>
+            <div className="flex flex-col items-center gap-2 mb-2">
+              <ChampionCrest fifaCode={champion.championCode} name={champion.championName} size={64} />
+              <p className="text-[10px] font-bold text-[hsl(var(--brand-gold))] uppercase tracking-widest">Campeón del Mundo</p>
+              <p className="text-2xl font-black text-white">{champion.championName}</p>
+            </div>
+            <p className="text-sm text-muted-foreground">Venció en la final a {champion.runnerUpName}</p>
+          </>
+        ) : (
+          <>
+            <div className="inline-flex items-center gap-2 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 px-3 py-1 rounded-full mb-3">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              EN CURSO · DESDE EL 11 DE JUNIO 2026
+            </div>
+            <p className="text-2xl font-black text-white mb-1">Mundial FIFA 2026</p>
+            <p className="text-sm text-muted-foreground">EE.UU. · Canadá · México · 48 equipos · 104 partidos</p>
+          </>
+        )}
       </div>
 
       {/* Live stats grid */}
@@ -844,7 +934,9 @@ function RecordsTab() {
   );
 }
 
-const HIST_GOALS = WC_EDITIONS.reduce((s, e) => s + e.totalGoals, 0); // 2720 (1930–2022)
+// WC2026 is tracked live (fetchMatchStats) and excluded here to avoid double-counting
+// its goals — it's already a row in WC_EDITIONS with the real final tally.
+const HIST_GOALS = WC_EDITIONS.filter((e) => e.year < 2026).reduce((s, e) => s + e.totalGoals, 0); // 2720 (1930–2022)
 
 /* ── PAGE ───────────────────────────────────────────────────── */
 export default function EstadisticasPage() {
