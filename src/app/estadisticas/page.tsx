@@ -246,12 +246,13 @@ const HIST_FLAGS: Record<string, string> = {
   "Portugal": "POR", "Bélgica": "BEL", "Corea del Sur": "KOR", "URSS": "RUS",
   "Chile": "CHI", "México": "MEX", "Qatar": "QAT", "Rusia": "RUS",
   "Suiza": "SUI", "Japón": "JPN", "Turquía": "TUR", "Yugoslavia": "SRB",
-  "Sudáfrica": "RSA", "Corea/Japón": "KOR", "EE.UU.": "USA",
+  "Sudáfrica": "RSA", "EE.UU.": "USA",
 };
 
 // Editions hosted by more than one country show one flag per host
 const HIST_MULTI_HOST_FLAGS: Record<string, string[]> = {
   "EE.UU. · Canadá · México": ["USA", "CAN", "MEX"],
+  "Corea/Japón": ["KOR", "JPN"],
 };
 
 function CountryWithFlag({ name, className }: { name: string; className?: string }) {
