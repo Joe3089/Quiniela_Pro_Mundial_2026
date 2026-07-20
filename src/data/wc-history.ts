@@ -172,11 +172,12 @@ export const RECORDS_2026: WCRecord[] = [
   {
     category: "Asistencias",
     record: "Más asistencias históricas",
-    holder: "Pelé (Brasil)",
-    value: "10 asistencias",
-    vulnerable: true,
-    challengedBy: "Lionel Messi (Argentina) – 2 asistencias en 2026",
-    context: "Se investigó en fuentes externas, pero las cifras históricas de asistencias en Mundiales previos al conteo oficial de la FIFA son inconsistentes entre sí (varían de 5 a 12 según la fuente), así que no se puede confirmar de forma confiable si el récord se rompió."
+    holder: "Lionel Messi (Argentina) 🏆",
+    value: "10 asistencias (2006–2026) — NUEVO RÉCORD",
+    year: 2026,
+    vulnerable: false,
+    challengedBy: "Diego Maradona (Argentina) – 8 asistencias (récord anterior)",
+    context: "Messi llegó al Mundial 2026 empatado con Maradona en 8 asistencias históricas. En el torneo sumó 2 más: asistió el gol de Romero en la remontada 3-2 ante Egipto en octavos (min. 79) y el de Mac Allister ante Suiza en cuartos, cerrando con 10 y superando el récord de Maradona."
   },
   {
     category: "Sede",
