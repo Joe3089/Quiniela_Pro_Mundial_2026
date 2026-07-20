@@ -14,22 +14,15 @@ interface NewsItem {
   image?: string | null;
 }
 
+// Mundial 2026 (BBC) and Convocatorias (Sky Sports, Marca) publish real,
+// bot-friendly RSS feeds we can hit directly.
 const RSS_SOURCES = [
-  // FIFA oficial
-  {
-    name: "FIFA News",
-    url: "https://www.fifa.com/rss/news_en.xml",
-    color: "#044B96",
-    category: "fifa",
-  },
-  // Mundial 2026
   {
     name: "BBC Sport",
     url: "https://feeds.bbci.co.uk/sport/football/rss.xml",
     color: "#BB1919",
     category: "mundial",
   },
-  // Convocatorias
   {
     name: "Sky Sports",
     url: "https://www.skysports.com/rss/12040",
@@ -42,42 +35,22 @@ const RSS_SOURCES = [
     color: "#E31E24",
     category: "convocatorias",
   },
-  // ESPN
-  {
-    name: "ESPN",
-    url: "https://www.espn.com/espn/rss/soccer/news",
-    color: "#FF6B00",
-    category: "espn",
-  },
-  // FOX Sports — GNews fallback (curated soccer feed)
-  {
-    name: "FOX Sports",
-    url: "https://gnews.io/api/v4/search?q=soccer+world+cup+2026&lang=en&country=us&max=10&apikey=pub_fallback",
-    color: "#003DA5",
-    category: "foxsports",
-    gnews: true,
-  },
-  // SportsCenter (ESPN Latam)
-  {
-    name: "SportsCenter",
-    url: "https://www.espn.com.mx/rss/news",
-    color: "#CC0000",
-    category: "sportscenter",
-  },
-  // DSPORTS
-  {
-    name: "DSPORTS",
-    url: "https://dsports.com/feed",
-    color: "#0057A8",
-    category: "dsports",
-  },
-  // Diario AS
-  {
-    name: "Diario AS",
-    url: "https://as.com/rss/futbol/mundial/",
-    color: "#1E3A8A",
-    category: "diarioas",
-  },
+];
+
+// FIFA, ESPN, FOX Sports, SportsCenter, DSPORTS and Diario AS either don't
+// publish a public RSS feed at all (FIFA's site is a JS SPA now, DSPORTS has
+// no working feed, SportsCenter is a TV segment brand with no site of its
+// own) or block server-side/bot requests (AS returns 403). Google News' RSS
+// search proxy indexes their real published headlines and links straight
+// back to the source article, so it works uniformly for all six without
+// needing per-site scraping or API keys.
+const GOOGLE_NEWS_SOURCES = [
+  { name: "FIFA News",   query: "site:fifa.com mundial 2026",           color: "#044B96", category: "fifa" },
+  { name: "ESPN",        query: "site:espndeportes.espn.com mundial",   color: "#FF6B00", category: "espn" },
+  { name: "FOX Sports",  query: "site:foxdeportes.com mundial",         color: "#003DA5", category: "foxsports" },
+  { name: "SportsCenter",query: "SportsCenter mundial 2026",            color: "#CC0000", category: "sportscenter" },
+  { name: "DSPORTS",     query: "DSPORTS mundial 2026",                 color: "#0057A8", category: "dsports" },
+  { name: "Diario AS",   query: "site:as.com mundial 2026",             color: "#1E3A8A", category: "diarioas" },
 ];
 
 function extractTag(xml: string, tag: string): string {
@@ -150,44 +123,44 @@ async function fetchRssSource(
   }
 }
 
-async function fetchGNewsSource(
-  source: { name: string; color: string; category: string },
+// Google News' RSS search always appends " - <Source Name>" to the title;
+// strip it since we already show the source as a separate badge.
+function stripSourceSuffix(title: string, sourceName: string): string {
+  const suffix = ` - ${sourceName}`;
+  return title.endsWith(suffix) ? title.slice(0, -suffix.length) : title;
+}
+
+async function fetchGoogleNewsSource(
+  source: { name: string; query: string; color: string; category: string },
   count = 8
 ): Promise<NewsItem[]> {
   try {
-    const apiKey = process.env.GNEWS_API_KEY;
-    if (!apiKey) return [];
-
-    const url = `https://gnews.io/api/v4/search?q=soccer+world+cup+2026&lang=en&max=${count}&apikey=${apiKey}`;
-    const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
+    const url = `https://news.google.com/rss/search?q=${encodeURIComponent(source.query)}&hl=es-419&gl=MX&ceid=MX:es-419`;
+    const res = await fetch(url, {
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; QuinielaPro/1.0)" },
+      signal: AbortSignal.timeout(6000),
+    });
     if (!res.ok) return [];
 
-    const data = await res.json() as { articles?: Array<{ title: string; url: string; description: string; publishedAt: string; image?: string }> };
-    if (!data.articles) return [];
+    const xml = await res.text();
+    const items = xml.match(/<item>([\s\S]*?)<\/item>/gi) ?? [];
 
-    return data.articles.map((a) => ({
-      title: a.title ?? "",
-      link: a.url ?? "#",
-      description: (a.description ?? "").slice(0, 220),
-      pubDate: a.publishedAt ?? "",
-      source: source.name,
-      sourceColor: source.color,
-      category: source.category,
-      image: a.image ?? null,
-    }));
+    return items.slice(0, count).map((item) => {
+      const itemSource = stripHTML(extractTag(item, "source")) || source.name;
+      return {
+        title: stripSourceSuffix(stripHTML(extractTag(item, "title")), itemSource),
+        link: extractLink(item),
+        description: "",
+        pubDate: extractTag(item, "pubDate"),
+        source: source.name,
+        sourceColor: source.color,
+        category: source.category,
+        image: null,
+      };
+    }) as NewsItem[];
   } catch {
     return [];
   }
-}
-
-async function fetchSource(
-  source: { name: string; url: string; color: string; category: string; gnews?: boolean },
-  count = 8
-): Promise<NewsItem[]> {
-  if (source.gnews) {
-    return fetchGNewsSource(source, count);
-  }
-  return fetchRssSource(source, count);
 }
 
 // Deduplicate by link
@@ -204,12 +177,15 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const category = searchParams.get("category") ?? "all";
 
-  const sources =
-    category === "all"
-      ? RSS_SOURCES
-      : RSS_SOURCES.filter((s) => s.category === category);
+  const rssSources =
+    category === "all" ? RSS_SOURCES : RSS_SOURCES.filter((s) => s.category === category);
+  const googleSources =
+    category === "all" ? GOOGLE_NEWS_SOURCES : GOOGLE_NEWS_SOURCES.filter((s) => s.category === category);
 
-  const results = await Promise.allSettled(sources.map((s) => fetchSource(s, 8)));
+  const results = await Promise.allSettled([
+    ...rssSources.map((s) => fetchRssSource(s, 8)),
+    ...googleSources.map((s) => fetchGoogleNewsSource(s, 8)),
+  ]);
 
   const allItems: NewsItem[] = results.flatMap((r) =>
     r.status === "fulfilled" ? r.value : []
