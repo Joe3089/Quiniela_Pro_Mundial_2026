@@ -162,7 +162,7 @@ export default function NoticiasPage() {
       </motion.div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1.5 mb-5 overflow-x-auto pb-1 scrollbar-none">
+      <div className="flex items-center gap-1.5 mb-5 overflow-x-auto pb-1 scrollbar-hover">
         {TABS.map((tab) => {
           const Icon = tab.icon;
           const active = activeTab === tab.id;

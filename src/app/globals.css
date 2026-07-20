@@ -257,6 +257,14 @@
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
   .scrollbar-hide::-webkit-scrollbar { display: none; }
 
+  /* Invisible until the pointer is over the scrollable area — for horizontal
+     tab rows where a permanent scrollbar is just visual clutter. */
+  .scrollbar-hover { scrollbar-width: none; }
+  .scrollbar-hover::-webkit-scrollbar-thumb { background: transparent; }
+  .scrollbar-hover:hover { scrollbar-width: thin; scrollbar-color: hsl(var(--muted-foreground) / 0.45) transparent; }
+  .scrollbar-hover:hover::-webkit-scrollbar-thumb { background: hsl(var(--muted-foreground) / 0.45); }
+  .scrollbar-hover:hover::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.7); }
+
   /* ── Trophy animations ── */
   .trophy-animate { animation: trophy-showcase 5s ease-in-out infinite; transform-style: preserve-3d; }
 
