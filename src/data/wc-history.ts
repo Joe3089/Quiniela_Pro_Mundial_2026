@@ -155,10 +155,10 @@ export const RECORDS_2026: WCRecord[] = [
   {
     category: "Campeones consecutivos",
     record: "Títulos consecutivos",
-    holder: "Italia",
-    value: "2 títulos consecutivos (1934–1938)",
+    holder: "Italia (1934–1938) y Brasil (1958–1962)",
+    value: "2 títulos consecutivos",
     vulnerable: false,
-    context: "Argentina (campeón 2022) buscaba igualarlo, pero cayó en la final de 2026 ante España. El récord de Italia sigue en pie."
+    context: "Argentina (campeón 2022) buscaba igualar la marca, pero cayó en la final de 2026 ante España. El récord sigue compartido entre Italia y Brasil — nadie ha logrado 3 títulos seguidos."
   },
   {
     category: "Portería imbatida",
