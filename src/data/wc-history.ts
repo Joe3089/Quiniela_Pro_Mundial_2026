@@ -182,11 +182,12 @@ export const RECORDS_2026: WCRecord[] = [
   {
     category: "Sede",
     record: "Mayor asistencia en un Mundial",
-    holder: "EE.UU. 1994",
-    value: "3,587,538 espectadores",
-    vulnerable: true,
-    challengedBy: "Mundial 2026 (48 equipos, 104 partidos)",
-    context: "Se verificó directamente con la API de datos del torneo: no expone la asistencia de público como campo para ningún partido, por lo que no hay forma de confirmar si el récord se rompió."
+    holder: "Mundial 2026 (EE.UU. · Canadá · México) 🏆",
+    value: "6,810,966 espectadores — NUEVO RÉCORD",
+    year: 2026,
+    vulnerable: false,
+    challengedBy: "EE.UU. 1994 – 3,587,538 espectadores (récord anterior)",
+    context: "La API del torneo no expone asistencia por partido, pero fuentes de prensa confirmaron que la FIFA declaró el récord roto antes de terminar la fase de grupos (3,605,357 espectadores en 38 de 104 partidos, promedio ~65,000 por partido). El total final del torneo cerró en 6,810,966, muy por encima de los 3,587,538 de 1994."
   },
   {
     category: "Goles en un partido",
