@@ -165,9 +165,9 @@ export const RECORDS_2026: WCRecord[] = [
     record: "Minutos sin encajar",
     holder: "Walter Zenga (Italia)",
     value: "517 minutos (1990)",
-    vulnerable: true,
-    challengedBy: "Emiliano Martínez (Argentina)",
-    context: "Argentina, con Martínez en el arco, llegó a la final de 2026. No hay datos suficientes en la app para confirmar si superó este récord."
+    vulnerable: false,
+    challengedBy: "Emiliano Martínez (Argentina) – 235 minutos (2026)",
+    context: "Verificado con los eventos de gol del torneo: la racha más larga de Martínez sin recibir goles en 2026 fue de 235 minutos (arrancó con dos partidos en cero antes de recibir el primero). El récord de Zenga sigue en pie por casi el doble."
   },
   {
     category: "Asistencias",
@@ -175,8 +175,8 @@ export const RECORDS_2026: WCRecord[] = [
     holder: "Pelé (Brasil)",
     value: "10 asistencias",
     vulnerable: true,
-    challengedBy: "Lionel Messi (Argentina) – 8 asistencias",
-    context: "Messi terminó su carrera mundialista cerca del récord, pero la app no lleva un conteo histórico completo de asistencias previas a 2026 para confirmarlo."
+    challengedBy: "Lionel Messi (Argentina) – 2 asistencias en 2026",
+    context: "Se investigó en fuentes externas, pero las cifras históricas de asistencias en Mundiales previos al conteo oficial de la FIFA son inconsistentes entre sí (varían de 5 a 12 según la fuente), así que no se puede confirmar de forma confiable si el récord se rompió."
   },
   {
     category: "Sede",
@@ -185,7 +185,7 @@ export const RECORDS_2026: WCRecord[] = [
     value: "3,587,538 espectadores",
     vulnerable: true,
     challengedBy: "Mundial 2026 (48 equipos, 104 partidos)",
-    context: "El Mundial 2026 tuvo 40 partidos más que 1994. Es probable que el récord se haya superado, pero la app aún no cuenta con datos oficiales de asistencia para confirmarlo."
+    context: "Se verificó directamente con la API de datos del torneo: no expone la asistencia de público como campo para ningún partido, por lo que no hay forma de confirmar si el récord se rompió."
   },
   {
     category: "Goles en un partido",
