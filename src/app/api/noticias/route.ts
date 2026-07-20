@@ -40,11 +40,11 @@ const RSS_SOURCES = [
 // FIFA, ESPN, FOX Sports, SportsCenter, DSPORTS and Diario AS either don't
 // publish a public RSS feed at all (FIFA's site is a JS SPA now, DSPORTS has
 // no working feed, SportsCenter is a TV segment brand with no site of its
-// own) or block server-side/bot requests (AS returns 403). Google News' RSS
-// search proxy indexes their real published headlines and links straight
-// back to the source article, so it works uniformly for all six without
-// needing per-site scraping or API keys.
-const GOOGLE_NEWS_SOURCES = [
+// own) or block server-side/bot requests (AS returns 403). Bing News' RSS
+// search indexes their real published headlines with a direct link back to
+// the source article embedded in the query string — and unlike Google News,
+// it isn't blocked from cloud/datacenter egress IPs (Vercel included).
+const BING_NEWS_SOURCES = [
   { name: "FIFA News",   query: "site:fifa.com mundial 2026",           color: "#044B96", category: "fifa" },
   { name: "ESPN",        query: "site:espndeportes.espn.com mundial",   color: "#FF6B00", category: "espn" },
   { name: "FOX Sports",  query: "site:foxdeportes.com mundial",         color: "#003DA5", category: "foxsports" },
@@ -63,6 +63,8 @@ function extractTag(xml: string, tag: string): string {
 function stripHTML(html: string): string {
   return html
     .replace(/<[^>]+>/g, "")
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCharCode(parseInt(code, 16)))
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&amp;/g, "&")
@@ -123,19 +125,24 @@ async function fetchRssSource(
   }
 }
 
-// Google News' RSS search always appends " - <Source Name>" to the title;
-// strip it since we already show the source as a separate badge.
-function stripSourceSuffix(title: string, sourceName: string): string {
-  const suffix = ` - ${sourceName}`;
-  return title.endsWith(suffix) ? title.slice(0, -suffix.length) : title;
+// Bing News RSS wraps every link in an apiclick.aspx redirect with the real
+// article URL embedded in the `url` query param — extract it so users land
+// straight on the source article instead of bouncing through Bing.
+function extractBingSourceUrl(bingLink: string): string {
+  try {
+    const u = new URL(bingLink.replace(/&amp;/g, "&"));
+    return u.searchParams.get("url") ?? bingLink;
+  } catch {
+    return bingLink;
+  }
 }
 
-async function fetchGoogleNewsSource(
+async function fetchBingNewsSource(
   source: { name: string; query: string; color: string; category: string },
   count = 8
 ): Promise<NewsItem[]> {
   try {
-    const url = `https://news.google.com/rss/search?q=${encodeURIComponent(source.query)}&hl=es-419&gl=MX&ceid=MX:es-419`;
+    const url = `https://www.bing.com/news/search?q=${encodeURIComponent(source.query)}&format=RSS&setlang=es-mx`;
     const res = await fetch(url, {
       headers: { "User-Agent": "Mozilla/5.0 (compatible; QuinielaPro/1.0)" },
       signal: AbortSignal.timeout(6000),
@@ -146,16 +153,17 @@ async function fetchGoogleNewsSource(
     const items = xml.match(/<item>([\s\S]*?)<\/item>/gi) ?? [];
 
     return items.slice(0, count).map((item) => {
-      const itemSource = stripHTML(extractTag(item, "source")) || source.name;
+      const rawLink = item.match(/<link>([^<]+)<\/link>/i)?.[1] ?? "#";
+      const image = item.match(/<News:Image>([^<]+)<\/News:Image>/i)?.[1] ?? null;
       return {
-        title: stripSourceSuffix(stripHTML(extractTag(item, "title")), itemSource),
-        link: extractLink(item),
-        description: "",
+        title: stripHTML(extractTag(item, "title")),
+        link: extractBingSourceUrl(rawLink),
+        description: stripHTML(extractTag(item, "description")),
         pubDate: extractTag(item, "pubDate"),
         source: source.name,
         sourceColor: source.color,
         category: source.category,
-        image: null,
+        image,
       };
     }) as NewsItem[];
   } catch {
@@ -179,12 +187,12 @@ export async function GET(request: NextRequest) {
 
   const rssSources =
     category === "all" ? RSS_SOURCES : RSS_SOURCES.filter((s) => s.category === category);
-  const googleSources =
-    category === "all" ? GOOGLE_NEWS_SOURCES : GOOGLE_NEWS_SOURCES.filter((s) => s.category === category);
+  const bingSources =
+    category === "all" ? BING_NEWS_SOURCES : BING_NEWS_SOURCES.filter((s) => s.category === category);
 
   const results = await Promise.allSettled([
     ...rssSources.map((s) => fetchRssSource(s, 8)),
-    ...googleSources.map((s) => fetchGoogleNewsSource(s, 8)),
+    ...bingSources.map((s) => fetchBingNewsSource(s, 8)),
   ]);
 
   const allItems: NewsItem[] = results.flatMap((r) =>
