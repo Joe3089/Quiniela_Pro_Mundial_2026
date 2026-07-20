@@ -816,6 +816,7 @@ function RecordsTab() {
     "Más Mundiales jugados (jugador)": "most_wc_appearances",
     "Mayor asistencia en un Mundial": "attendance_wc2026",
     "Más asistencias históricas": "max_assists",
+    "Más victorias seguidas": "longest_unbeaten_streak",
   };
 
   const isBroken = (rec: { record: string }) => brokenKeys.has(BROKEN_KEY_MAP[rec.record] ?? "");

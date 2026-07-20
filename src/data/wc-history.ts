@@ -200,10 +200,12 @@ export const RECORDS_2026: WCRecord[] = [
   {
     category: "Victorias consecutivas",
     record: "Más victorias seguidas",
-    holder: "Brasil",
-    value: "11 partidos sin perder (1970–1974)",
-    vulnerable: true,
-    context: "Argentina llegó a la final de 2026 pero cayó ante España, cortando su racha. El récord de Brasil sigue en pie."
+    holder: "Argentina 🏆",
+    value: "13 partidos sin perder (2022–2026) — NUEVO RÉCORD",
+    year: 2026,
+    vulnerable: false,
+    challengedBy: "Brasil – 11 partidos sin perder (1970–1974, récord anterior)",
+    context: "Tras perder su debut en 2022 ante Arabia Saudita, Argentina no volvió a caer hasta la final de 2026 ante España: 6 partidos para cerrar el título de 2022 (incluyendo penales ante Países Bajos y Francia) + 7 victorias corridas en 2026 = 13 partidos seguidos sin perder, superando el récord de Brasil."
   },
 ];
 
